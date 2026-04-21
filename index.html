@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Patient Care Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --ink: #0e2a33;
+    --ink-2: #476069;
+    --muted: #7a8c93;
+    --line: #e4ebee;
+    --line-2: #eff3f5;
+    --bg: #f5f8f8;
+    --card: #ffffff;
+    --accent: #0f766e;          /* deep teal */
+    --accent-2: #14b8a6;
+    --accent-soft: #e7f4f2;
+    --blue: #1e6091;
+    --blue-soft: #e6eff6;
+    --amber: #b7791f;
+    --amber-soft: #fbf4e4;
+    --red: #b54747;
+    --red-soft: #fbeaea;
+    --gold: #c69a4b;
+    --shadow: 0 1px 2px rgba(14,42,51,.04), 0 8px 24px rgba(14,42,51,.05);
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    background-image:
+      radial-gradient(1200px 500px at 10% -10%, rgba(20,184,166,.06), transparent 60%),
+      radial-gradient(900px 400px at 100% 0%, rgba(30,96,145,.05), transparent 60%);
+    background-attachment: fixed;
+  }
+  .shell { max-width: 1440px; margin: 0 auto; padding: 28px 32px 80px; }
+
+  /* ── HEADER ──────────────────────────────────────── */
+  header.top {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    padding-bottom: 20px; margin-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; flex-direction: column; gap: 4px; }
+  .brand .eyebrow { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  .brand h1 {
+    font-family: 'Fraunces', serif; font-weight: 500;
+    font-size: 34px; margin: 0; letter-spacing: -0.01em; color: var(--ink);
+  }
+  .brand h1 em { font-style: italic; color: var(--accent); font-weight: 400; }
+  .status-bar { display: flex; gap: 20px; align-items: center; font-size: 12px; color: var(--ink-2); }
+  .status-bar .dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; display: inline-block; margin-right: 6px; box-shadow: 0 0 0 3px rgba(34,197,94,.15); }
+  .status-bar .refresh {
+    background: white; border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 12px; cursor: pointer; font-size: 12px; color: var(--ink);
+    font-family: inherit; display: inline-flex; align-items: center; gap: 6px;
+    transition: all .15s ease;
+  }
+  .status-bar .refresh:hover { border-color: var(--accent); color: var(--accent); }
+  .status-bar .refresh svg { width: 13px; height: 13px; }
+
+  /* ── FILTER BAR ──────────────────────────────────── */
+  .filter-bar {
+    background: white; border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 20px; margin-bottom: 24px; box-shadow: var(--shadow);
+    display: flex; flex-wrap: wrap; gap: 18px; align-items: center;
+  }
+  .filter-bar .label {
+    font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 4px; font-weight: 600; display: block;
+  }
+  .filter-group { display: flex; flex-direction: column; min-width: 130px; }
+  .filter-group select, .filter-group input {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; color: var(--ink); font-family: inherit;
+    outline: none; cursor: pointer; transition: border-color .15s ease;
+  }
+  .filter-group select:hover, .filter-group input:hover { border-color: var(--accent); }
+  .filter-group select:focus, .filter-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(15,118,110,.08); }
+  .date-chips { display: flex; gap: 4px; background: var(--bg); padding: 3px; border-radius: 9px; border: 1px solid var(--line); }
+  .date-chips button {
+    background: transparent; border: 0; padding: 6px 12px; font-size: 12px;
+    font-weight: 500; font-family: inherit; color: var(--ink-2); cursor: pointer;
+    border-radius: 6px; transition: all .15s ease;
+  }
+  .date-chips button.active { background: white; color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+  .date-chips button:hover:not(.active) { color: var(--ink); }
+  .custom-range { display: none; gap: 8px; align-items: center; }
+  .custom-range.show { display: flex; }
+  .custom-range input { padding: 6px 10px; font-size: 12px; }
+  .custom-range span { color: var(--muted); font-size: 11px; }
+  .reset-btn {
+    margin-left: auto; background: transparent; border: 1px solid var(--line); border-radius: 8px;
+    padding: 7px 14px; font-size: 12px; color: var(--ink-2); cursor: pointer; font-family: inherit;
+    transition: all .15s ease;
+  }
+  .reset-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── SECTION / MODULE ────────────────────────────── */
+  section.module {
+    margin-bottom: 28px;
+  }
+  .module-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .module-title {
+    display: flex; align-items: baseline; gap: 12px;
+  }
+  .module-num {
+    font-family: 'Fraunces', serif; font-size: 13px; color: var(--accent);
+    font-weight: 500; letter-spacing: .04em;
+  }
+  .module-title h2 {
+    font-family: 'Fraunces', serif; font-weight: 500; font-size: 22px;
+    margin: 0; color: var(--ink); letter-spacing: -0.005em;
+  }
+  .module-sub { font-size: 12px; color: var(--muted); }
+
+  /* ── CARDS ───────────────────────────────────────── */
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--muted); font-weight: 600; margin-bottom: 14px;
+  }
+
+  /* KPI cards */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .kpi {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px 20px; position: relative; overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  .kpi::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+    background: var(--accent);
+  }
+  .kpi.blue::before { background: var(--blue); }
+  .kpi.amber::before { background: var(--amber); }
+  .kpi.red::before { background: var(--red); }
+  .kpi-label { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .kpi-value {
+    font-family: 'Fraunces', serif; font-size: 30px; font-weight: 500;
+    color: var(--ink); margin-top: 6px; line-height: 1.1; letter-spacing: -0.01em;
+  }
+  .kpi-meta { font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+
+  /* Grids */
+  .grid { display: grid; gap: 14px; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-1-2 { grid-template-columns: 1fr 2fr; }
+  .grid-2-1 { grid-template-columns: 2fr 1fr; }
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-1-2, .grid-2-1 { grid-template-columns: 1fr; }
+  }
+
+  .chart-wrap { position: relative; height: 260px; }
+  .chart-wrap.tall { height: 300px; }
+  .chart-wrap.short { height: 220px; }
+
+  /* Breakdown lists */
+  .breakdown-list { display: flex; flex-direction: column; gap: 12px; }
+  .breakdown-row {
+    display: grid; grid-template-columns: 1fr auto; gap: 4px 12px;
+    align-items: center;
+  }
+  .breakdown-row .name {
+    font-size: 13px; color: var(--ink); font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .breakdown-row .swatch {
+    width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0;
+  }
+  .breakdown-row .val {
+    font-family: 'Fraunces', serif; font-size: 15px; color: var(--ink); font-weight: 500;
+    text-align: right;
+  }
+  .breakdown-row .bar-wrap {
+    grid-column: 1 / -1;
+    background: var(--line-2); border-radius: 4px; height: 4px; overflow: hidden;
+    margin-top: 2px;
+  }
+  .breakdown-row .bar-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
+  .breakdown-row .pct { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* Leaderboard (doctors) */
+  .leaderboard { display: flex; flex-direction: column; }
+  .leaderboard-row {
+    display: grid; grid-template-columns: 28px 1fr auto; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid var(--line-2); align-items: center;
+  }
+  .leaderboard-row:last-child { border-bottom: 0; }
+  .rank {
+    font-family: 'Fraunces', serif; font-size: 16px; color: var(--muted);
+    text-align: center; font-weight: 500;
+  }
+  .rank.top1 { color: var(--gold); }
+  .rank.top2 { color: #a4a4a4; }
+  .rank.top3 { color: #b87333; }
+  .doctor-name { font-size: 13px; color: var(--ink); font-weight: 500; }
+  .doctor-count {
+    font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500; color: var(--ink);
+  }
+  .doctor-count small { color: var(--muted); font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; }
+
+  /* Status pills for logistics bifurcation */
+  .status-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+  }
+  .status-pill {
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+    background: var(--bg); display: flex; flex-direction: column; gap: 2px;
+  }
+  .status-pill .pill-name { font-size: 11px; color: var(--muted); font-weight: 500; }
+  .status-pill .pill-value {
+    font-family: 'Fraunces', serif; font-size: 18px; color: var(--ink); font-weight: 500;
+    display: flex; align-items: baseline; gap: 6px;
+  }
+  .status-pill .pill-pct { font-size: 11px; color: var(--ink-2); font-family: 'Inter'; font-weight: 500; }
+
+  /* Consultation funnel */
+  .funnel { display: flex; flex-direction: column; gap: 10px; }
+  .funnel-row {
+    display: grid; grid-template-columns: 110px 1fr auto; gap: 12px; align-items: center;
+  }
+  .funnel-row .fn-label { font-size: 12px; color: var(--ink-2); font-weight: 500; }
+  .funnel-row .fn-bar { background: var(--line-2); height: 28px; border-radius: 6px; overflow: hidden; position: relative; }
+  .funnel-row .fn-fill {
+    height: 100%; border-radius: 6px; transition: width .5s cubic-bezier(.2,.6,.2,1);
+    display: flex; align-items: center; padding-left: 10px;
+  }
+  .funnel-row .fn-fill span { color: white; font-size: 12px; font-weight: 600; }
+  .funnel-row .fn-value {
+    font-family: 'Fraunces', serif; font-size: 15px; font-weight: 500; color: var(--ink);
+    min-width: 40px; text-align: right;
+  }
+
+  /* Empty / future placeholder */
+  .placeholder-card {
+    background: repeating-linear-gradient(
+      135deg, var(--card), var(--card) 10px,
+      var(--line-2) 10px, var(--line-2) 11px
+    );
+    border: 1px dashed var(--line); border-radius: var(--radius);
+    padding: 40px 28px; text-align: center;
+  }
+  .placeholder-card .ph-icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 10px;
+  }
+  .placeholder-card h3 {
+    font-family: 'Fraunces', serif; margin: 0 0 4px; font-weight: 500; font-size: 18px;
+  }
+  .placeholder-card p { margin: 0; color: var(--muted); font-size: 13px; }
+
+  /* Notes */
+  .note {
+    background: var(--amber-soft); border-left: 3px solid var(--amber);
+    padding: 10px 14px; border-radius: 6px; font-size: 12px; color: #6c5423;
+    margin-top: 12px;
+  }
+
+  /* Loading / error states */
+  .loading-overlay {
+    position: fixed; inset: 0; background: rgba(245,248,248,.97);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 1000; transition: opacity .3s ease;
+  }
+  .loading-overlay.hide { opacity: 0; pointer-events: none; }
+  .loading-dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
+    animation: pulse 1.2s infinite ease-in-out;
+  }
+  .loading-text { font-family: 'Fraunces', serif; font-size: 17px; color: var(--ink); margin-top: 18px; font-style: italic; }
+  .loading-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  @keyframes pulse { 0%, 100% { transform: scale(.6); opacity: .5; } 50% { transform: scale(1); opacity: 1; } }
+
+  .error-banner {
+    background: var(--red-soft); border-left: 3px solid var(--red);
+    padding: 10px 14px; border-radius: 6px; font-size: 13px; color: #8a3333;
+    margin-bottom: 16px; display: none;
+  }
+  .error-banner.show { display: block; }
+
+  .empty-small { text-align: center; color: var(--muted); font-size: 12px; padding: 20px; font-style: italic; }
+
+  /* Subtle separator between modules */
+  .module-divider {
+    border: 0; border-top: 1px dashed var(--line);
+    margin: 6px 0 24px;
+  }
+
+  /* consultation tabs */
+  .consult-tabs { display: flex; gap: 6px; background: var(--bg); padding: 3px; border-radius: 9px; border: 1px solid var(--line); margin-bottom: 14px; width: fit-content; }
+  .consult-tabs button {
+    background: transparent; border: 0; padding: 7px 16px; font-size: 12px;
+    font-weight: 500; font-family: inherit; color: var(--ink-2); cursor: pointer;
+    border-radius: 6px; transition: all .15s ease;
+  }
+  .consult-tabs button.active { background: white; color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+  footer.page-foot {
+    margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--line);
+    display: flex; justify-content: space-between; font-size: 11px; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loader">
+  <div class="loading-dot"></div>
+  <div class="loading-text">Fetching live data…</div>
+  <div class="loading-sub" id="loaderSub">Connecting to Google Sheets</div>
+</div>
+
+<div class="shell">
+
+  <header class="top">
+    <div class="brand">
+      <div class="eyebrow">Patient Programme · Live Dashboard</div>
+      <h1>Care <em>Operations</em> Overview</h1>
+    </div>
+    <div class="status-bar">
+      <span><span class="dot"></span>Live · <span id="lastUpdated">—</span></span>
+      <button class="refresh" onclick="loadAll(true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.3-6.95"/><path d="M21 4v5h-5"/></svg>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <div id="errorBanner" class="error-banner"></div>
+
+  <!-- GLOBAL FILTER BAR -->
+  <div class="filter-bar" role="region" aria-label="Global filters">
+    <div class="filter-group">
+      <span class="label">Date Range</span>
+      <div class="date-chips" id="dateChips">
+        <button data-range="all" class="active">All</button>
+        <button data-range="day">Daily</button>
+        <button data-range="week">Weekly</button>
+        <button data-range="month">Monthly</button>
+        <button data-range="custom">Custom</button>
+      </div>
+    </div>
+    <div class="filter-group custom-range" id="customRange">
+      <input type="date" id="dateFrom" aria-label="From date"/>
+      <span>→</span>
+      <input type="date" id="dateTo" aria-label="To date"/>
+    </div>
+    <div class="filter-group">
+      <span class="label">Drug</span>
+      <select id="f_drug"><option value="">All Drugs</option></select>
+    </div>
+    <div class="filter-group">
+      <span class="label">State</span>
+      <select id="f_state"><option value="">All States</option></select>
+    </div>
+    <div class="filter-group">
+      <span class="label">Doctor</span>
+      <select id="f_doctor"><option value="">All Doctors</option></select>
+    </div>
+    <div class="filter-group">
+      <span class="label">QR Type</span>
+      <select id="f_qr"><option value="">All QR Types</option></select>
+    </div>
+    <button class="reset-btn" onclick="resetFilters()">Reset</button>
+  </div>
+
+  <!-- ============ 1. PATIENT DISTRIBUTION ============ -->
+  <section class="module">
+    <div class="module-head">
+      <div class="module-title">
+        <span class="module-num">01</span>
+        <h2>Patient Distribution</h2>
+      </div>
+      <span class="module-sub">Date field: Purchase Date</span>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Total Patients Registered</div>
+        <div class="kpi-value" id="kpi_patients">—</div>
+        <div class="kpi-meta" id="kpi_patients_meta">Filtered from <span id="kpi_patients_total">—</span> total</div>
+      </div>
+      <div class="kpi blue">
+        <div class="kpi-label">Active Plans</div>
+        <div class="kpi-value" id="kpi_active">—</div>
+        <div class="kpi-meta" id="kpi_active_meta">—</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-label">Unique Doctors Referring</div>
+        <div class="kpi-value" id="kpi_doctors">—</div>
+        <div class="kpi-meta">with at least one patient</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">States Covered</div>
+        <div class="kpi-value" id="kpi_states">—</div>
+        <div class="kpi-meta">geographical reach</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-title">Drug Distribution</div>
+        <div class="grid grid-1-2" style="gap: 18px; align-items: center;">
+          <div class="chart-wrap short"><canvas id="chart_drug"></canvas></div>
+          <div class="breakdown-list" id="list_drug"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">QR Type Split</div>
+        <div class="grid grid-1-2" style="gap: 18px; align-items: center;">
+          <div class="chart-wrap short"><canvas id="chart_qr"></canvas></div>
+          <div class="breakdown-list" id="list_qr"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top: 14px;">
+      <div class="card">
+        <div class="card-title">Top 5 States by Patient Count</div>
+        <div class="chart-wrap"><canvas id="chart_states"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Top 5 Doctors by Referrals</div>
+        <div class="leaderboard" id="list_doctors"></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="module-divider" />
+
+  <!-- ============ 2. WELCOME KIT / LOGISTICS ============ -->
+  <section class="module">
+    <div class="module-head">
+      <div class="module-title">
+        <span class="module-num">02</span>
+        <h2>Welcome Kit · Logistics Tracking</h2>
+      </div>
+      <span class="module-sub">Date field: Shiprocket Created At · State inferred from city</span>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Total Kits Initiated</div>
+        <div class="kpi-value" id="kpi_kits">—</div>
+        <div class="kpi-meta">shipments created</div>
+      </div>
+      <div class="kpi blue">
+        <div class="kpi-label">Delivery Success Rate</div>
+        <div class="kpi-value" id="kpi_success">—</div>
+        <div class="kpi-meta">delivered ÷ total</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-label">In Transit</div>
+        <div class="kpi-value" id="kpi_transit">—</div>
+        <div class="kpi-meta" id="kpi_transit_meta">—</div>
+      </div>
+      <div class="kpi red">
+        <div class="kpi-label">RTO / Others</div>
+        <div class="kpi-value" id="kpi_rto">—</div>
+        <div class="kpi-meta" id="kpi_rto_meta">—</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2-1">
+      <div class="card">
+        <div class="card-title">Delivery Trend</div>
+        <div class="chart-wrap"><canvas id="chart_trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Status Mix</div>
+        <div class="chart-wrap short"><canvas id="chart_logistics_mix"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 14px;">
+      <div class="card-title">Detailed Status Bifurcation</div>
+      <div class="status-grid" id="logistics_statuses"></div>
+    </div>
+  </section>
+
+  <hr class="module-divider" />
+
+  <!-- ============ 3. EXPERT CONSULTATION ============ -->
+  <section class="module">
+    <div class="module-head">
+      <div class="module-title">
+        <span class="module-num">03</span>
+        <h2>Expert Consultation</h2>
+      </div>
+      <span class="module-sub">No date field in source · Date filter disabled for this module</span>
+    </div>
+
+    <div class="consult-tabs" id="consultTabs">
+      <button data-type="physio" class="active">Physiotherapist</button>
+      <button data-type="nutri">Nutritionist</button>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Booked</div>
+        <div class="kpi-value" id="kpi_booked">—</div>
+        <div class="kpi-meta">total consultations</div>
+      </div>
+      <div class="kpi blue">
+        <div class="kpi-label">Completed</div>
+        <div class="kpi-value" id="kpi_completed">—</div>
+        <div class="kpi-meta" id="kpi_completed_meta">—</div>
+      </div>
+      <div class="kpi red">
+        <div class="kpi-label">No Show</div>
+        <div class="kpi-value" id="kpi_noshow">—</div>
+        <div class="kpi-meta" id="kpi_noshow_meta">—</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-label">Completion Rate</div>
+        <div class="kpi-value" id="kpi_comp_rate">—</div>
+        <div class="kpi-meta">of booked consultations</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-title">Consultation Funnel</div>
+        <div class="funnel" id="consult_funnel"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Status Breakdown</div>
+        <div class="chart-wrap short"><canvas id="chart_consult"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="module-divider" />
+
+  <!-- ============ 4. DOCUMENTATION ============ -->
+  <section class="module">
+    <div class="module-head">
+      <div class="module-title">
+        <span class="module-num">04</span>
+        <h2>Documentation</h2>
+      </div>
+      <span class="module-sub">Date field: Purchase Date · Weekly trend</span>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Completed</div>
+        <div class="kpi-value" id="kpi_doc_completed">—</div>
+        <div class="kpi-meta" id="kpi_doc_completed_meta">—</div>
+      </div>
+      <div class="kpi amber">
+        <div class="kpi-label">Missing Documents</div>
+        <div class="kpi-value" id="kpi_doc_missing">—</div>
+        <div class="kpi-meta" id="kpi_doc_missing_meta">—</div>
+      </div>
+      <div class="kpi red">
+        <div class="kpi-label">Rejected</div>
+        <div class="kpi-value" id="kpi_doc_rejected">—</div>
+        <div class="kpi-meta" id="kpi_doc_rejected_meta">—</div>
+      </div>
+      <div class="kpi blue">
+        <div class="kpi-label">Dispatch Pending</div>
+        <div class="kpi-value" id="kpi_doc_pending">—</div>
+        <div class="kpi-meta" id="kpi_doc_pending_meta">completed – dispatch pending</div>
+      </div>
+    </div>
+
+    <div class="grid grid-2-1">
+      <div class="card">
+        <div class="card-title">Weekly Trend</div>
+        <div class="chart-wrap"><canvas id="chart_doc_trend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Status Distribution</div>
+        <div class="chart-wrap short"><canvas id="chart_doc_pie"></canvas></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top: 14px;">
+      <div class="card-title">Detailed Status Bifurcation</div>
+      <div class="status-grid" id="doc_statuses"></div>
+    </div>
+  </section>
+
+  <hr class="module-divider" />
+
+  <!-- ============ 5. LOYALTY REWARDS ============ -->
+  <section class="module">
+    <div class="module-head">
+      <div class="module-title">
+        <span class="module-num">05</span>
+        <h2>Loyalty Rewards</h2>
+      </div>
+      <span class="module-sub">Coming soon</span>
+    </div>
+    <div class="placeholder-card">
+      <div class="ph-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <h3>Loyalty Rewards Module</h3>
+      <p>Patient engagement, reward points, and redemption analytics will appear here.</p>
+    </div>
+  </section>
+
+  <!-- ============ 6. APP USAGE ============ -->
+  <section class="module">
+    <div class="module-head">
+      <div class="module-title">
+        <span class="module-num">06</span>
+        <h2>App Engagement</h2>
+      </div>
+      <span class="module-sub">Coming soon</span>
+    </div>
+    <div class="placeholder-card">
+      <div class="ph-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+      </div>
+      <h3>App Engagement Module</h3>
+      <p>Daily active users, session duration, and feature adoption will appear here once the data feed is live.</p>
+    </div>
+  </section>
+
+  <footer class="page-foot">
+    <div>Patient Care Dashboard · Data from connected Google Sheets</div>
+    <div id="footerStats">—</div>
+  </footer>
+
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   LIVE DATA DASHBOARD — single-file, client-ready
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ───── Config ───── */
+const SHEETS = {
+  patient:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQscA-Y05gGsr6xx54awNYgJJnCLoirIf5IKsNHRmLFYyBqtUL1khVmy3cP_L3U0pG1G6vMPPOqiNNO/pub?gid=1310523268&single=true&output=csv',
+  logistics: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQscA-Y05gGsr6xx54awNYgJJnCLoirIf5IKsNHRmLFYyBqtUL1khVmy3cP_L3U0pG1G6vMPPOqiNNO/pub?gid=1879543153&single=true&output=csv',
+  consult:   'https://docs.google.com/spreadsheets/d/e/2PACX-1vQscA-Y05gGsr6xx54awNYgJJnCLoirIf5IKsNHRmLFYyBqtUL1khVmy3cP_L3U0pG1G6vMPPOqiNNO/pub?gid=419247046&single=true&output=csv',
+  app:       'https://docs.google.com/spreadsheets/d/e/2PACX-1vQscA-Y05gGsr6xx54awNYgJJnCLoirIf5IKsNHRmLFYyBqtUL1khVmy3cP_L3U0pG1G6vMPPOqiNNO/pub?gid=975503331&single=true&output=csv',
+};
+
+const COLORS = {
+  teal:'#0f766e', teal2:'#14b8a6', teal3:'#5eead4',
+  blue:'#1e6091', blueLt:'#7ba8c9',
+  amber:'#b7791f', amberLt:'#e3b767',
+  red:'#b54747', redLt:'#d98a8a',
+  slate:'#64748b', slateLt:'#a0aec0',
+  mint:'#6fbfab', sage:'#a3c9a8',
+};
+const PALETTE_DRUG = [COLORS.teal, COLORS.blue, COLORS.amber, COLORS.red, COLORS.mint];
+const PALETTE_QR   = [COLORS.teal2, COLORS.blue, COLORS.slate];
+const PALETTE_STATUS = [COLORS.teal, COLORS.blueLt, COLORS.amber, COLORS.red, COLORS.slate];
+
+/* ───── Normalisation helpers ───── */
+const norm = s => (s == null ? '' : String(s).trim());
+const normCI = s => norm(s).toLowerCase().replace(/\s+/g, ' ').replace(/[.·]/g, '').trim();
+
+// Title-case that preserves common patterns
+function titleCase(s) {
+  if (!s) return s;
+  const lower = s.toLowerCase();
+  return lower.replace(/\b([a-z])/g, m => m.toUpperCase());
+}
+
+/* State canonicaliser — fixes misspellings in Patient sheet */
+const STATE_CANON = {
+  'maharastra':'Maharashtra', 'maharashtra':'Maharashtra', 'mh':'Maharashtra',
+  'karnataka':'Karnataka', 'ka':'Karnataka',
+  'delhi':'Delhi', 'new delhi':'Delhi',
+  'kerala':'Kerala', 'kl':'Kerala',
+  'west bengal':'West Bengal', 'west bangal':'West Bengal', 'wb':'West Bengal',
+  'tamil nadu':'Tamil Nadu', 'tamilnadu':'Tamil Nadu', 'tn':'Tamil Nadu',
+  'telengana':'Telangana', 'telangana':'Telangana', 'tg':'Telangana',
+  'uttar pradesh':'Uttar Pradesh', 'up':'Uttar Pradesh',
+  'gujrat':'Gujarat', 'gujarat':'Gujarat', 'gj':'Gujarat',
+  'haryana':'Haryana', 'hr':'Haryana',
+  'punjab':'Punjab', 'pb':'Punjab',
+  'madhya pradesh':'Madhya Pradesh', 'mp':'Madhya Pradesh',
+  'rajasthan':'Rajasthan', 'rj':'Rajasthan',
+  'andhra pradesh':'Andhra Pradesh', 'ap':'Andhra Pradesh',
+  'bihar':'Bihar', 'br':'Bihar',
+  'odisha':'Odisha', 'orissa':'Odisha',
+  'chhattisgarh':'Chhattisgarh', 'chattisgarh':'Chhattisgarh',
+  'jharkhand':'Jharkhand', 'jh':'Jharkhand',
+  'assam':'Assam', 'as':'Assam',
+  'himachal pradesh':'Himachal Pradesh', 'hp':'Himachal Pradesh',
+  'uttarakhand':'Uttarakhand', 'uk':'Uttarakhand',
+  'jammu and kashmir':'Jammu & Kashmir', 'jammu & kashmir':'Jammu & Kashmir', 'j&k':'Jammu & Kashmir',
+  'goa':'Goa', 'tripura':'Tripura', 'manipur':'Manipur',
+  'arunachal pradesh':'Arunachal Pradesh', 'meghalaya':'Meghalaya',
+  'mizoram':'Mizoram', 'nagaland':'Nagaland', 'sikkim':'Sikkim',
+  'puducherry':'Puducherry', 'pondicherry':'Puducherry',
+  'chandigarh':'Chandigarh',
+  'dadra and nagar haveli':'Dadra & Nagar Haveli',
+  'daman and diu':'Daman & Diu',
+  'lakshadweep':'Lakshadweep', 'andaman and nicobar islands':'Andaman & Nicobar',
+  'ladakh':'Ladakh',
+};
+function canonState(s) {
+  const key = normCI(s);
+  if (!key) return '';
+  if (STATE_CANON[key]) return STATE_CANON[key];
+  return titleCase(key);
+}
+
+/* Drug canonicaliser — handles case (AlterMe/Alterme/ALTERME) */
+function canonDrug(s) {
+  const k = normCI(s);
+  if (!k) return '';
+  if (k === 'alterme') return 'AlterMe';
+  if (k === 'semaglyn') return 'Semaglyn';
+  if (k === 'mashema') return 'Mashema';
+  return titleCase(k);
+}
+
+/* QR Type canonicaliser — em-dash → Unknown */
+function canonQR(s) {
+  const v = norm(s);
+  if (!v || v === '—' || v === '-' || v === 'N/A' || v === '#N/A') return 'Unknown';
+  const k = v.toLowerCase();
+  if (k === 'medicine') return 'Medicine';
+  if (k === 'doctor') return 'Doctor';
+  return titleCase(k);
+}
+
+/* Doctor name canonicaliser — merges "Dr. X" / "Dr X" / case */
+function canonDoctor(s) {
+  let v = norm(s);
+  if (!v || v === '#N/A' || v === 'N/A') return '';
+  // strip periods after Dr, normalise whitespace
+  v = v.replace(/\bDr\.?\s+/i, 'Dr ').replace(/\s+/g, ' ').trim();
+  // Title-case words but keep Dr as prefix
+  v = v.split(' ').map(w => {
+    if (w.toLowerCase() === 'dr') return 'Dr';
+    if (w.length <= 2) return w.toUpperCase();
+    return w[0].toUpperCase() + w.slice(1).toLowerCase();
+  }).join(' ');
+  return v;
+}
+
+/* Patient status canonicaliser */
+function canonDocStatus(s) {
+  const k = normCI(s);
+  if (!k) return '';
+  if (k === 'completed') return 'Completed';
+  if (k === 'rejected') return 'Rejected';
+  if (k === 'missing docs' || k === 'missing documents' || k === 'missing document') return 'Missing Documents';
+  if (k === 'in progress' || k === 'inprogress') return 'In Progress';
+  if (k.includes('dispatch pending')) return 'Completed – Dispatch Pending';
+  return titleCase(k);
+}
+
+/* Logistics status buckets (per agreed mapping) */
+const LOG_BUCKETS = {
+  'DELIVERED':'Delivered',
+  'IN TRANSIT':'In Transit',
+  'IN TRANSIT-EN-ROUTE':'In Transit',
+  'IN TRANSIT-AT DESTINATION HUB':'In Transit',
+  'SHIPPED':'In Transit',
+  'OUT FOR DELIVERY':'In Transit',
+  'REACHED DESTINATION HUB':'In Transit',
+  'PICKED UP':'In Transit',
+  'PICKUP SCHEDULED':'In Transit',
+  'FC MANIFEST GENERATED':'In Transit',
+  'RTO DELIVERED':'RTO',
+  'REACHED BACK AT_SELLER_CITY':'RTO',
+  'UNDELIVERED-1ST ATTEMPT':'Others',
+  'UNDELIVERED-2ND ATTEMPT':'Others',
+  'UNDELIVERED-3RD ATTEMPT':'Others',
+  'CANCELED':'Others','CANCELLED':'Others',
+  'MISROUTED':'Others',
+  'PICKUP EXCEPTION':'Others',
+  'UNTRACEABLE':'Others',
+  'SELF FULFILED':'Others','SELF FULFILLED':'Others',
+};
+function bucketLogistics(status) {
+  const u = norm(status).toUpperCase();
+  if (LOG_BUCKETS[u]) return LOG_BUCKETS[u];
+  // lenient matching
+  if (u.includes('DELIVERED') && u.includes('RTO')) return 'RTO';
+  if (u === 'DELIVERED') return 'Delivered';
+  if (u.includes('TRANSIT') || u.includes('SHIPPED') || u.includes('PICKUP') || u.includes('PICKED') || u.includes('MANIFEST') || u.includes('HUB') || u.includes('OUT FOR')) return 'In Transit';
+  if (u.includes('RTO') || u.includes('SELLER_CITY')) return 'RTO';
+  return 'Others';
+}
+
+/* Consult status canonicaliser (mapped per user) */
+function canonConsult(s) {
+  const k = normCI(s);
+  if (!k) return '';
+  if (k.includes('booked')) return 'Booked';
+  if (k.includes('finished') || k.includes('completed')) return 'Completed';
+  if (k.includes('cancelled') || k.includes('canceled') || k.includes('no show') || k.includes('no-show')) return 'No Show';
+  return titleCase(k);
+}
+function canonCoachType(s) {
+  const k = normCI(s);
+  if (k.includes('physio')) return 'Physiotherapist';
+  if (k.includes('nutri') || k.includes('diet')) return 'Nutritionist';
+  return titleCase(k);
+}
+
+/* City → State lookup (for logistics sheet which only has city) */
+const CITY_TO_STATE = {
+  // Maharashtra
+  'mumbai':'Maharashtra','thane':'Maharashtra','pune':'Maharashtra','nashik':'Maharashtra','nagpur':'Maharashtra','ahmed nagar':'Maharashtra','ahmednagar':'Maharashtra','kolhapur':'Maharashtra','amravati':'Maharashtra','jalgaon':'Maharashtra','wardha':'Maharashtra','sangli':'Maharashtra','solapur':'Maharashtra','beed':'Maharashtra','satara':'Maharashtra','nanded':'Maharashtra','yavatmal':'Maharashtra','kamothe':'Maharashtra','raigarh':'Maharashtra',
+  // Karnataka
+  'bangalore':'Karnataka','bengaluru':'Karnataka','bangalore rural':'Karnataka','mysore':'Karnataka','dharwad':'Karnataka','shimoga':'Karnataka','chitradurga':'Karnataka','kolar':'Karnataka','gadag':'Karnataka','hassan':'Karnataka','tumkur':'Karnataka','davangere':'Karnataka','koppal':'Karnataka','bijapur(kar)':'Karnataka','bijapur':'Karnataka','dakshina kannada':'Karnataka',
+  // Telangana
+  'hyderabad':'Telangana','k.v.rangareddy':'Telangana','kv rangareddy':'Telangana','warangal':'Telangana','khammam':'Telangana','nalgonda':'Telangana','mathrusri nagar':'Telangana',
+  // Andhra Pradesh
+  'visakhapatnam':'Andhra Pradesh','guntur':'Andhra Pradesh','east godavari':'Andhra Pradesh','west godavari':'Andhra Pradesh','chittoor':'Andhra Pradesh','kurnool':'Andhra Pradesh',
+  // Tamil Nadu
+  'chennai':'Tamil Nadu','kanchipuram':'Tamil Nadu','tiruvallur':'Tamil Nadu','coimbatore':'Tamil Nadu','krishnagiri':'Tamil Nadu','namakkal':'Tamil Nadu','dharmapuri':'Tamil Nadu','salem':'Tamil Nadu','cuddalore':'Tamil Nadu','vellore':'Tamil Nadu','tiruchirappalli':'Tamil Nadu',
+  // Kerala
+  'kozhikode':'Kerala','ernakulam':'Kerala','malappuram':'Kerala','thrissur':'Kerala','palakkad':'Kerala','kannur':'Kerala','kollam':'Kerala','kottayam':'Kerala','thiruvananthapuram':'Kerala',
+  // West Bengal
+  'kolkata':'West Bengal','north 24 parganas':'West Bengal','south 24 parganas':'West Bengal','hooghly':'West Bengal','nadia':'West Bengal','howrah':'West Bengal','north dinajpur':'West Bengal','west midnapore':'West Bengal','jalpaiguri':'West Bengal','bardhaman':'West Bengal','kolkata east':'West Bengal',
+  // Delhi
+  'delhi':'Delhi','east delhi':'Delhi','west delhi':'Delhi','north delhi':'Delhi','north west delhi':'Delhi','south delhi':'Delhi','south west delhi':'Delhi','central delhi':'Delhi',
+  // Haryana
+  'gurgaon':'Haryana','gurugram':'Haryana','faridabad':'Haryana','ambala':'Haryana','sonipat':'Haryana','panipat':'Haryana','karnal':'Haryana','palwal':'Haryana',
+  // Rajasthan
+  'jaipur':'Rajasthan','jodhpur':'Rajasthan','pali':'Rajasthan',
+  // Gujarat
+  'ahmedabad':'Gujarat','surat':'Gujarat','anand':'Gujarat','kheda':'Gujarat','banaskantha':'Gujarat','vadodara':'Gujarat','rajkot':'Gujarat',
+  // Madhya Pradesh
+  'indore':'Madhya Pradesh','jhabua':'Madhya Pradesh','satna':'Madhya Pradesh','shahdol':'Madhya Pradesh','anuppur':'Madhya Pradesh','ujjain':'Madhya Pradesh',
+  // Uttar Pradesh
+  'ghaziabad':'Uttar Pradesh','gautam buddha nagar':'Uttar Pradesh','greater noida':'Uttar Pradesh','kanpur nagar':'Uttar Pradesh','lucknow':'Uttar Pradesh','saharanpur':'Uttar Pradesh','bareilly':'Uttar Pradesh','firozabad':'Uttar Pradesh','kannauj':'Uttar Pradesh','pilibhit':'Uttar Pradesh','sonbhadra':'Uttar Pradesh','sant kabir nagar':'Uttar Pradesh','ghazipur':'Uttar Pradesh','aligarh':'Uttar Pradesh','agra':'Uttar Pradesh','mathura':'Uttar Pradesh','jaunpur':'Uttar Pradesh',
+  // Punjab
+  'ludhiana':'Punjab','amritsar':'Punjab','jalandhar':'Punjab','pathankot':'Punjab','rupnagar':'Punjab','bathinda':'Punjab',
+  // Bihar
+  'patna':'Bihar','saharsa':'Bihar','vaishali':'Bihar','gaya':'Bihar',
+  // Jharkhand
+  'east singhbhum':'Jharkhand','dhanbad':'Jharkhand','ranchi':'Jharkhand',
+  // Odisha
+  'khorda':'Odisha','ganjam':'Odisha','cuttack':'Odisha','bhadrak':'Odisha','sambalpur':'Odisha','gajapati':'Odisha',
+  // Chhattisgarh
+  'raipur':'Chhattisgarh','durg':'Chhattisgarh',
+  // Assam
+  'kamrup':'Assam','darrang':'Assam',
+  // J&K / Ladakh
+  'srinagar':'Jammu & Kashmir','jammu':'Jammu & Kashmir','budgam':'Jammu & Kashmir',
+  // Manipur / Tripura / Arunachal
+  'imphal east':'Manipur','west tripura':'Tripura','changlang':'Arunachal Pradesh',
+  // Puducherry
+  'pondicherry':'Puducherry',
+};
+function cityToState(city) {
+  const k = normCI(city);
+  if (!k) return '';
+  return CITY_TO_STATE[k] || '';
+}
+
+/* ───── Date parsing ───── */
+function parseDateMDY(s) {  // MM/DD/YYYY (patient)
+  const v = norm(s); if (!v) return null;
+  const m = v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (!m) return null;
+  let [, mm, dd, yy] = m;
+  if (yy.length === 2) yy = (parseInt(yy) < 50 ? '20'+yy : '19'+yy);
+  const d = new Date(+yy, +mm-1, +dd);
+  return isNaN(d) ? null : d;
+}
+function parseDateDMY(s) {  // DD-MM-YYYY or DD/MM/YYYY (logistics)
+  const v = norm(s); if (!v || v === 'N/A' || v === '#N/A') return null;
+  const m = v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (!m) return null;
+  let [, dd, mm, yy] = m;
+  if (yy.length === 2) yy = (parseInt(yy) < 50 ? '20'+yy : '19'+yy);
+  const d = new Date(+yy, +mm-1, +dd);
+  return isNaN(d) ? null : d;
+}
+function ymd(d) { return d.toISOString().slice(0, 10); }
+function startOfWeek(d) { const x = new Date(d); const day = x.getDay(); const diff = (day + 6) % 7; x.setDate(x.getDate() - diff); x.setHours(0,0,0,0); return x; }
+function fmtDate(d) { return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short' }); }
+
+/* ───── State ───── */
+const state = {
+  patient: [], logistics: [], consult: [], app: [],
+  maxPatientDate: null, minPatientDate: null,
+  maxLogDate: null, minLogDate: null,
+  filters: {
+    range: 'all',   // all|day|week|month|custom
+    from: null, to: null,
+    drug: '', state: '', doctor: '', qr: '',
+  },
+  consultView: 'physio',
+};
+
+/* ───── Fetching ───── */
+async function fetchCSV(url) {
+  return new Promise((resolve, reject) => {
+    Papa.parse(url, {
+      download: true, header: true, skipEmptyLines: true,
+      complete: r => resolve(r.data),
+      error: err => reject(err),
+    });
+  });
+}
+
+async function loadAll(isRefresh = false) {
+  showLoader(isRefresh ? 'Refreshing live data…' : 'Fetching live data…');
+  try {
+    const [p, l, c] = await Promise.all([
+      fetchCSV(SHEETS.patient),
+      fetchCSV(SHEETS.logistics),
+      fetchCSV(SHEETS.consult),
+    ]);
+    state.patient   = transformPatient(p);
+    state.logistics = transformLogistics(l);
+    state.consult   = transformConsult(c);
+
+    // cache min/max dates for filter UI
+    const pDates = state.patient.map(r => r._date).filter(Boolean);
+    const lDates = state.logistics.map(r => r._date).filter(Boolean);
+    state.minPatientDate = pDates.length ? new Date(Math.min(...pDates)) : null;
+    state.maxPatientDate = pDates.length ? new Date(Math.max(...pDates)) : null;
+    state.minLogDate = lDates.length ? new Date(Math.min(...lDates)) : null;
+    state.maxLogDate = lDates.length ? new Date(Math.max(...lDates)) : null;
+
+    populateFilterOptions();
+    renderAll();
+    setLastUpdated();
+    hideLoader();
+  } catch (err) {
+    console.error(err);
+    showError('Could not load live data from Google Sheets. Check that each sheet is still published to web. Details: ' + (err.message || err));
+    hideLoader();
+  }
+}
+
+/* ───── Transform per sheet ───── */
+function transformPatient(rows) {
+  return rows.map(r => {
+    const mobile = norm(r['Mobile no']);
+    if (!mobile) return null;
+    return {
+      mobile,
+      name: norm(r['Name']),
+      state: canonState(r['State']),
+      _dateRaw: r['Purchase date'],
+      _date: parseDateMDY(r['Purchase date']),
+      drug: canonDrug(r['Drug Name']),
+      qr: canonQR(r['QR Type']),
+      doctor: canonDoctor(r['Doctor name']),
+      currentStatus: canonDocStatus(r['Current Status']),
+      plan: norm(r['Plan expiry date as per retool']),
+    };
+  }).filter(Boolean);
+}
+
+function transformLogistics(rows) {
+  return rows.map(r => {
+    const city = norm(r['Address City']);
+    return {
+      name: norm(r['Customer Name']),
+      product: norm(r['Product Name']),
+      _dateRaw: r['Shiprocket Created At'],
+      _date: parseDateDMY(r['Shiprocket Created At']),
+      rawStatus: norm(r['Status']),
+      bucket: bucketLogistics(r['Status']),
+      city,
+      state: cityToState(city),
+    };
+  });
+}
+
+function transformConsult(rows) {
+  return rows.map(r => ({
+    name: norm(r['name']),
+    contact: norm(r['contact_no']),
+    city: norm(r['city']),
+    drug: canonDrug(r['support_program_type']),
+    coachType: canonCoachType(r['consultation_type']),
+    status: canonConsult(r['appointment_status']),
+    _date: null,   // no date in source
+  }));
+}
+
+/* ───── Filters ───── */
+function populateFilterOptions() {
+  // Drug options: union across patient + consult + (logistics has no drug)
+  const drugs = new Set();
+  state.patient.forEach(r => r.drug && drugs.add(r.drug));
+  state.consult.forEach(r => r.drug && drugs.add(r.drug));
+  fillSelect('f_drug', [...drugs].sort(), 'All Drugs');
+
+  // State: union across patient canonical state + logistics mapped state
+  const states = new Set();
+  state.patient.forEach(r => r.state && states.add(r.state));
+  state.logistics.forEach(r => r.state && states.add(r.state));
+  fillSelect('f_state', [...states].sort(), 'All States');
+
+  // Doctor: patient only
+  const doctors = new Set();
+  state.patient.forEach(r => r.doctor && doctors.add(r.doctor));
+  fillSelect('f_doctor', [...doctors].sort(), 'All Doctors');
+
+  // QR: patient
+  const qrs = new Set();
+  state.patient.forEach(r => r.qr && qrs.add(r.qr));
+  fillSelect('f_qr', [...qrs].sort(), 'All QR Types');
+}
+
+function fillSelect(id, values, placeholder) {
+  const el = document.getElementById(id);
+  const current = el.value;
+  el.innerHTML = `<option value="">${placeholder}</option>` + values.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  if (values.includes(current)) el.value = current;
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* Returns true if a row passes the non-date filters */
+function passesNonDate(row, module) {
+  const f = state.filters;
+  // Drug filter
+  if (f.drug) {
+    if (module === 'logistics') { /* logistics has no drug column — skip */ }
+    else if (!row.drug || row.drug !== f.drug) return false;
+  }
+  // State filter
+  if (f.state) {
+    const s = row.state;
+    if (!s || s !== f.state) return false;
+  }
+  // Doctor filter — only patient has doctor
+  if (f.doctor) {
+    if (module !== 'patient') return false;  // no doctor in other modules, exclude all
+    if (!row.doctor || row.doctor !== f.doctor) return false;
+  }
+  // QR filter — only patient has QR
+  if (f.qr) {
+    if (module !== 'patient') return false;  // no QR in other modules
+    if (!row.qr || row.qr !== f.qr) return false;
+  }
+  return true;
+}
+
+function passesDate(row) {
+  const f = state.filters;
+  if (f.range === 'all' || !row._date) return f.range === 'all' ? true : (row._date ? true : false);
+  const d = row._date;
+  if (!d) return false;
+  if (f.range === 'custom') {
+    if (f.from && d < f.from) return false;
+    if (f.to && d > f.to) return false;
+    return true;
+  }
+  // Relative ranges: use last N days from today (or max date in data)
+  const today = new Date(); today.setHours(23, 59, 59, 999);
+  let fromDate;
+  if (f.range === 'day') { fromDate = new Date(today); fromDate.setHours(0,0,0,0); }
+  else if (f.range === 'week') { fromDate = new Date(today); fromDate.setDate(fromDate.getDate() - 6); fromDate.setHours(0,0,0,0); }
+  else if (f.range === 'month') { fromDate = new Date(today); fromDate.setDate(fromDate.getDate() - 29); fromDate.setHours(0,0,0,0); }
+  return d >= fromDate && d <= today;
+}
+
+function applyFilters(rows, module, applyDate = true) {
+  return rows.filter(r => passesNonDate(r, module) && (!applyDate || passesDate(r)));
+}
+
+function resetFilters() {
+  state.filters = { range:'all', from:null, to:null, drug:'', state:'', doctor:'', qr:'' };
+  document.querySelectorAll('#dateChips button').forEach(b => b.classList.toggle('active', b.dataset.range === 'all'));
+  document.getElementById('customRange').classList.remove('show');
+  document.getElementById('dateFrom').value = '';
+  document.getElementById('dateTo').value = '';
+  ['f_drug','f_state','f_doctor','f_qr'].forEach(id => document.getElementById(id).value = '');
+  renderAll();
+}
+
+/* ───── Rendering ───── */
+const charts = {};
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function makeChart(id, cfg) { destroyChart(id); charts[id] = new Chart(document.getElementById(id), cfg); }
+
+function renderAll() {
+  renderPatient();
+  renderLogistics();
+  renderConsult();
+  renderDocumentation();
+  document.getElementById('footerStats').textContent =
+    `Patients: ${state.patient.length} · Kits: ${state.logistics.length} · Consultations: ${state.consult.length}`;
+}
+
+/* ---- 1. Patient module ---- */
+function renderPatient() {
+  const rows = applyFilters(state.patient, 'patient');
+  const total = rows.length;
+  const absoluteTotal = state.patient.length;
+
+  document.getElementById('kpi_patients').textContent = fmtNum(total);
+  document.getElementById('kpi_patients_total').textContent = fmtNum(absoluteTotal);
+  document.getElementById('kpi_patients_meta').innerHTML = isFiltered() ? `Filtered from <span id="kpi_patients_total">${fmtNum(absoluteTotal)}</span> total` : 'all-time registrations';
+
+  const active = rows.filter(r => /active/i.test(r.plan)).length;
+  document.getElementById('kpi_active').textContent = fmtNum(active);
+  document.getElementById('kpi_active_meta').textContent = total > 0 ? `${pct(active, total)} of filtered` : '—';
+
+  document.getElementById('kpi_doctors').textContent = fmtNum(new Set(rows.map(r => r.doctor).filter(Boolean)).size);
+  document.getElementById('kpi_states').textContent  = fmtNum(new Set(rows.map(r => r.state).filter(Boolean)).size);
+
+  // Drug
+  const drugCounts = countBy(rows, 'drug');
+  renderPieBreakdown(drugCounts, 'chart_drug', 'list_drug', PALETTE_DRUG);
+
+  // QR
+  const qrCounts = countBy(rows, 'qr');
+  renderPieBreakdown(qrCounts, 'chart_qr', 'list_qr', PALETTE_QR, 'doughnut');
+
+  // Top 5 states
+  const stateCounts = topN(countBy(rows, 'state'), 5);
+  renderBar('chart_states', stateCounts, COLORS.teal);
+
+  // Top 5 doctors
+  const drs = topN(countBy(rows, 'doctor'), 5);
+  const lbEl = document.getElementById('list_doctors');
+  if (!drs.length) { lbEl.innerHTML = '<div class="empty-small">No doctor data for current filters</div>'; }
+  else {
+    lbEl.innerHTML = drs.map((d, i) => `
+      <div class="leaderboard-row">
+        <div class="rank ${i===0?'top1':i===1?'top2':i===2?'top3':''}">${i+1}</div>
+        <div class="doctor-name">${escapeHtml(d.k || '(unspecified)')}</div>
+        <div class="doctor-count">${fmtNum(d.v)} <small>patients</small></div>
+      </div>`).join('');
+  }
+}
+
+/* ---- 2. Logistics module ---- */
+function renderLogistics() {
+  const rows = applyFilters(state.logistics, 'logistics');
+  const total = rows.length;
+  document.getElementById('kpi_kits').textContent = fmtNum(total);
+
+  const buckets = { Delivered:0, 'In Transit':0, RTO:0, Others:0 };
+  rows.forEach(r => { buckets[r.bucket] = (buckets[r.bucket] || 0) + 1; });
+
+  const success = total > 0 ? (buckets.Delivered / total) : 0;
+  document.getElementById('kpi_success').textContent = (success * 100).toFixed(1) + '%';
+  document.getElementById('kpi_transit').textContent = fmtNum(buckets['In Transit']);
+  document.getElementById('kpi_transit_meta').textContent = pct(buckets['In Transit'], total) + ' of kits';
+  document.getElementById('kpi_rto').textContent = fmtNum(buckets.RTO + buckets.Others);
+  document.getElementById('kpi_rto_meta').textContent = `${buckets.RTO} RTO · ${buckets.Others} other`;
+
+  // Status mix doughnut
+  const mixLabels = ['Delivered','In Transit','RTO','Others'];
+  const mixData   = mixLabels.map(l => buckets[l] || 0);
+  const mixColors = [COLORS.teal, COLORS.blueLt, COLORS.amber, COLORS.red];
+  makeChart('chart_logistics_mix', {
+    type: 'doughnut',
+    data: { labels: mixLabels, datasets: [{ data: mixData, backgroundColor: mixColors, borderWidth: 0, hoverOffset: 6 }] },
+    options: { responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{ position:'right', labels:{ boxWidth:10, boxHeight:10, padding:10, font:{size:12, family:'Inter'} } } } }
+  });
+
+  // Trend — delivered vs total per week
+  renderLogisticsTrend(rows);
+
+  // Detailed bifurcation (granular)
+  const granular = new Map();
+  rows.forEach(r => {
+    const key = titleCase(r.rawStatus.toLowerCase());
+    granular.set(key, (granular.get(key) || 0) + 1);
+  });
+  const sorted = [...granular.entries()].sort((a,b) => b[1] - a[1]);
+  const logEl = document.getElementById('logistics_statuses');
+  if (!sorted.length) logEl.innerHTML = '<div class="empty-small">No shipments for current filters</div>';
+  else logEl.innerHTML = sorted.map(([k, v]) => `
+    <div class="status-pill">
+      <div class="pill-name">${escapeHtml(k || 'Unknown')}</div>
+      <div class="pill-value">${fmtNum(v)} <span class="pill-pct">${pct(v, total)}</span></div>
+    </div>`).join('');
+}
+
+function renderLogisticsTrend(rows) {
+  // Group by week (start-of-week) with delivered & total counts
+  const byWeek = new Map();
+  rows.forEach(r => {
+    if (!r._date) return;
+    const key = ymd(startOfWeek(r._date));
+    if (!byWeek.has(key)) byWeek.set(key, { total:0, delivered:0 });
+    const b = byWeek.get(key);
+    b.total++;
+    if (r.bucket === 'Delivered') b.delivered++;
+  });
+  const sorted = [...byWeek.entries()].sort((a,b) => a[0].localeCompare(b[0]));
+  const labels = sorted.map(([k]) => fmtDate(new Date(k)));
+  const totals = sorted.map(([,v]) => v.total);
+  const delivered = sorted.map(([,v]) => v.delivered);
+
+  makeChart('chart_trend', {
+    type:'line',
+    data:{ labels,
+      datasets:[
+        { label:'Total Kits', data:totals, borderColor:COLORS.blueLt, backgroundColor:'rgba(123,168,201,.12)', borderWidth:2, tension:.35, fill:true, pointRadius:2 },
+        { label:'Delivered', data:delivered, borderColor:COLORS.teal, backgroundColor:'rgba(15,118,110,.12)', borderWidth:2.5, tension:.35, fill:true, pointRadius:2.5 },
+      ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'top', align:'end', labels:{ boxWidth:10, boxHeight:10, padding:12, font:{size:11, family:'Inter'} }} },
+      scales:{
+        x:{ grid:{ display:false }, ticks:{ font:{ size:11 }, color:'#7a8c93' } },
+        y:{ beginAtZero:true, grid:{ color:'#eff3f5' }, ticks:{ font:{ size:11 }, color:'#7a8c93', precision:0 } }
+      }
+    }
+  });
+}
+
+/* ---- 3. Consultation module ---- */
+function renderConsult() {
+  // Consult has no date — only non-date filters apply
+  // Drug filter applies; State/Doctor/QR do not apply (no state/doctor/qr in consult sheet)
+  // We still respect drug filter.
+  let rows = state.consult.filter(r => {
+    const f = state.filters;
+    if (f.drug && r.drug !== f.drug) return false;
+    // Filter by coach type tab
+    if (state.consultView === 'physio' && r.coachType !== 'Physiotherapist') return false;
+    if (state.consultView === 'nutri' && r.coachType !== 'Nutritionist') return false;
+    return true;
+  });
+  // State/Doctor/QR filters — if set, exclude all consult rows (no way to match)
+  const f = state.filters;
+  if (f.state || f.doctor || f.qr) rows = [];
+
+  const booked    = rows.filter(r => r.status === 'Booked').length;
+  const completed = rows.filter(r => r.status === 'Completed').length;
+  const noshow    = rows.filter(r => r.status === 'No Show').length;
+  const total     = rows.length;
+
+  document.getElementById('kpi_booked').textContent = fmtNum(booked + completed + noshow);  // all are "booked" if counting attempts
+  document.getElementById('kpi_completed').textContent = fmtNum(completed);
+  document.getElementById('kpi_completed_meta').textContent = total ? pct(completed, total) + ' of all' : '—';
+  document.getElementById('kpi_noshow').textContent = fmtNum(noshow);
+  document.getElementById('kpi_noshow_meta').textContent = total ? pct(noshow, total) + ' of all' : '—';
+  const compRate = total ? completed / total : 0;
+  document.getElementById('kpi_comp_rate').textContent = (compRate * 100).toFixed(1) + '%';
+
+  // Funnel (Booked → Completed; No Show to the side)
+  const funnel = document.getElementById('consult_funnel');
+  const max = Math.max(total, 1);
+  funnel.innerHTML = `
+    <div class="funnel-row"><div class="fn-label">Total (Booked)</div><div class="fn-bar"><div class="fn-fill" style="width:${pctRaw(total,max)}%;background:${COLORS.teal}"><span>${fmtNum(total)}</span></div></div><div class="fn-value">${total ? '100%' : '—'}</div></div>
+    <div class="funnel-row"><div class="fn-label">Completed</div><div class="fn-bar"><div class="fn-fill" style="width:${pctRaw(completed,max)}%;background:${COLORS.blue}"><span>${fmtNum(completed)}</span></div></div><div class="fn-value">${total ? pct(completed,total) : '—'}</div></div>
+    <div class="funnel-row"><div class="fn-label">No Show</div><div class="fn-bar"><div class="fn-fill" style="width:${pctRaw(noshow,max)}%;background:${COLORS.red}"><span>${fmtNum(noshow)}</span></div></div><div class="fn-value">${total ? pct(noshow,total) : '—'}</div></div>
+    <div class="funnel-row"><div class="fn-label">Upcoming</div><div class="fn-bar"><div class="fn-fill" style="width:${pctRaw(booked,max)}%;background:${COLORS.amber}"><span>${fmtNum(booked)}</span></div></div><div class="fn-value">${total ? pct(booked,total) : '—'}</div></div>
+  `;
+
+  // Stacked bar chart
+  makeChart('chart_consult', {
+    type:'bar',
+    data:{ labels:[state.consultView === 'physio' ? 'Physiotherapist' : 'Nutritionist'],
+      datasets:[
+        { label:'Completed', data:[completed], backgroundColor:COLORS.teal, borderRadius:4, barThickness:46 },
+        { label:'Upcoming',  data:[booked],    backgroundColor:COLORS.amber, borderRadius:4, barThickness:46 },
+        { label:'No Show',   data:[noshow],    backgroundColor:COLORS.red, borderRadius:4, barThickness:46 },
+      ]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:10, boxHeight:10, padding:12, font:{size:11, family:'Inter'} }} },
+      scales:{
+        x:{ stacked:true, beginAtZero:true, grid:{ color:'#eff3f5' }, ticks:{ font:{size:11}, color:'#7a8c93', precision:0 } },
+        y:{ stacked:true, grid:{ display:false }, ticks:{ font:{size:12}, color:'#0e2a33' } }
+      }
+    }
+  });
+}
+
+/* ---- 4. Documentation module ---- */
+function renderDocumentation() {
+  // Documentation status lives in Patient sheet, Column O (currentStatus)
+  // Uses patient filters including date (Purchase date)
+  const rows = applyFilters(state.patient, 'patient');
+  const total = rows.length;
+
+  const statuses = ['Completed','Missing Documents','Rejected','In Progress','Completed – Dispatch Pending'];
+  const counts = {};
+  statuses.forEach(s => counts[s] = 0);
+  rows.forEach(r => { if (counts[r.currentStatus] != null) counts[r.currentStatus]++; else counts.Other = (counts.Other || 0) + (r.currentStatus ? 1 : 0); });
+
+  document.getElementById('kpi_doc_completed').textContent = fmtNum(counts.Completed);
+  document.getElementById('kpi_doc_completed_meta').textContent = total ? pct(counts.Completed, total) + ' of total' : '—';
+  document.getElementById('kpi_doc_missing').textContent = fmtNum(counts['Missing Documents']);
+  document.getElementById('kpi_doc_missing_meta').textContent = total ? pct(counts['Missing Documents'], total) + ' of total' : '—';
+  document.getElementById('kpi_doc_rejected').textContent = fmtNum(counts.Rejected);
+  document.getElementById('kpi_doc_rejected_meta').textContent = total ? pct(counts.Rejected, total) + ' of total' : '—';
+  document.getElementById('kpi_doc_pending').textContent = fmtNum(counts['Completed – Dispatch Pending']);
+  document.getElementById('kpi_doc_pending_meta').textContent = total ? pct(counts['Completed – Dispatch Pending'], total) + ' of total' : '—';
+
+  // Pie chart
+  const pieLabels = [], pieData = [];
+  statuses.forEach(s => { if (counts[s] > 0) { pieLabels.push(s); pieData.push(counts[s]); } });
+  if (counts.Other) { pieLabels.push('Other'); pieData.push(counts.Other); }
+  const pieColors = [COLORS.teal, COLORS.amber, COLORS.red, COLORS.blueLt, COLORS.slate, COLORS.mint];
+  makeChart('chart_doc_pie', {
+    type:'doughnut',
+    data:{ labels:pieLabels, datasets:[{ data:pieData, backgroundColor:pieColors, borderWidth:0, hoverOffset:6 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{ position:'right', labels:{ boxWidth:10, boxHeight:10, padding:10, font:{size:12, family:'Inter'} }} } }
+  });
+
+  // Status pills
+  const el = document.getElementById('doc_statuses');
+  const entries = Object.entries(counts).filter(([,v]) => v > 0).sort((a,b) => b[1] - a[1]);
+  if (!entries.length) el.innerHTML = '<div class="empty-small">No records for current filters</div>';
+  else el.innerHTML = entries.map(([k, v]) => `
+    <div class="status-pill">
+      <div class="pill-name">${escapeHtml(k)}</div>
+      <div class="pill-value">${fmtNum(v)} <span class="pill-pct">${pct(v, total)}</span></div>
+    </div>`).join('');
+
+  // Weekly trend — Completed / Rejected / Missing Documents per week
+  const byWeek = new Map();
+  rows.forEach(r => {
+    if (!r._date) return;
+    const key = ymd(startOfWeek(r._date));
+    if (!byWeek.has(key)) byWeek.set(key, { Completed:0, Rejected:0, 'Missing Documents':0 });
+    const b = byWeek.get(key);
+    if (b[r.currentStatus] != null) b[r.currentStatus]++;
+  });
+  const sorted = [...byWeek.entries()].sort((a,b) => a[0].localeCompare(b[0]));
+  const labels = sorted.map(([k]) => fmtDate(new Date(k)));
+  makeChart('chart_doc_trend', {
+    type:'line',
+    data:{ labels,
+      datasets:[
+        { label:'Completed',         data:sorted.map(([,v]) => v.Completed),           borderColor:COLORS.teal,  backgroundColor:'rgba(15,118,110,.12)', borderWidth:2.5, tension:.35, fill:true, pointRadius:2.5 },
+        { label:'Missing Documents', data:sorted.map(([,v]) => v['Missing Documents']),borderColor:COLORS.amber, backgroundColor:'rgba(183,121,31,.12)', borderWidth:2, tension:.35, fill:false, pointRadius:2 },
+        { label:'Rejected',          data:sorted.map(([,v]) => v.Rejected),            borderColor:COLORS.red,   backgroundColor:'rgba(181,71,71,.12)',  borderWidth:2, tension:.35, fill:false, pointRadius:2 },
+      ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'top', align:'end', labels:{ boxWidth:10, boxHeight:10, padding:12, font:{size:11, family:'Inter'} }} },
+      scales:{
+        x:{ grid:{ display:false }, ticks:{ font:{size:11}, color:'#7a8c93' } },
+        y:{ beginAtZero:true, grid:{ color:'#eff3f5' }, ticks:{ font:{size:11}, color:'#7a8c93', precision:0 } }
+      }
+    }
+  });
+}
+
+/* ───── Shared chart/list renderers ───── */
+function renderPieBreakdown(counts, chartId, listId, palette, type='pie') {
+  const entries = [...counts.entries()].sort((a,b) => b[1] - a[1]);
+  const total = entries.reduce((s, [,v]) => s + v, 0);
+  const labels = entries.map(([k]) => k);
+  const data = entries.map(([,v]) => v);
+  makeChart(chartId, {
+    type,
+    data:{ labels, datasets:[{ data, backgroundColor:palette.slice(0, entries.length), borderWidth:0, hoverOffset:6 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout: type==='doughnut' ? '62%' : 0,
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:c => `${c.label}: ${fmtNum(c.parsed)} (${pct(c.parsed,total)})` }} } }
+  });
+  const el = document.getElementById(listId);
+  if (!entries.length) { el.innerHTML = '<div class="empty-small">No data</div>'; return; }
+  el.innerHTML = entries.map(([k, v], i) => `
+    <div class="breakdown-row">
+      <div class="name"><span class="swatch" style="background:${palette[i % palette.length]}"></span>${escapeHtml(k)}</div>
+      <div class="val">${fmtNum(v)}</div>
+      <div class="bar-wrap"><div class="bar-fill" style="width:${pctRaw(v,total)}%;background:${palette[i % palette.length]}"></div></div>
+      <div class="pct">${pct(v,total)}</div>
+    </div>`).join('');
+}
+
+function renderBar(chartId, entries, color) {
+  const labels = entries.map(e => e.k);
+  const data = entries.map(e => e.v);
+  makeChart(chartId, {
+    type:'bar',
+    data:{ labels, datasets:[{ data, backgroundColor:color, borderRadius:6, barThickness:28 }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{
+        x:{ beginAtZero:true, grid:{ color:'#eff3f5' }, ticks:{ font:{size:11}, color:'#7a8c93', precision:0 } },
+        y:{ grid:{ display:false }, ticks:{ font:{size:12}, color:'#0e2a33' } }
+      }
+    }
+  });
+}
+
+/* ───── Utils ───── */
+function countBy(rows, field) {
+  const m = new Map();
+  rows.forEach(r => {
+    const k = r[field];
+    if (!k) return;
+    m.set(k, (m.get(k) || 0) + 1);
+  });
+  return m;
+}
+function topN(map, n) { return [...map.entries()].sort((a,b) => b[1] - a[1]).slice(0, n).map(([k, v]) => ({k, v})); }
+function fmtNum(n) { return (n || 0).toLocaleString('en-IN'); }
+function pct(a, b) { return b ? ((a / b) * 100).toFixed(1) + '%' : '—'; }
+function pctRaw(a, b) { return b ? (a / b) * 100 : 0; }
+function isFiltered() {
+  const f = state.filters;
+  return f.range !== 'all' || f.drug || f.state || f.doctor || f.qr;
+}
+
+/* ───── UI events ───── */
+function setLastUpdated() {
+  const now = new Date();
+  document.getElementById('lastUpdated').textContent = now.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+}
+function showLoader(msg) { document.getElementById('loader').classList.remove('hide'); document.getElementById('loaderSub').textContent = msg || 'Connecting…'; }
+function hideLoader() { document.getElementById('loader').classList.add('hide'); }
+function showError(msg) {
+  const el = document.getElementById('errorBanner');
+  el.textContent = msg; el.classList.add('show');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Date chips
+  document.querySelectorAll('#dateChips button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#dateChips button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.filters.range = btn.dataset.range;
+      document.getElementById('customRange').classList.toggle('show', btn.dataset.range === 'custom');
+      renderAll();
+    });
+  });
+  // Custom range inputs
+  document.getElementById('dateFrom').addEventListener('change', e => {
+    state.filters.from = e.target.value ? new Date(e.target.value + 'T00:00:00') : null;
+    state.filters.range = 'custom';
+    renderAll();
+  });
+  document.getElementById('dateTo').addEventListener('change', e => {
+    const d = e.target.value ? new Date(e.target.value + 'T23:59:59') : null;
+    state.filters.to = d;
+    state.filters.range = 'custom';
+    renderAll();
+  });
+  // Select filters
+  document.getElementById('f_drug').addEventListener('change', e => { state.filters.drug = e.target.value; renderAll(); });
+  document.getElementById('f_state').addEventListener('change', e => { state.filters.state = e.target.value; renderAll(); });
+  document.getElementById('f_doctor').addEventListener('change', e => { state.filters.doctor = e.target.value; renderAll(); });
+  document.getElementById('f_qr').addEventListener('change', e => { state.filters.qr = e.target.value; renderAll(); });
+
+  // Consult tabs
+  document.querySelectorAll('#consultTabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#consultTabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.consultView = btn.dataset.type;
+      renderConsult();
+    });
+  });
+
+  loadAll();
+});
+
+// Chart.js global defaults
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = '#476069';
+Chart.defaults.plugins.tooltip.backgroundColor = '#0e2a33';
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.plugins.tooltip.titleFont = { weight: 600, size: 12 };
+Chart.defaults.plugins.tooltip.bodyFont = { size: 12 };
+Chart.defaults.plugins.tooltip.cornerRadius = 6;
+Chart.defaults.plugins.tooltip.displayColors = false;
+</script>
+</body>
+</html>
