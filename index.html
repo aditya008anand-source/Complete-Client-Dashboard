@@ -252,6 +252,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     <div class="fgrst"><button class="brst" onclick="rst4()">Reset</button></div>
   </div>
   <div class="krow">
+    <div class="kpi"><div class="kl">Total Patients</div><div class="kv" id="k4total">—</div><div class="km" id="k4totalm">in filtered selection</div></div>
     <div class="kpi"><div class="kl">Completed</div><div class="kv" id="k4c">—</div><div class="km" id="k4cm">—</div></div>
     <div class="kpi amb"><div class="kl">Missing Documents</div><div class="kv" id="k4ms">—</div><div class="km" id="k4mm">—</div></div>
     <div class="kpi red"><div class="kl">Rejected</div><div class="kv" id="k4r">—</div><div class="km" id="k4rm">—</div></div>
@@ -435,6 +436,7 @@ function r4(){
   const tot=rows.length;
   const cts={Completed:0,'Missing Documents':0,Rejected:0,'In Progress':0,'Completed – Dispatch Pending':0};
   rows.forEach(r=>{if(cts[r.docStatus]!=null)cts[r.docStatus]++;});
+  st('k4total',fN(tot));st('k4totalm',tot!==DS.patient.length?`filtered from ${fN(DS.patient.length)} total`:'all-time registrations');
   st('k4c',fN(cts.Completed));st('k4cm',tot?`${pct(cts.Completed,tot)} of total`:'—');
   st('k4ms',fN(cts['Missing Documents']));st('k4mm',tot?`${pct(cts['Missing Documents'],tot)} of total`:'—');
   st('k4r',fN(cts.Rejected));st('k4rm',tot?`${pct(cts.Rejected,tot)} of total`:'—');
@@ -444,9 +446,30 @@ function r4(){
   const pills=Object.entries(cts).filter(([,vv])=>vv>0).sort((a,b)=>b[1]-a[1]);
   document.getElementById('lDS').innerHTML=pills.length?pills.map(([k,vv])=>`<div class="spl"><div class="pn">${esc(k)}</div><div class="pv">${fN(vv)}<span class="pp">${pct(vv,tot)}</span></div></div>`).join(''):'<div class="emp">No records for current filters</div>';
   const bw=new Map();
-  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{Completed:0,Rejected:0,'Missing Documents':0});const b=bw.get(k);if(b[r.docStatus]!=null)b[r.docStatus]++;});
+  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{Completed:0,Rejected:0,'Missing Documents':0,total:0});const b=bw.get(k);if(b[r.docStatus]!=null)b[r.docStatus]++;b.total++;});
   const sw=[...bw.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
-  mkC('cDT',{type:'line',data:{labels:sw.map(([k])=>fmtD(new Date(k))),datasets:[{label:'Completed',data:sw.map(([,v])=>v.Completed),borderColor:C.teal,backgroundColor:'rgba(15,118,110,.12)',borderWidth:2.5,tension:.35,fill:true,pointRadius:2.5},{label:'Missing Documents',data:sw.map(([,v])=>v['Missing Documents']),borderColor:C.amber,backgroundColor:'rgba(183,121,31,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2},{label:'Rejected',data:sw.map(([,v])=>v.Rejected),borderColor:C.red,backgroundColor:'rgba(181,71,71,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}}}}});
+  mkC('cDT',{type:'line',data:{labels:sw.map(([k])=>fmtD(new Date(k))),datasets:[
+    {label:'Completed',
+      data:sw.map(([,v])=>v.total?+((v.Completed/v.total)*100).toFixed(1):0),
+      rawC:sw.map(([,v])=>v.Completed), wkTot:sw.map(([,v])=>v.total),
+      borderColor:C.teal,backgroundColor:'rgba(15,118,110,.12)',borderWidth:2.5,tension:.35,fill:true,pointRadius:2.5},
+    {label:'Missing Documents',
+      data:sw.map(([,v])=>v.total?+((v['Missing Documents']/v.total)*100).toFixed(1):0),
+      rawC:sw.map(([,v])=>v['Missing Documents']), wkTot:sw.map(([,v])=>v.total),
+      borderColor:C.amber,backgroundColor:'rgba(183,121,31,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2},
+    {label:'Rejected',
+      data:sw.map(([,v])=>v.total?+((v.Rejected/v.total)*100).toFixed(1):0),
+      rawC:sw.map(([,v])=>v.Rejected), wkTot:sw.map(([,v])=>v.total),
+      borderColor:C.red,backgroundColor:'rgba(181,71,71,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}},
+      tooltip:{callbacks:{label:ctx=>{const rc=ctx.dataset.rawC[ctx.dataIndex];const wt=ctx.dataset.wkTot[ctx.dataIndex];return`${ctx.dataset.label}: ${rc} patients (${ctx.parsed.y}% of ${wt} that week)`;}}}
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},
+      y:{beginAtZero:true,max:100,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',callback:vv=>vv+'%'}}
+    }}});
 }
 /* RESETS */
 function rst1(){document.getElementById('p1f').value='';document.getElementById('p1t').value='';document.getElementById('p1d').value='';document.getElementById('p1s').value='';document.getElementById('p1q').value='';selDrs=new Set();updDrLbl();initF();r1();}
