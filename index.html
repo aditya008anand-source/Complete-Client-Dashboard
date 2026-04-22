@@ -66,7 +66,7 @@ hr.dv{border:0;border-top:1px dashed var(--line);margin:4px 0 28px}
 .dra button:last-child:hover{border-color:var(--red);color:var(--red)}
 .drb{background:var(--teal);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:600}
 .krow{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;margin-bottom:14px}
-.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}.kpi.ov{overflow:visible}
 .kpi::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--teal)}
 .kpi.blue::before{background:var(--blue)}.kpi.amb::before{background:var(--amber)}.kpi.red::before{background:var(--red)}
 .kl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:4px}
@@ -189,7 +189,26 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   <div class="krow">
     <div class="kpi"><div class="kl">Total Kits</div><div class="kv" id="k2t">—</div><div class="km">shipments created</div></div>
     <div class="kpi blue"><div class="kl">Delivery Success Rate</div><div class="kv" id="k2r">—</div><div class="km">delivered ÷ total</div></div>
-    <div class="kpi amb"><div class="kl">In Transit</div><div class="kv" id="k2tr">—</div><div class="km" id="k2trm">—</div></div>
+    <div class="kpi amb" style="overflow:visible">
+      <div class="kl">In Transit</div>
+      <div class="kv" id="k2tr">—</div>
+      <div class="km" id="k2trm">—</div>
+      <div style="margin-top:8px">
+        <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('+')? '▾ What’s included' : '▸ What’s included'" style="background:none;border:none;font-size:10px;color:var(--muted);cursor:pointer;padding:0;font-family:inherit;letter-spacing:.04em;text-transform:uppercase;font-weight:600">▸ What’s included</button>
+        <div style="display:none;margin-top:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--ink2);line-height:1.7;position:relative;z-index:10;box-shadow:0 4px 12px rgba(14,42,51,.08)">
+          <div style="font-weight:600;color:var(--ink);margin-bottom:4px;font-size:10px;letter-spacing:.08em;text-transform:uppercase">Statuses counted as In Transit</div>
+          IN TRANSIT<br>
+          IN TRANSIT-EN-ROUTE<br>
+          IN TRANSIT-AT DESTINATION HUB<br>
+          OUT FOR DELIVERY<br>
+          REACHED DESTINATION HUB<br>
+          PICKED UP<br>
+          PICKUP SCHEDULED<br>
+          SHIPPED<br>
+          FC MANIFEST GENERATED
+        </div>
+      </div>
+    </div>
     <div class="kpi red"><div class="kl">RTO / Others</div><div class="kv" id="k2rto">—</div><div class="km" id="k2rtom">—</div></div>
     <div class="kpi"><div class="kl">Avg Delivery TAT <span class="tip" data-t="Average days from kit creation to delivery. Delivered orders only within selected filters. Source: Column L of Logistics sheet.">?</span></div><div class="kv" id="k2tat">—</div><div class="km" id="k2tatm">days · delivered only</div></div>
   </div>
@@ -229,7 +248,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   <div class="mf">
     <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p4f" onchange="oF4()"><span>→</span><input type="date" id="p4t" onchange="oF4()"></div></div>
     <div class="fg"><label>Drug</label><select id="p4d" onchange="oF4()"><option value="">All Drugs</option></select></div>
-    <div class="fg"><label>Status</label><select id="p4s" onchange="oF4()"><option value="">All Statuses</option><option>Completed</option><option>Missing Documents</option><option>Rejected</option><option>In Progress</option><option>Completed \u2013 Dispatch Pending</option></select></div>
+    <div class="fg"><label>Status</label><select id="p4s" onchange="oF4()"><option value="">All Statuses</option><option>Completed</option><option>Missing Documents</option><option>Rejected</option><option>In Progress</option><option>Completed – Dispatch Pending</option></select></div>
     <div class="fgrst"><button class="brst" onclick="rst4()">Reset</button></div>
   </div>
   <div class="krow">
@@ -274,7 +293,7 @@ const cSt=s=>{const k=nci(s);if(!k)return'';return SM[k]||(k.split(' ').map(w=>w
 const cDr=s=>{const k=nci(s);if(!k)return'';if(k==='alterme')return'AlterMe';if(k==='semaglyn')return'Semaglyn';if(k==='mashema')return'Mashema';return k.split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1):'').join(' ');};
 const cQR=s=>{const v=n(s);if(!v||v==='\u2014'||v==='-'||v==='N/A'||v==='#N/A')return'Unknown';const k=v.toLowerCase();if(k==='medicine')return'Medicine';if(k==='doctor')return'Doctor';return v;};
 const cDoc=s=>{const v=n(s);if(!v||v==='#N/A'||v==='N/A')return'';let x=v.replace(/\bDr\.?\s+/i,'Dr ').replace(/\s+/g,' ').trim();return x.split(' ').map(w=>w.toLowerCase()==='dr'?'Dr':w?w[0].toUpperCase()+w.slice(1).toLowerCase():'').join(' ');};
-const cSts=s=>{const k=nci(s);if(!k)return'';if(k==='completed')return'Completed';if(k==='rejected')return'Rejected';if(k.includes('missing'))return'Missing Documents';if(k.includes('in progress')||k==='inprogress')return'In Progress';if(k.includes('dispatch pending'))return'Completed \u2013 Dispatch Pending';return k.split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1):'').join(' ');};
+const cSts=s=>{const k=nci(s);if(!k)return'';if(k==='completed')return'Completed';if(k==='rejected')return'Rejected';if(k.includes('missing'))return'Missing Documents';if(k.includes('in progress')||k==='inprogress')return'In Progress';if(k.includes('dispatch pending'))return'Completed – Dispatch Pending';return k.split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1):'').join(' ');};
 const LB={DELIVERED:'Delivered','IN TRANSIT':'In Transit','IN TRANSIT-EN-ROUTE':'In Transit','IN TRANSIT-AT DESTINATION HUB':'In Transit',SHIPPED:'In Transit','OUT FOR DELIVERY':'In Transit','REACHED DESTINATION HUB':'In Transit','PICKED UP':'In Transit','PICKUP SCHEDULED':'In Transit','FC MANIFEST GENERATED':'In Transit','RTO DELIVERED':'RTO','REACHED BACK AT_SELLER_CITY':'RTO','UNDELIVERED-1ST ATTEMPT':'Others','UNDELIVERED-2ND ATTEMPT':'Others','UNDELIVERED-3RD ATTEMPT':'Others','UNDELIVERED-1st Attempt':'Others','UNDELIVERED-2nd Attempt':'Others','UNDELIVERED-3rd Attempt':'Others',CANCELED:'Others',CANCELLED:'Others',MISROUTED:'Others','PICKUP EXCEPTION':'Others',UNTRACEABLE:'Others','SELF FULFILED':'Others','SELF FULFILLED':'Others'};
 const bkL=s=>{const u=n(s);if(LB[u])return LB[u];const uu=u.toUpperCase();if(uu.includes('RTO')||uu.includes('SELLER_CITY'))return'RTO';if(uu==='DELIVERED')return'Delivered';if(uu.includes('TRANSIT')||uu.includes('SHIPPED')||uu.includes('PICKUP')||uu.includes('PICKED')||uu.includes('MANIFEST')||uu.includes('HUB')||uu.includes('OUT FOR'))return'In Transit';return'Others';};
 const cCon=s=>{const k=nci(s);if(k.includes('booked'))return'Booked';if(k.includes('finished')||k.includes('completed'))return'Completed';if(k.includes('cancel')||k.includes('no show')||k.includes('no-show'))return'No Show';return s;};
@@ -414,12 +433,12 @@ function r4(){
   const{from,to}=gR('p4f','p4t');const fd=gv('p4d'),fs=gv('p4s');
   const rows=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.docStatus!==fs)return false;return true;});
   const tot=rows.length;
-  const cts={Completed:0,'Missing Documents':0,Rejected:0,'In Progress':0,'Completed \u2013 Dispatch Pending':0};
+  const cts={Completed:0,'Missing Documents':0,Rejected:0,'In Progress':0,'Completed – Dispatch Pending':0};
   rows.forEach(r=>{if(cts[r.docStatus]!=null)cts[r.docStatus]++;});
   st('k4c',fN(cts.Completed));st('k4cm',tot?`${pct(cts.Completed,tot)} of total`:'—');
   st('k4ms',fN(cts['Missing Documents']));st('k4mm',tot?`${pct(cts['Missing Documents'],tot)} of total`:'—');
   st('k4r',fN(cts.Rejected));st('k4rm',tot?`${pct(cts.Rejected,tot)} of total`:'—');
-  st('k4p',fN(cts['Completed \u2013 Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed \u2013 Dispatch Pending'],tot)} of total`:'—');
+  st('k4p',fN(cts['Completed – Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed – Dispatch Pending'],tot)} of total`:'—');
   const pl=Object.keys(cts).filter(k=>cts[k]>0);
   mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(k=>cts[k]),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
   const pills=Object.entries(cts).filter(([,vv])=>vv>0).sort((a,b)=>b[1]-a[1]);
