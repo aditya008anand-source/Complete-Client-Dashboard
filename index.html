@@ -117,6 +117,30 @@ hr.dv{border:0;border-top:1px dashed var(--line);margin:4px 0 28px}
 .ldt{font-family:'Fraunces',serif;font-size:17px;color:var(--ink);margin-top:18px;font-style:italic}
 .lds{font-size:12px;color:var(--muted);margin-top:4px}
 @keyframes pulse{0%,100%{transform:scale(.6);opacity:.5}50%{transform:scale(1);opacity:1}}
+/* ── Patient Search ── */
+.psearch-wrap{width:100%;margin-top:10px;border-top:1px solid var(--line2);padding-top:12px}
+.psearch-row{display:flex;gap:8px;align-items:center}
+.psearch-input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px 8px 34px;font-size:13px;color:var(--ink);font-family:inherit;outline:none;transition:border-color .15s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237a8c93' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center}
+.psearch-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.08)}
+.psearch-input::placeholder{color:var(--muted)}
+.psearch-clear{background:transparent;border:none;font-size:18px;color:var(--muted);cursor:pointer;padding:0 4px;line-height:1;display:none}
+.psearch-clear.show{display:block}
+.psearch-results{margin-top:10px;display:none}
+.psearch-results.show{display:block}
+.psearch-meta{font-size:11px;color:var(--muted);margin-bottom:8px;font-style:italic}
+.psearch-table{width:100%;border-collapse:collapse;font-size:13px}
+.psearch-table th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 12px;border-bottom:2px solid var(--line);white-space:nowrap}
+.psearch-table td{padding:10px 12px;border-bottom:1px solid var(--line2);color:var(--ink);vertical-align:middle}
+.psearch-table tr:last-child td{border-bottom:none}
+.psearch-table tr:hover td{background:var(--teal-soft)}
+.pst-name{font-weight:500}
+.pst-status{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.pst-delivered{background:#e7f4f2;color:#0f766e}
+.pst-transit{background:#e6eff6;color:#1e6091}
+.pst-rto{background:#fbeaea;color:#b54747}
+.pst-others{background:#f5f5f5;color:#64748b}
+.pst-blank{color:var(--muted);font-style:italic;font-size:12px}
+.psearch-empty{text-align:center;padding:20px;color:var(--muted);font-size:13px;font-style:italic}
 footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
 </style>
 </head>
@@ -185,6 +209,25 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     <div class="fg"><label>Delivery Status</label><select id="p2st" onchange="oF2()"><option value="">All Statuses</option><option>Delivered</option><option>In Transit</option><option>RTO</option><option>Others</option></select></div>
     <div class="fg"><label>State</label><select id="p2s" onchange="oF2()"><option value="">All States</option></select></div>
     <div class="fgrst"><button class="brst" onclick="rst2()">Reset</button></div>
+    <div class="psearch-wrap">
+      <div class="psearch-row">
+        <input type="text" class="psearch-input" id="pSearch" placeholder="Search patient name in logistics…" oninput="onPSearch()" onkeydown="if(event.key==='Enter')onPSearch()">
+        <button class="psearch-clear" id="pSearchClear" onclick="clearPSearch()">×</button>
+      </div>
+      <div class="psearch-results" id="pSearchResults">
+        <div class="psearch-meta" id="pSearchMeta"></div>
+        <table class="psearch-table">
+          <thead><tr>
+            <th>Patient Name</th>
+            <th>Order Placed</th>
+            <th>Order Delivered</th>
+            <th>Status</th>
+            <th>City</th>
+          </tr></thead>
+          <tbody id="pSearchBody"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
   <div class="krow">
     <div class="kpi"><div class="kl">Total Kits</div><div class="kv" id="k2t">—</div><div class="km">shipments created</div></div>
@@ -315,7 +358,7 @@ async function loadAll(){
   try{
     const[p,l,c]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult)]);
     DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool'])}));
-    DS.logistics=l.map(r=>({name:n(r['Customer Name']),_date:pDMY(r['Shiprocket Created At']),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
+    DS.logistics=l.map(r=>({name:n(r['Customer Name']),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
     DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status'])}));
     const img=document.getElementById('zLogo');
     img.src=ZLOGO;img.onload=()=>{img.style.display='block';document.getElementById('lph').style.display='none';};
@@ -508,6 +551,48 @@ const gv=id=>document.getElementById(id).value;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const gR=(f,t)=>({from:document.getElementById(f).value?new Date(document.getElementById(f).value+'T00:00:00'):null,to:document.getElementById(t).value?new Date(document.getElementById(t).value+'T23:59:59'):null});
 function fsl(id,vals,ph,pres=''){const el=document.getElementById(id);el.innerHTML=`<option value="">${ph}</option>`+vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');if(pres&&vals.includes(pres))el.value=pres;}
+/* ── Patient Logistics Search ── */
+function onPSearch(){
+  const q=document.getElementById('pSearch').value.trim();
+  const clr=document.getElementById('pSearchClear');
+  const res=document.getElementById('pSearchResults');
+  clr.classList.toggle('show', q.length>0);
+  if(q.length<2){res.classList.remove('show');return;}
+  // Search across ALL logistics data (not just filtered — so user can find any patient)
+  const ql=q.toLowerCase();
+  const matches=DS.logistics.filter(r=>r.name&&r.name.toLowerCase().includes(ql));
+  renderPSearchResults(matches, q);
+  res.classList.add('show');
+}
+function clearPSearch(){
+  document.getElementById('pSearch').value='';
+  document.getElementById('pSearchClear').classList.remove('show');
+  document.getElementById('pSearchResults').classList.remove('show');
+}
+function renderPSearchResults(rows, q){
+  const meta=document.getElementById('pSearchMeta');
+  const body=document.getElementById('pSearchBody');
+  if(!rows.length){
+    meta.textContent='';
+    body.innerHTML=`<tr><td colspan="5" class="psearch-empty">No patient found matching "${esc(q)}"</td></tr>`;
+    return;
+  }
+  meta.textContent=`${rows.length} result${rows.length>1?'s':''} found`;
+  body.innerHTML=rows.map(r=>{
+    const bucket=r.bucket||'Others';
+    const stClass=bucket==='Delivered'?'pst-delivered':bucket==='In Transit'?'pst-transit':bucket==='RTO'?'pst-rto':'pst-others';
+    const placedDate=r._date?fmtDFull(r._date):'<span class="pst-blank">—</span>';
+    const deliveredDate=r._deliveredDate?fmtDFull(r._deliveredDate):'<span class="pst-blank">Not yet delivered</span>';
+    return`<tr>
+      <td class="pst-name">${esc(r.name)}</td>
+      <td>${placedDate}</td>
+      <td>${deliveredDate}</td>
+      <td><span class="pst-status ${stClass}">${esc(bucket)}</span></td>
+      <td>${esc(r.city||'—')}</td>
+    </tr>`;
+  }).join('');
+}
+function fmtDFull(d){return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
 Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
 loadAll();
 </script>
