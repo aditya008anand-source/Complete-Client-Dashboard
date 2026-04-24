@@ -148,6 +148,30 @@ hr.dv{border:0;border-top:1px dashed var(--line);margin:4px 0 28px}
 .btn-export:hover{background:#0d6660;border-color:#0d6660}
 .btn-export svg{width:13px;height:13px;flex-shrink:0}
 .btn-export:disabled{opacity:.5;cursor:not-allowed}
+.chpwd-modal{display:none;position:fixed;inset:0;background:rgba(14,42,51,.7);z-index:9000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.chpwd-modal.show{display:flex}
+.chpwd-card{background:#fff;border-radius:16px;padding:32px 36px;width:100%;max-width:400px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.chpwd-card h3{font-family:'Fraunces',serif;font-weight:500;font-size:20px;color:#0e2a33;margin-bottom:4px}
+.chpwd-card p{font-size:12px;color:#7a8c93;margin-bottom:22px}
+.chpwd-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.chpwd-field label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#476069;font-weight:600}
+.chpwd-field .pwd-wrap{position:relative}
+.chpwd-field .pwd-wrap input{width:100%;border:1px solid #e4ebee;border-radius:8px;padding:10px 36px 10px 12px;font-size:13px;font-family:'Inter',sans-serif;outline:none;background:#f5f8f8;transition:border-color .15s}
+.chpwd-field .pwd-wrap input:focus{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.08);background:#fff}
+.chpwd-field .pwd-wrap .eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#7a8c93;font-size:14px;padding:0}
+.chpwd-error{background:#fbeaea;border:1px solid #f0c0c0;border-radius:7px;padding:9px 12px;font-size:12px;color:#b54747;margin-bottom:12px;display:none}
+.chpwd-error.show{display:block}
+.chpwd-success{background:#e7f4f2;border:1px solid #a3d9d0;border-radius:7px;padding:9px 12px;font-size:12px;color:#0f766e;margin-bottom:12px;display:none}
+.chpwd-success.show{display:block}
+.chpwd-actions{display:flex;gap:8px;margin-top:6px}
+.chpwd-save{flex:1;background:#0f766e;border:none;border-radius:8px;padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s}
+.chpwd-save:hover{background:#0d6660}
+.chpwd-save:disabled{opacity:.6;cursor:not-allowed}
+.chpwd-cancel{flex:1;background:transparent;border:1px solid #e4ebee;border-radius:8px;padding:11px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;color:#476069}
+.chpwd-cancel:hover{border-color:#b54747;color:#b54747}
+.chpwd-user-tag{font-size:11px;background:#e6eff6;color:#1e6091;padding:3px 10px;border-radius:10px;font-weight:600;margin-bottom:18px;display:inline-block}
+.reset-pwd-btn{background:transparent;border:1px solid #e4ebee;border-radius:6px;padding:6px 12px;font-size:11px;color:#476069;cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s}
+.reset-pwd-btn:hover{border-color:#0f766e;color:#0f766e;background:#e7f4f2}
 footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
 
 /* ══ AUTH LAYER ══ */
@@ -311,6 +335,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     <div id="authBar">
       <div class="auth-user-pill" id="authUserPill">—</div>
       <button class="admin-panel-btn" id="adminPanelBtn" onclick="openAdminPanel()">⚙ Admin</button>
+      <button class="logout-btn" style="border-color:#e4ebee" onclick="openSelfChPwd()">🔑 Change Password</button>
       <button class="logout-btn" onclick="doLogout()">Sign Out</button>
     </div>
   </div>
@@ -1029,8 +1054,9 @@ async function selectUser(uid){
           <span class="toggle-slider"></span>
         </label>
       </div>`).join('')}
-    <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid #eff3f5">
+    <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid #eff3f5;flex-wrap:wrap">
       ${!isAdmin ? `<button class="auf-save" style="background:#1e6091;font-size:12px;padding:7px 14px" onclick="changeRole('${uid}','admin')">⬆ Make Admin</button>` : uid !== ADMIN_UID ? `<button class="auf-save" style="background:#b7791f;font-size:12px;padding:7px 14px" onclick="changeRole('${uid}','user')">⬇ Remove Admin</button>` : '<span style="font-size:11px;color:#7a8c93;font-style:italic">Primary admin — role cannot be changed</span>'}
+      <button class="reset-pwd-btn" onclick="openAdminResetPwd('${uid}','${esc(u.email||'')}')">🔑 Reset Password</button>
       <button class="del-user-btn" style="margin-top:0" onclick="deleteUser('${uid}','${esc(u.email||'')}')">🗑 Remove User</button>
     </div>
   `;
@@ -1087,6 +1113,124 @@ function toggleAddForm(){
   document.getElementById('addUserForm').classList.toggle('show');
 }
 
+/* ══ CHANGE PASSWORD ══ */
+let chpwdMode = 'self'; // 'self' or 'admin'
+let chpwdTargetUid = null;
+let chpwdTargetEmail = null;
+
+function openSelfChPwd(){
+  chpwdMode = 'self';
+  chpwdTargetUid = null;
+  document.getElementById('chpwdTitle').textContent = 'Change Your Password';
+  document.getElementById('chpwdSubtitle').textContent = 'Enter your current password and choose a new one.';
+  document.getElementById('chpwdUserTag').style.display = 'none';
+  document.getElementById('chpwdCurrentWrap').style.display = 'flex';
+  resetChPwdForm();
+  document.getElementById('chpwdModal').classList.add('show');
+}
+
+function openAdminResetPwd(uid, email){
+  chpwdMode = 'admin';
+  chpwdTargetUid = uid;
+  chpwdTargetEmail = email;
+  document.getElementById('chpwdTitle').textContent = 'Reset User Password';
+  document.getElementById('chpwdSubtitle').textContent = 'Set a new password for this user.';
+  const tag = document.getElementById('chpwdUserTag');
+  tag.textContent = email;
+  tag.style.display = 'inline-block';
+  document.getElementById('chpwdCurrentWrap').style.display = 'none';
+  resetChPwdForm();
+  document.getElementById('chpwdModal').classList.add('show');
+}
+
+function closeChPwd(){
+  document.getElementById('chpwdModal').classList.remove('show');
+  resetChPwdForm();
+}
+
+function resetChPwdForm(){
+  ['chpwdCurrent','chpwdNew','chpwdConfirm'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.value=''; el.type='password'; }
+  });
+  document.querySelectorAll('.chpwd-card .eye').forEach(b=>b.textContent='👁');
+  document.getElementById('chpwdError').classList.remove('show');
+  document.getElementById('chpwdSuccess').classList.remove('show');
+  const btn = document.getElementById('chpwdSaveBtn');
+  btn.disabled=false; btn.textContent='Update Password';
+}
+
+function toggleChPwd(inputId, btn){
+  const inp = document.getElementById(inputId);
+  if(inp.type==='password'){ inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
+}
+
+async function savePassword(){
+  const newPwd     = document.getElementById('chpwdNew').value;
+  const confirmPwd = document.getElementById('chpwdConfirm').value;
+  const errEl      = document.getElementById('chpwdError');
+  const sucEl      = document.getElementById('chpwdSuccess');
+  const btn        = document.getElementById('chpwdSaveBtn');
+
+  errEl.classList.remove('show');
+  sucEl.classList.remove('show');
+
+  if(newPwd.length < 6){ showChPwdError('New password must be at least 6 characters.'); return; }
+  if(newPwd !== confirmPwd){ showChPwdError('Passwords do not match. Please try again.'); return; }
+
+  btn.disabled=true; btn.textContent='Updating…';
+
+  if(chpwdMode === 'self'){
+    // Self change — re-authenticate first with current password
+    const currentPwd = document.getElementById('chpwdCurrent').value;
+    if(!currentPwd){ showChPwdError('Please enter your current password.'); btn.disabled=false; btn.textContent='Update Password'; return; }
+    try{
+      const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPwd);
+      await currentUser.reauthenticateWithCredential(credential);
+      await currentUser.updatePassword(newPwd);
+      showChPwdSuccess('Password changed successfully!');
+      setTimeout(()=>closeChPwd(), 2000);
+    } catch(e){
+      let msg = 'Failed to update password. Please try again.';
+      if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential') msg='Current password is incorrect.';
+      if(e.code==='auth/too-many-requests') msg='Too many attempts. Please wait a moment.';
+      showChPwdError(msg);
+      btn.disabled=false; btn.textContent='Update Password';
+    }
+  } else {
+    // Admin reset — use Firebase REST API to update password
+    try{
+      const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:update?key=AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({localId: chpwdTargetUid, password: newPwd, returnSecureToken:false})
+      });
+      const data = await resp.json();
+      if(data.error){ showChPwdError('Error: '+data.error.message); btn.disabled=false; btn.textContent='Update Password'; return; }
+      showChPwdSuccess('Password reset successfully for '+chpwdTargetEmail+'!');
+      setTimeout(()=>closeChPwd(), 2000);
+    } catch(e){
+      showChPwdError('Failed to reset password. Please try again.');
+      btn.disabled=false; btn.textContent='Update Password';
+    }
+  }
+}
+
+function showChPwdError(msg){
+  const el=document.getElementById('chpwdError');
+  el.textContent=msg; el.classList.add('show');
+}
+function showChPwdSuccess(msg){
+  const el=document.getElementById('chpwdSuccess');
+  el.textContent=msg; el.classList.add('show');
+}
+
+// Close modal on backdrop click
+document.getElementById('chpwdModal').addEventListener('click', function(e){
+  if(e.target===this) closeChPwd();
+});
+
 function togglePwdView(){
   const inp = document.getElementById('loginPwd');
   const btn = document.getElementById('pwdToggle');
@@ -1111,5 +1255,42 @@ async function changeRole(uid, newRole){
 Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
 // loadAll() is called by Firebase auth state listener
 </script>
+
+<!-- ══ CHANGE PASSWORD MODAL ══ -->
+<div class="chpwd-modal" id="chpwdModal">
+  <div class="chpwd-card">
+    <h3 id="chpwdTitle">Change Password</h3>
+    <p id="chpwdSubtitle">Enter your current password and choose a new one.</p>
+    <div class="chpwd-user-tag" id="chpwdUserTag" style="display:none"></div>
+    <div class="chpwd-error" id="chpwdError"></div>
+    <div class="chpwd-success" id="chpwdSuccess"></div>
+    <!-- Current password — only for self-change -->
+    <div class="chpwd-field" id="chpwdCurrentWrap">
+      <label>Current Password</label>
+      <div class="pwd-wrap">
+        <input type="password" id="chpwdCurrent" placeholder="Enter current password">
+        <button type="button" class="eye" onclick="toggleChPwd('chpwdCurrent',this)">👁</button>
+      </div>
+    </div>
+    <div class="chpwd-field">
+      <label>New Password</label>
+      <div class="pwd-wrap">
+        <input type="password" id="chpwdNew" placeholder="Min 6 characters">
+        <button type="button" class="eye" onclick="toggleChPwd('chpwdNew',this)">👁</button>
+      </div>
+    </div>
+    <div class="chpwd-field">
+      <label>Confirm New Password</label>
+      <div class="pwd-wrap">
+        <input type="password" id="chpwdConfirm" placeholder="Re-enter new password">
+        <button type="button" class="eye" onclick="toggleChPwd('chpwdConfirm',this)">👁</button>
+      </div>
+    </div>
+    <div class="chpwd-actions">
+      <button class="chpwd-save" id="chpwdSaveBtn" onclick="savePassword()">Update Password</button>
+      <button class="chpwd-cancel" onclick="closeChPwd()">Cancel</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
