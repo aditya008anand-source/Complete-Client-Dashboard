@@ -6,6 +6,9 @@
 <title>MySaathi Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <style>
@@ -146,11 +149,144 @@ hr.dv{border:0;border-top:1px dashed var(--line);margin:4px 0 28px}
 .btn-export svg{width:13px;height:13px;flex-shrink:0}
 .btn-export:disabled{opacity:.5;cursor:not-allowed}
 footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+
+/* ══ AUTH LAYER ══ */
+#authLayer{position:fixed;inset:0;background:linear-gradient(135deg,#0e2a33 0%,#1a4a5a 50%,#0f4a3a 100%);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Inter',sans-serif}
+#authLayer.hide{display:none}
+.auth-card{background:#fff;border-radius:20px;padding:40px 44px;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.auth-logo-pill{background:linear-gradient(135deg,#00a99d,#005b8e);border-radius:8px;padding:6px 14px;color:#fff;font-weight:700;font-size:13px}
+.auth-logo-title{font-family:'Fraunces',serif;font-size:20px;color:#0e2a33;font-weight:500}
+.auth-logo-title em{font-style:italic;color:#0f766e}
+.auth-card h2{font-family:'Fraunces',serif;font-weight:500;font-size:24px;color:#0e2a33;margin-bottom:6px}
+.auth-card p{font-size:13px;color:#7a8c93;margin-bottom:28px}
+.auth-field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.auth-field label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#476069;font-weight:600}
+.auth-field input{border:1px solid #e4ebee;border-radius:8px;padding:11px 14px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;background:#f5f8f8}
+.auth-field input:focus{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.08);background:#fff}
+.auth-btn{width:100%;background:#0f766e;border:none;border-radius:10px;padding:13px;color:#fff;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:background .15s;margin-top:8px}
+.auth-btn:hover{background:#0d6660}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed}
+.auth-error{background:#fbeaea;border:1px solid #f0c0c0;border-radius:8px;padding:10px 14px;font-size:12px;color:#b54747;margin-bottom:14px;display:none}
+.auth-error.show{display:block}
+/* ══ ADMIN PANEL ══ */
+#adminPanel{display:none;position:fixed;inset:0;background:rgba(14,42,51,.7);z-index:8888;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#adminPanel.show{display:flex}
+.ap-modal{background:#fff;border-radius:20px;width:100%;max-width:820px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.ap-head{padding:24px 28px;border-bottom:1px solid #e4ebee;display:flex;justify-content:space-between;align-items:center}
+.ap-head h2{font-family:'Fraunces',serif;font-size:22px;font-weight:500;color:#0e2a33}
+.ap-head-right{display:flex;gap:10px;align-items:center}
+.ap-close{background:transparent;border:1px solid #e4ebee;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;color:#476069;font-family:'Inter',sans-serif}
+.ap-close:hover{border-color:#b54747;color:#b54747}
+.ap-body{display:grid;grid-template-columns:340px 1fr;overflow:hidden;flex:1}
+.ap-users{border-right:1px solid #e4ebee;overflow-y:auto}
+.ap-users-head{padding:16px 20px;border-bottom:1px solid #eff3f5;display:flex;justify-content:space-between;align-items:center}
+.ap-users-head span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#7a8c93;font-weight:600}
+.ap-add-btn{background:#0f766e;border:none;border-radius:7px;padding:6px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.ap-add-btn:hover{background:#0d6660}
+.user-item{padding:14px 20px;border-bottom:1px solid #eff3f5;cursor:pointer;transition:background .1s}
+.user-item:hover{background:#f5f8f8}
+.user-item.active{background:#e7f4f2;border-left:3px solid #0f766e}
+.user-item .un{font-size:13px;font-weight:500;color:#0e2a33}
+.user-item .ue{font-size:11px;color:#7a8c93;margin-top:2px}
+.user-item .ur{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;margin-top:4px}
+.ur-admin{background:#e7f4f2;color:#0f766e}
+.ur-user{background:#e6eff6;color:#1e6091}
+.ap-perms{padding:24px 28px;overflow-y:auto}
+.ap-perms-title{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#7a8c93;font-weight:600;margin-bottom:16px}
+.ap-no-sel{color:#7a8c93;font-size:13px;font-style:italic;text-align:center;padding:40px 0}
+.perm-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eff3f5}
+.perm-row:last-child{border-bottom:0}
+.perm-label{font-size:13px;color:#0e2a33;font-weight:500}
+.perm-sub{font-size:11px;color:#7a8c93;margin-top:2px}
+.toggle-wrap{position:relative;width:42px;height:24px;flex-shrink:0}
+.toggle-wrap input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:#e4ebee;border-radius:24px;cursor:pointer;transition:.2s}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-wrap input:checked + .toggle-slider{background:#0f766e}
+.toggle-wrap input:checked + .toggle-slider:before{transform:translateX(18px)}
+/* Add user form */
+.add-user-form{padding:20px 28px;border-top:1px solid #e4ebee;background:#f5f8f8;display:none}
+.add-user-form.show{display:block}
+.auf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.auf-field{display:flex;flex-direction:column;gap:5px}
+.auf-field label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#7a8c93;font-weight:600}
+.auf-field input,.auf-field select{border:1px solid #e4ebee;border-radius:7px;padding:8px 10px;font-size:12px;font-family:'Inter',sans-serif;outline:none;background:#fff}
+.auf-field input:focus{border-color:#0f766e}
+.auf-actions{display:flex;gap:8px}
+.auf-save{background:#0f766e;border:none;border-radius:7px;padding:8px 16px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.auf-cancel{background:transparent;border:1px solid #e4ebee;border-radius:7px;padding:8px 16px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;color:#476069}
+/* Top bar auth info */
+#authBar{display:flex;align-items:center;gap:10px;font-size:12px;color:#476069}
+.auth-user-pill{background:#e7f4f2;border-radius:20px;padding:4px 12px;font-size:11px;color:#0f766e;font-weight:600;display:flex;align-items:center;gap:6px}
+.admin-panel-btn{background:#0f766e;border:none;border-radius:7px;padding:5px 11px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:none}
+.admin-panel-btn.show{display:block}
+.logout-btn{background:transparent;border:1px solid #e4ebee;border-radius:7px;padding:5px 11px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;color:#476069}
+.logout-btn:hover{border-color:#b54747;color:#b54747}
+.del-user-btn{background:transparent;border:1px solid #fbeaea;border-radius:6px;padding:4px 8px;font-size:11px;color:#b54747;cursor:pointer;font-family:'Inter',sans-serif;margin-top:6px}
+.del-user-btn:hover{background:#fbeaea}
 </style>
 </head>
 <body>
 <div class="ldr" id="loader"><div class="ldd"></div><div class="ldt">Fetching live data…</div><div class="lds">Connecting to Google Sheets</div></div>
-<div class="shell">
+
+<!-- ══ AUTH LAYER ══ -->
+<div id="authLayer">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-pill">ZYDUS</div>
+      <div class="auth-logo-title">MySaathi <em>Dashboard</em></div>
+    </div>
+    <h2>Welcome back</h2>
+    <p>Sign in to access your dashboard</p>
+    <div class="auth-error" id="loginError"></div>
+    <div class="auth-field">
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="auth-field">
+      <label>Password</label>
+      <input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="auth-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<!-- ══ ADMIN PANEL ══ -->
+<div id="adminPanel">
+  <div class="ap-modal">
+    <div class="ap-head">
+      <h2>User Management</h2>
+      <div class="ap-head-right">
+        <button class="ap-add-btn" onclick="toggleAddForm()">+ Add User</button>
+        <button class="ap-close" onclick="closeAdminPanel()">Close</button>
+      </div>
+    </div>
+    <div class="add-user-form" id="addUserForm">
+      <div class="auf-grid">
+        <div class="auf-field"><label>Email</label><input type="email" id="newEmail" placeholder="user@example.com"></div>
+        <div class="auf-field"><label>Password</label><input type="password" id="newPwd" placeholder="Min 6 characters"></div>
+        <div class="auf-field"><label>Display Name</label><input type="text" id="newName" placeholder="Full name"></div>
+        <div class="auf-field"><label>Role</label><select id="newRole"><option value="user">General User</option><option value="admin">Admin</option></select></div>
+      </div>
+      <div class="auf-actions">
+        <button class="auf-save" onclick="createUser()">Create User</button>
+        <button class="auf-cancel" onclick="toggleAddForm()">Cancel</button>
+      </div>
+    </div>
+    <div class="ap-body">
+      <div class="ap-users">
+        <div class="ap-users-head"><span>Users</span></div>
+        <div id="userList"></div>
+      </div>
+      <div class="ap-perms" id="permPanel">
+        <div class="ap-no-sel">Select a user to manage permissions</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="shell" id="mainShell" style="display:none">
 
 <header class="top">
   <div class="brand">
@@ -165,6 +301,11 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   <div class="hdr">
     <span><span class="ldot"></span>Live · <span id="lastUp">—</span></span>
     <button class="rbtn" onclick="loadAll(true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.3-6.95"/><path d="M21 4v5h-5"/></svg>Refresh</button>
+    <div id="authBar">
+      <div class="auth-user-pill" id="authUserPill">—</div>
+      <button class="admin-panel-btn" id="adminPanelBtn" onclick="openAdminPanel()">⚙ Admin</button>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+    </div>
   </div>
 </header>
 
@@ -671,8 +812,261 @@ function renderPSearchResults(rows, q){
   }).join('');
 }
 function fmtDFull(d){return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+
+/* ══════════════════════════════════════════════════════
+   FIREBASE AUTH + ROLE-BASED ACCESS CONTROL
+══════════════════════════════════════════════════════ */
+const FB_CONFIG = {
+  apiKey: "AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8",
+  authDomain: "mysaathi-dashboard.firebaseapp.com",
+  databaseURL: "https://mysaathi-dashboard-default-rtdb.firebaseio.com",
+  projectId: "mysaathi-dashboard",
+  storageBucket: "mysaathi-dashboard.firebasestorage.app",
+  messagingSenderId: "755642238347",
+  appId: "1:755642238347:web:be8a39c6852021c4761b8e"
+};
+const ADMIN_UID = "VzNDpj9MfDMDVx9Cc6RD4xdj93N2";
+
+// Module permission keys — map to section IDs
+const MODULE_PERMS = [
+  {key:'mod1', label:'Patient Distribution',      sub:'Module 01'},
+  {key:'mod2', label:'Welcome Kit & Logistics',   sub:'Module 02'},
+  {key:'mod3', label:'Expert Consultation',        sub:'Module 03'},
+  {key:'mod4', label:'Documentation',              sub:'Module 04'},
+  {key:'mod5', label:'Loyalty Rewards',            sub:'Module 05'},
+  {key:'mod6', label:'App Engagement',             sub:'Module 06'},
+  {key:'export', label:'Data Export (CSV)',        sub:'Module 04 export button'},
+];
+
+// Initialize Firebase
+firebase.initializeApp(FB_CONFIG);
+const fbAuth = firebase.auth();
+const fbDB   = firebase.database();
+
+let currentUser  = null;
+let currentRole  = null;
+let currentPerms = {};
+let selectedUid  = null;
+
+/* ── Auth state listener ── */
+fbAuth.onAuthStateChanged(async user => {
+  if(!user){
+    showLoginScreen();
+    return;
+  }
+  currentUser = user;
+  // Load user profile from DB
+  const snap = await fbDB.ref('users/'+user.uid).get();
+  if(snap.exists()){
+    const profile = snap.val();
+    currentRole  = profile.role || 'user';
+    currentPerms = profile.permissions || {};
+  } else {
+    // First time — check if admin UID
+    currentRole = (user.uid === ADMIN_UID) ? 'admin' : 'user';
+    currentPerms = {};
+    // Save to DB
+    await fbDB.ref('users/'+user.uid).set({
+      email: user.email,
+      name: user.displayName || user.email.split('@')[0],
+      role: currentRole,
+      permissions: currentRole==='admin' ? {mod1:true,mod2:true,mod3:true,mod4:true,mod5:true,mod6:true,export:true} : {},
+      createdAt: Date.now()
+    });
+    if(currentRole==='admin') currentPerms = {mod1:true,mod2:true,mod3:true,mod4:true,mod5:true,mod6:true,export:true};
+  }
+  hideLoginScreen();
+  applyAccessControl();
+  // Load dashboard data
+  loadAll();
+});
+
+/* ── Login ── */
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  const btn   = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginError');
+  errEl.classList.remove('show');
+  if(!email||!pwd){ showLoginError('Please enter email and password.'); return; }
+  btn.disabled=true; btn.textContent='Signing in…';
+  try{
+    await fbAuth.signInWithEmailAndPassword(email, pwd);
+  } catch(e){
+    let msg = 'Invalid email or password. Please try again.';
+    if(e.code==='auth/too-many-requests') msg='Too many attempts. Please wait a moment.';
+    if(e.code==='auth/user-disabled') msg='This account has been disabled.';
+    showLoginError(msg);
+    btn.disabled=false; btn.textContent='Sign In';
+  }
+}
+
+/* ── Logout ── */
+async function doLogout(){
+  await fbAuth.signOut();
+  currentUser=null; currentRole=null; currentPerms={};
+  document.getElementById('mainShell').style.display='none';
+  showLoginScreen();
+}
+
+function showLoginScreen(){
+  document.getElementById('authLayer').classList.remove('hide');
+  document.getElementById('mainShell').style.display='none';
+}
+function hideLoginScreen(){
+  document.getElementById('authLayer').classList.add('hide');
+  document.getElementById('mainShell').style.display='block';
+  // Update auth bar
+  const name = currentUser.displayName || currentUser.email.split('@')[0];
+  document.getElementById('authUserPill').textContent = name + (currentRole==='admin'?' (Admin)':'');
+  const adminBtn = document.getElementById('adminPanelBtn');
+  if(currentRole==='admin') adminBtn.classList.add('show'); else adminBtn.classList.remove('show');
+}
+function showLoginError(msg){
+  const el=document.getElementById('loginError');
+  el.textContent=msg; el.classList.add('show');
+}
+
+/* ── Access Control ── */
+function applyAccessControl(){
+  if(currentRole==='admin'){
+    // Admin sees everything
+    document.querySelectorAll('section.module').forEach(s=>s.style.display='');
+    const expBtn=document.getElementById('exportBtn');
+    if(expBtn) expBtn.style.display='';
+    return;
+  }
+  // General user — apply permissions
+  const modMap = {
+    mod1: document.querySelectorAll('section.module')[0],
+    mod2: document.querySelectorAll('section.module')[1],
+    mod3: document.querySelectorAll('section.module')[2],
+    mod4: document.querySelectorAll('section.module')[3],
+    mod5: document.querySelectorAll('section.module')[4],
+    mod6: document.querySelectorAll('section.module')[5],
+  };
+  // Also handle hr dividers
+  const dividers = document.querySelectorAll('hr.dv');
+  MODULE_PERMS.filter(p=>p.key!=='export').forEach((p,i)=>{
+    const el=modMap[p.key];
+    if(el){
+      const allowed = currentPerms[p.key]===true;
+      el.style.display = allowed?'':'none';
+      if(dividers[i]) dividers[i].style.display = allowed?'':'none';
+    }
+  });
+  // Export button
+  const expBtn=document.getElementById('exportBtn');
+  if(expBtn) expBtn.style.display = currentPerms.export===true ? '' : 'none';
+}
+
+/* ── Admin Panel ── */
+function openAdminPanel(){
+  if(currentRole!=='admin') return;
+  document.getElementById('adminPanel').classList.add('show');
+  loadUserList();
+}
+function closeAdminPanel(){
+  document.getElementById('adminPanel').classList.remove('show');
+  selectedUid=null;
+}
+
+async function loadUserList(){
+  const snap = await fbDB.ref('users').get();
+  const listEl = document.getElementById('userList');
+  if(!snap.exists()){ listEl.innerHTML='<div style="padding:20px;font-size:12px;color:#7a8c93">No users yet</div>'; return; }
+  const users = snap.val();
+  listEl.innerHTML = Object.entries(users).map(([uid,u])=>`
+    <div class="user-item ${selectedUid===uid?'active':''}" onclick="selectUser('${uid}')">
+      <div class="un">${esc(u.name||u.email||'Unknown')}</div>
+      <div class="ue">${esc(u.email||'')}</div>
+      <span class="ur ${u.role==='admin'?'ur-admin':'ur-user'}">${u.role==='admin'?'Admin':'General User'}</span>
+    </div>`).join('');
+}
+
+async function selectUser(uid){
+  selectedUid=uid;
+  await loadUserList(); // refresh active state
+  const snap = await fbDB.ref('users/'+uid).get();
+  if(!snap.exists()) return;
+  const u = snap.val();
+  const perms = u.permissions||{};
+  const isAdmin = u.role==='admin';
+  const permEl = document.getElementById('permPanel');
+  permEl.innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:15px;font-weight:600;color:#0e2a33">${esc(u.name||u.email)}</div>
+      <div style="font-size:12px;color:#7a8c93;margin-top:2px">${esc(u.email||'')}</div>
+      ${isAdmin?'<div style="margin-top:8px;font-size:12px;color:#0f766e;background:#e7f4f2;padding:6px 10px;border-radius:6px">Admin has full access to all modules</div>':''}
+    </div>
+    <div class="ap-perms-title">Module Access Permissions</div>
+    ${MODULE_PERMS.map(p=>`
+      <div class="perm-row">
+        <div>
+          <div class="perm-label">${p.label}</div>
+          <div class="perm-sub">${p.sub}</div>
+        </div>
+        <label class="toggle-wrap">
+          <input type="checkbox" ${(isAdmin||perms[p.key]===true)?'checked':''} ${isAdmin?'disabled':''}
+            onchange="updatePerm('${uid}','${p.key}',this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>`).join('')}
+    <button class="del-user-btn" onclick="deleteUser('${uid}','${esc(u.email||'')}')">🗑 Remove User</button>
+  `;
+}
+
+async function updatePerm(uid, key, val){
+  await fbDB.ref('users/'+uid+'/permissions/'+key).set(val);
+}
+
+async function createUser(){
+  const email  = document.getElementById('newEmail').value.trim();
+  const pwd    = document.getElementById('newPwd').value;
+  const name   = document.getElementById('newName').value.trim();
+  const role   = document.getElementById('newRole').value;
+  if(!email||!pwd||pwd.length<6){ alert('Please fill all fields. Password must be at least 6 characters.'); return; }
+
+  // Create via Firebase REST API (client SDK createUser creates & signs in — we avoid that)
+  // Instead: use Admin REST endpoint via fetch with current user's ID token
+  const idToken = await currentUser.getIdToken();
+  try{
+    const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pwd,returnSecureToken:false})
+    });
+    const data = await resp.json();
+    if(data.error){ alert('Error: '+data.error.message); return; }
+    const newUid = data.localId;
+    const defaultPerms = role==='admin'?{mod1:true,mod2:true,mod3:true,mod4:true,mod5:true,mod6:true,export:true}:{};
+    await fbDB.ref('users/'+newUid).set({
+      email, name:name||email.split('@')[0], role,
+      permissions:defaultPerms, createdAt:Date.now()
+    });
+    document.getElementById('newEmail').value='';
+    document.getElementById('newPwd').value='';
+    document.getElementById('newName').value='';
+    document.getElementById('addUserForm').classList.remove('show');
+    await loadUserList();
+    alert('User created successfully!');
+  } catch(e){ alert('Failed to create user: '+e.message); }
+}
+
+async function deleteUser(uid, email){
+  if(!confirm('Remove user '+email+'? They will lose dashboard access.')) return;
+  await fbDB.ref('users/'+uid).remove();
+  selectedUid=null;
+  document.getElementById('permPanel').innerHTML='<div class="ap-no-sel">Select a user to manage permissions</div>';
+  await loadUserList();
+}
+
+function toggleAddForm(){
+  document.getElementById('addUserForm').classList.toggle('show');
+}
+
 Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
-loadAll();
+// loadAll() is called by Firebase auth state listener
 </script>
 </body>
 </html>
