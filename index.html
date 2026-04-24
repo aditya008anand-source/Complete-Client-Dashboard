@@ -246,7 +246,10 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     </div>
     <div class="auth-field">
       <label>Password</label>
-      <input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+      <div style="position:relative">
+        <input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;padding-right:42px">
+        <button type="button" id="pwdToggle" onclick="togglePwdView()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#7a8c93;font-size:16px;padding:0;line-height:1">👁</button>
+      </div>
     </div>
     <button class="auth-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
   </div>
@@ -265,7 +268,11 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     <div class="add-user-form" id="addUserForm">
       <div class="auf-grid">
         <div class="auf-field"><label>Email</label><input type="email" id="newEmail" placeholder="user@example.com"></div>
-        <div class="auf-field"><label>Password</label><input type="password" id="newPwd" placeholder="Min 6 characters"></div>
+        <div class="auf-field"><label>Password</label>
+        <div style="position:relative">
+          <input type="password" id="newPwd" placeholder="Min 6 characters" style="width:100%;padding-right:36px">
+          <button type="button" onclick="toggleNewPwd()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#7a8c93;font-size:14px;padding:0">👁</button>
+        </div></div>
         <div class="auf-field"><label>Display Name</label><input type="text" id="newName" placeholder="Full name"></div>
         <div class="auf-field"><label>Role</label><select id="newRole"><option value="user">General User</option><option value="admin">Admin</option></select></div>
       </div>
@@ -859,6 +866,13 @@ fbAuth.onAuthStateChanged(async user => {
   const snap = await fbDB.ref('users/'+user.uid).get();
   if(snap.exists()){
     const profile = snap.val();
+    // Check if user has been disabled/removed by admin
+    if(profile.disabled === true){
+      await fbAuth.signOut();
+      showLoginScreen();
+      showLoginError('Your account has been removed. Please contact your administrator.');
+      return;
+    }
     currentRole  = profile.role || 'user';
     currentPerms = profile.permissions || {};
   } else {
@@ -976,7 +990,10 @@ async function loadUserList(){
   const listEl = document.getElementById('userList');
   if(!snap.exists()){ listEl.innerHTML='<div style="padding:20px;font-size:12px;color:#7a8c93">No users yet</div>'; return; }
   const users = snap.val();
-  listEl.innerHTML = Object.entries(users).map(([uid,u])=>`
+  // Filter out hidden/removed users
+  const visibleUsers = Object.entries(users).filter(([uid,u]) => !u.hidden);
+  if(!visibleUsers.length){ listEl.innerHTML='<div style="padding:20px;font-size:12px;color:#7a8c93">No active users</div>'; return; }
+  listEl.innerHTML = visibleUsers.map(([uid,u])=>`
     <div class="user-item ${selectedUid===uid?'active':''}" onclick="selectUser('${uid}')">
       <div class="un">${esc(u.name||u.email||'Unknown')}</div>
       <div class="ue">${esc(u.email||'')}</div>
@@ -1012,7 +1029,10 @@ async function selectUser(uid){
           <span class="toggle-slider"></span>
         </label>
       </div>`).join('')}
-    <button class="del-user-btn" onclick="deleteUser('${uid}','${esc(u.email||'')}')">🗑 Remove User</button>
+    <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid #eff3f5">
+      ${!isAdmin ? `<button class="auf-save" style="background:#1e6091;font-size:12px;padding:7px 14px" onclick="changeRole('${uid}','admin')">⬆ Make Admin</button>` : uid !== ADMIN_UID ? `<button class="auf-save" style="background:#b7791f;font-size:12px;padding:7px 14px" onclick="changeRole('${uid}','user')">⬇ Remove Admin</button>` : '<span style="font-size:11px;color:#7a8c93;font-style:italic">Primary admin — role cannot be changed</span>'}
+      <button class="del-user-btn" style="margin-top:0" onclick="deleteUser('${uid}','${esc(u.email||'')}')">🗑 Remove User</button>
+    </div>
   `;
 }
 
@@ -1054,15 +1074,38 @@ async function createUser(){
 }
 
 async function deleteUser(uid, email){
-  if(!confirm('Remove user '+email+'? They will lose dashboard access.')) return;
-  await fbDB.ref('users/'+uid).remove();
+  if(!confirm('Remove '+email+' from dashboard? They will be permanently blocked from accessing the dashboard.')) return;
+  // Set disabled flag — blocks login. Also mark hidden so they don't appear in user list.
+  await fbDB.ref('users/'+uid).update({disabled: true, hidden: true, permissions: {}});
   selectedUid=null;
   document.getElementById('permPanel').innerHTML='<div class="ap-no-sel">Select a user to manage permissions</div>';
   await loadUserList();
+  alert(email+' has been removed. They can no longer access the dashboard.');
 }
 
 function toggleAddForm(){
   document.getElementById('addUserForm').classList.toggle('show');
+}
+
+function togglePwdView(){
+  const inp = document.getElementById('loginPwd');
+  const btn = document.getElementById('pwdToggle');
+  if(inp.type==='password'){ inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
+}
+function toggleNewPwd(){
+  const inp = document.getElementById('newPwd');
+  inp.type = inp.type==='password' ? 'text' : 'password';
+}
+
+async function changeRole(uid, newRole){
+  const action = newRole==='admin' ? 'make this user an Admin' : 'remove Admin access from this user';
+  if(!confirm('Are you sure you want to '+action+'?')) return;
+  const newPerms = newRole==='admin' ? {mod1:true,mod2:true,mod3:true,mod4:true,mod5:true,mod6:true,export:true} : {};
+  await fbDB.ref('users/'+uid).update({role: newRole, permissions: newPerms});
+  await selectUser(uid); // refresh panel
+  await loadUserList();  // refresh list
+  alert('Role updated successfully!');
 }
 
 Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
