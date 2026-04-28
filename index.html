@@ -435,7 +435,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   </div>
   <div class="grid g21">
     <div class="card"><div class="ct">Weekly Delivery Trend <span style="font-weight:400;color:var(--muted);font-size:10px;text-transform:none;letter-spacing:0;margin-left:6px">% of total filtered period</span></div><div class="cw"><canvas id="cTr"></canvas></div></div>
-    <div class="card"><div class="ct">Status Mix</div><div class="cw sh"><canvas id="cLM"></canvas></div><div class="bkl" id="lLMBreak" style="margin-top:14px"></div></div>
+    <div class="card"><div class="ct">Status Mix</div><div class="cw sh"><canvas id="cLM"></canvas></div></div>
   </div>
   <div class="card" style="margin-top:14px"><div class="ct">Detailed Status Breakdown</div><div class="sgrd" id="lLS"></div></div>
 </section>
@@ -487,7 +487,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   </div>
   <div class="grid g21">
     <div class="card"><div class="ct">Weekly Trend</div><div class="cw"><canvas id="cDT"></canvas></div></div>
-    <div class="card"><div class="ct">Status Distribution</div><div class="cw sh"><canvas id="cDP"></canvas></div><div class="bkl" id="lDPBreak" style="margin-top:14px"></div></div>
+    <div class="card"><div class="ct">Status Distribution</div><div class="cw sh"><canvas id="cDP"></canvas></div></div>
   </div>
   <div class="card" style="margin-top:14px"><div class="ct">Detailed Status Breakdown</div><div class="sgrd" id="lDS"></div></div>
 </section>
@@ -549,7 +549,7 @@ const CS={mumbai:'Maharashtra',thane:'Maharashtra',pune:'Maharashtra',nashik:'Ma
 const ctySt=c=>CS[nci(c)]||'';
 function parseLoyaltyDate(s){
   const v=n(s);if(!v)return null;
-  const m=v.match(/(\d{4})-(\d{2})-(\d{2})/);
+  const m=v.match(/([0-9]{4})-([0-9]{2})-([0-9]{2})/);
   if(!m)return null;
   const d=new Date(+m[1],+m[2]-1,+m[3]);
   return isNaN(d)?null:d;
@@ -675,35 +675,9 @@ function r2(){
   st('k2tr',fN(bk['In Transit']));st('k2trm',tot?`${pct(bk['In Transit'],tot)} of filtered`:'—');
   st('k2rto',fN(bk.RTO+bk.Others));st('k2rtom',`${bk.RTO} RTO \u00b7 ${bk.Others} other`);
   const tv=rows.filter(r=>r.bucket==='Delivered'&&r.tat!==null).map(r=>r.tat);
-  if(tv.length){const avg=(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1);st('k2tat',avg);st('k2tatm',`avg days \u00b7 ${tv.length} delivered orders`);}
+  if(tv.length){const avg=(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1);st('k2tat',avg);st('k2tatm',avg+' days avg');}
   else{st('k2tat','\u2014');st('k2tatm','no TAT data in Column L yet');}
-  mkC('cLM',{type:'doughnut',data:{labels:['Delivered','In Transit','RTO','Others'],datasets:[{data:[bk.Delivered,bk['In Transit'],bk.RTO,bk.Others],backgroundColor:[C.teal,C.blueLt,C.amber,C.red],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}});
-  // Status mix breakdown with %
-  const lmPal = [C.teal,C.blueLt,C.amber,C.red];
-  const lmLabels = ['Delivered','In Transit','RTO','Others'];
-  const lmData = [bk.Delivered,bk['In Transit'],bk.RTO,bk.Others];
-  const lmTotal = Math.max(tot,1);
-  document.getElementById('lLMBreak').innerHTML = lmLabels.map((l,i)=>`
-    <div class="bkr">
-      <div class="bkn"><span class="bks" style="background:${lmPal[i]}"></span>${l}</div>
-      <div class="bkv">${fN(lmData[i])}</div>
-      <div class="bkbw"><div class="bkbf" style="width:${pr(lmData[i],lmTotal)}%;background:${lmPal[i]}"></div></div>
-      <div class="bkp">${pct(lmData[i],lmTotal)}</div>
-    </div>`).join('');
-
-  /* TRENDLINE — bars = % of total filtered period, tooltip shows count + % */
-  const bw=new Map();
-  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{total:0,delivered:0});bw.get(k).total++;if(r.bucket==='Delivered')bw.get(k).delivered++;});
-  const sw=[...bw.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
-  const pt=Math.max(tot,1);
-  const tpct=sw.map(([,v])=>+((v.total/pt)*100).toFixed(1));
-  const dpct=sw.map(([,v])=>+((v.delivered/pt)*100).toFixed(1));
-  const rawT=sw.map(([,v])=>v.total),rawD=sw.map(([,v])=>v.delivered);
-  mkC('cTr',{type:'bar',data:{labels:sw.map(([k])=>fmtD(new Date(k))),datasets:[{label:'Total Kits',data:tpct,backgroundColor:'rgba(123,168,201,.5)',borderColor:C.blueLt,borderWidth:1.5,borderRadius:4,rawC:rawT},{label:'Delivered',data:dpct,backgroundColor:'rgba(15,118,110,.65)',borderColor:C.teal,borderWidth:1.5,borderRadius:4,rawC:rawD}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.dataset.rawC[ctx.dataIndex]} kits (${ctx.parsed.y}% of period total)`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',callback:vv=>vv+'%'}}}}});
-  const gr=new Map();rows.forEach(r=>{const k=r.rawStatus||'Unknown';gr.set(k,(gr.get(k)||0)+1);});
-  const sorted=[...gr.entries()].sort((a,b)=>b[1]-a[1]);
-  document.getElementById('lLS').innerHTML=sorted.length?sorted.map(([k,vv])=>`<div class="spl"><div class="pn">${esc(k)}</div><div class="pv">${fN(vv)}<span class="pp">${pct(vv,tot)}</span></div></div>`).join(''):'<div class="emp">No shipments for current filters</div>';
-}
+  mkC('cLM',{type:'doughnut',data:{labels:['Delivered','In Transit','RTO','Others'],datasets:[{data:[bk.Delivered,bk['In Transit'],bk.RTO,bk.Others],backgroundColor:[C.teal,C.blueLt,C.amber,C.red],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?((ctx.parsed/t)*100).toFixed(1):0;return ctx.label+': '+fN(ctx.parsed)+' ('+p+'%)';}}}}}});
 /* RENDER 3 */
 function r3(){
   const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
@@ -730,45 +704,7 @@ function r4(){
   st('k4r',fN(cts.Rejected));st('k4rm',tot?`${pct(cts.Rejected,tot)} of total`:'—');
   st('k4p',fN(cts['Completed – Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed – Dispatch Pending'],tot)} of total`:'—');
   const pl=Object.keys(cts).filter(k=>cts[k]>0);
-  mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(k=>cts[k]),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{display:false}}}});
-  const pills=Object.entries(cts).filter(([,vv])=>vv>0).sort((a,b)=>b[1]-a[1]);
-  // Doc pie breakdown with %
-  const dpPal=[C.teal,C.amber,C.red,C.blueLt,C.slate];
-  const dpLabels=Object.keys(cts).filter(k=>cts[k]>0);
-  document.getElementById('lDPBreak').innerHTML=dpLabels.map((k,i)=>`
-    <div class="bkr">
-      <div class="bkn"><span class="bks" style="background:${dpPal[i%dpPal.length]}"></span>${esc(k)}</div>
-      <div class="bkv">${fN(cts[k])}</div>
-      <div class="bkbw"><div class="bkbf" style="width:${pr(cts[k],tot)}%;background:${dpPal[i%dpPal.length]}"></div></div>
-      <div class="bkp">${pct(cts[k],tot)}</div>
-    </div>`).join('');
-  document.getElementById('lDS').innerHTML=pills.length?pills.map(([k,vv])=>`<div class="spl"><div class="pn">${esc(k)}</div><div class="pv">${fN(vv)}<span class="pp">${pct(vv,tot)}</span></div></div>`).join(''):'<div class="emp">No records for current filters</div>';
-  const bw=new Map();
-  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{Completed:0,Rejected:0,'Missing Documents':0,total:0});const b=bw.get(k);if(b[r.docStatus]!=null)b[r.docStatus]++;b.total++;});
-  const sw=[...bw.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
-  mkC('cDT',{type:'line',data:{labels:sw.map(([k])=>fmtD(new Date(k))),datasets:[
-    {label:'Completed',
-      data:sw.map(([,v])=>v.total?+((v.Completed/v.total)*100).toFixed(1):0),
-      rawC:sw.map(([,v])=>v.Completed), wkTot:sw.map(([,v])=>v.total),
-      borderColor:C.teal,backgroundColor:'rgba(15,118,110,.12)',borderWidth:2.5,tension:.35,fill:true,pointRadius:2.5},
-    {label:'Missing Documents',
-      data:sw.map(([,v])=>v.total?+((v['Missing Documents']/v.total)*100).toFixed(1):0),
-      rawC:sw.map(([,v])=>v['Missing Documents']), wkTot:sw.map(([,v])=>v.total),
-      borderColor:C.amber,backgroundColor:'rgba(183,121,31,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2},
-    {label:'Rejected',
-      data:sw.map(([,v])=>v.total?+((v.Rejected/v.total)*100).toFixed(1):0),
-      rawC:sw.map(([,v])=>v.Rejected), wkTot:sw.map(([,v])=>v.total),
-      borderColor:C.red,backgroundColor:'rgba(181,71,71,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2}
-  ]},options:{responsive:true,maintainAspectRatio:false,
-    plugins:{
-      legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}},
-      tooltip:{callbacks:{label:ctx=>{const rc=ctx.dataset.rawC[ctx.dataIndex];const wt=ctx.dataset.wkTot[ctx.dataIndex];return`${ctx.dataset.label}: ${rc} patients (${ctx.parsed.y}% of ${wt} that week)`;}}}
-    },
-    scales:{
-      x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},
-      y:{beginAtZero:true,max:100,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',callback:vv=>vv+'%'}}
-    }}});
-}
+  mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(function(k){return cts[k];}),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?((ctx.parsed/t)*100).toFixed(1):0;return ctx.label+': '+fN(ctx.parsed)+' ('+p+'%)';}}}}}});
 /* RESETS */
 function rst1(){document.getElementById('p1f').value='';document.getElementById('p1t').value='';document.getElementById('p1d').value='';document.getElementById('p1s').value='';document.getElementById('p1q').value='';selDrs=new Set();updDrLbl();initF();r1();}
 function rst2(){document.getElementById('p2f').value='';document.getElementById('p2t').value='';document.getElementById('p2st').value='';document.getElementById('p2s').value='';cascM2();r2();}
@@ -1416,18 +1352,19 @@ function r5(){
       bv.coins+=r.coinRedeemed; bv.amount+=r.amount; bv.count++;
     });
     const brands=[...brandMap.entries()].sort((a,b)=>b[1].coins-a[1].coins);
-    redemEl.innerHTML=`
-      <div style="margin-bottom:10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600">Brand Breakdown</div>
-      ${brands.map(([brand,v])=>`
-        <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px 16px;padding:10px 0;border-bottom:1px solid var(--line2);align-items:center">
-          <div style="font-size:13px;font-weight:500;color:var(--ink)">${esc(brand)}</div>
-          <div style="text-align:right"><div style="font-family:'Fraunces',serif;font-size:15px">${fN(v.coins)}</div><div style="font-size:10px;color:var(--muted)">coins</div></div>
-          <div style="text-align:right"><div style="font-family:'Fraunces',serif;font-size:15px">₹${fN(v.amount)}</div><div style="font-size:10px;color:var(--muted)">value</div></div>
-        </div>`).join('')}
-      <div style="padding-top:10px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
-        <span>${redeemRows.length} redemption${redeemRows.length!==1?'s':''}</span>
-        <span>Total: ${fN(totalRedeemed)} coins · ₹${fN(totalAmount)}</span>
-      </div>`;
+    var redemHtml='<div style="margin-bottom:10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600">Brand Breakdown</div>';
+    brands.forEach(function(entry){
+      var brand=entry[0]; var v=entry[1];
+      redemHtml+='<div style="display:grid;grid-template-columns:1fr auto auto;gap:8px 16px;padding:10px 0;border-bottom:1px solid var(--line2);align-items:center">';
+      redemHtml+='<div style="font-size:13px;font-weight:500;color:var(--ink)">'+esc(brand)+'</div>';
+      redemHtml+='<div style="text-align:right"><div style="font-family:Fraunces,serif;font-size:15px">'+fN(v.coins)+'</div><div style="font-size:10px;color:var(--muted)">coins</div></div>';
+      redemHtml+='<div style="text-align:right"><div style="font-family:Fraunces,serif;font-size:15px">₹'+fN(v.amount)+'</div><div style="font-size:10px;color:var(--muted)">value</div></div>';
+      redemHtml+='</div>';
+    });
+    redemHtml+='<div style="padding-top:10px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">';
+    redemHtml+='<span>'+redeemRows.length+' redemption'+(redeemRows.length!==1?'s':'')+'</span>';
+    redemHtml+='<span>Total: '+fN(totalRedeemed)+' coins · ₹'+fN(totalAmount)+'</span></div>';
+    redemEl.innerHTML=redemHtml;
   }
 
   // Trend — daily points
