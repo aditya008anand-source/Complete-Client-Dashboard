@@ -677,7 +677,7 @@ function r2(){
   const tv=rows.filter(r=>r.bucket==='Delivered'&&r.tat!==null).map(r=>r.tat);
   if(tv.length){const avg=(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1);st('k2tat',avg);st('k2tatm',`avg days \u00b7 ${tv.length} delivered orders`);}
   else{st('k2tat','\u2014');st('k2tatm','no TAT data in Column L yet');}
-  mkC('cLM',{type:'doughnut',data:{labels:['Delivered','In Transit','RTO','Others'],datasets:[{data:[bk.Delivered,bk['In Transit'],bk.RTO,bk.Others],backgroundColor:[C.teal,C.blueLt,C.amber,C.red],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
+  mkC('cLM',{type:'doughnut',data:{labels:['Delivered','In Transit','RTO','Others'],datasets:[{data:[bk.Delivered,bk['In Transit'],bk.RTO,bk.Others],backgroundColor:[C.teal,C.blueLt,C.amber,C.red],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:12,boxHeight:12,padding:12,font:{size:12,family:'Inter'},generateLabels:function(chart){const data=chart.data;return data.labels.map(function(label,i){const val=data.datasets[0].data[i];const total=data.datasets[0].data.reduce((a,b)=>a+b,0);const pctVal=total?((val/total)*100).toFixed(1)+'%':'0%';return{text:label+': '+fN(val)+' ('+pctVal+')',fillStyle:data.datasets[0].backgroundColor[i],hidden:false,index:i};});}}}}}});
   // Status mix breakdown with %
   const lmPal = [C.teal,C.blueLt,C.amber,C.red];
   const lmLabels = ['Delivered','In Transit','RTO','Others'];
@@ -730,7 +730,7 @@ function r4(){
   st('k4r',fN(cts.Rejected));st('k4rm',tot?`${pct(cts.Rejected,tot)} of total`:'—');
   st('k4p',fN(cts['Completed – Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed – Dispatch Pending'],tot)} of total`:'—');
   const pl=Object.keys(cts).filter(k=>cts[k]>0);
-  mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(k=>cts[k]),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
+  mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(k=>cts[k]),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:12,boxHeight:12,padding:12,font:{size:11,family:'Inter'},generateLabels:function(chart){const data=chart.data;return data.labels.map(function(label,i){const val=data.datasets[0].data[i];const total=data.datasets[0].data.reduce((a,b)=>a+b,0);const pctVal=total?((val/total)*100).toFixed(1)+'%':'0%';return{text:label+': '+fN(val)+' ('+pctVal+')',fillStyle:data.datasets[0].backgroundColor[i],hidden:false,index:i};});}}}}}});
   const pills=Object.entries(cts).filter(([,vv])=>vv>0).sort((a,b)=>b[1]-a[1]);
   // Doc pie breakdown with %
   const dpPal=[C.teal,C.amber,C.red,C.blueLt,C.slate];
