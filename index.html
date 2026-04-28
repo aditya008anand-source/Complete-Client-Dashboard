@@ -678,6 +678,7 @@ function r2(){
   if(tv.length){const avg=(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1);st('k2tat',avg);st('k2tatm',avg+' days avg');}
   else{st('k2tat','\u2014');st('k2tatm','no TAT data in Column L yet');}
   mkC('cLM',{type:'doughnut',data:{labels:['Delivered','In Transit','RTO','Others'],datasets:[{data:[bk.Delivered,bk['In Transit'],bk.RTO,bk.Others],backgroundColor:[C.teal,C.blueLt,C.amber,C.red],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?((ctx.parsed/t)*100).toFixed(1):0;return ctx.label+': '+fN(ctx.parsed)+' ('+p+'%)';}}}}}});
+}
 /* RENDER 3 */
 function r3(){
   const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
@@ -705,6 +706,7 @@ function r4(){
   st('k4p',fN(cts['Completed – Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed – Dispatch Pending'],tot)} of total`:'—');
   const pl=Object.keys(cts).filter(k=>cts[k]>0);
   mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(function(k){return cts[k];}),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?((ctx.parsed/t)*100).toFixed(1):0;return ctx.label+': '+fN(ctx.parsed)+' ('+p+'%)';}}}}}});
+}
 /* RESETS */
 function rst1(){document.getElementById('p1f').value='';document.getElementById('p1t').value='';document.getElementById('p1d').value='';document.getElementById('p1s').value='';document.getElementById('p1q').value='';selDrs=new Set();updDrLbl();initF();r1();}
 function rst2(){document.getElementById('p2f').value='';document.getElementById('p2t').value='';document.getElementById('p2st').value='';document.getElementById('p2s').value='';cascM2();r2();}
