@@ -409,7 +409,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   </div>
   <div class="krow">
     <div class="kpi"><div class="kl">Total Kits</div><div class="kv" id="k2t">—</div><div class="km">shipments created</div></div>
-    <div class="kpi blue"><div class="kl">Delivery Success Rate</div><div class="kv" id="k2r">—</div><div class="km">delivered ÷ total</div></div>
+    <div class="kpi blue"><div class="kl">Delivery Success Rate</div><div class="kv" id="k2r">—</div><div class="km" id="k2rm">— delivered</div></div>
     <div class="kpi amb" style="overflow:visible">
       <div class="kl">In Transit</div>
       <div class="kv" id="k2tr">—</div>
@@ -435,7 +435,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   </div>
   <div class="grid g21">
     <div class="card"><div class="ct">Weekly Delivery Trend <span style="font-weight:400;color:var(--muted);font-size:10px;text-transform:none;letter-spacing:0;margin-left:6px">% of total filtered period</span></div><div class="cw"><canvas id="cTr"></canvas></div></div>
-    <div class="card"><div class="ct">Status Mix</div><div class="cw sh"><canvas id="cLM"></canvas></div></div>
+    <div class="card"><div class="ct">Status Mix</div><div class="cw sh"><canvas id="cLM"></canvas></div><div class="bkl" id="lLMBreak" style="margin-top:14px"></div></div>
   </div>
   <div class="card" style="margin-top:14px"><div class="ct">Detailed Status Breakdown</div><div class="sgrd" id="lLS"></div></div>
 </section>
@@ -487,16 +487,13 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   </div>
   <div class="grid g21">
     <div class="card"><div class="ct">Weekly Trend</div><div class="cw"><canvas id="cDT"></canvas></div></div>
-    <div class="card"><div class="ct">Status Distribution</div><div class="cw sh"><canvas id="cDP"></canvas></div></div>
+    <div class="card"><div class="ct">Status Distribution</div><div class="cw sh"><canvas id="cDP"></canvas></div><div class="bkl" id="lDPBreak" style="margin-top:14px"></div></div>
   </div>
   <div class="card" style="margin-top:14px"><div class="ct">Detailed Status Breakdown</div><div class="sgrd" id="lDS"></div></div>
 </section>
 <hr class="dv"/>
 
-<section class="module">
-  <div class="mh"><span class="mn">05</span><h2>Loyalty Rewards</h2></div>
-  <div class="phc"><div class="phi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div><h3>Loyalty Rewards Module</h3><p>Patient engagement, reward points, and redemption analytics will appear here.</p></div>
-</section>
+
 <section class="module" style="margin-top:24px">
   <div class="mh"><span class="mn">06</span><h2>App Engagement</h2></div>
   <div class="phc"><div class="phi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div><h3>App Engagement Module</h3><p>Daily active users, session duration, and feature adoption will appear here once the data feed is live.</p></div>
@@ -510,6 +507,7 @@ const SHEETS={
   patient:'/api/sheet?gid=1310523268',
   logistics:'/api/sheet?gid=1879543153',
   consult:'/api/sheet?gid=419247046',
+  loyalty:'/api/sheet?gid=975503331',
 };
 const ZLOGO='https://www.zyduslife.com/public/images/zydus-logo.png';
 const C={teal:'#0f766e',teal2:'#14b8a6',blueLt:'#7ba8c9',blue:'#1e6091',amber:'#b7791f',red:'#b54747',slate:'#64748b',mint:'#6fbfab'};
@@ -528,6 +526,20 @@ const cCon=s=>{const k=nci(s);if(k.includes('booked'))return'Booked';if(k.includ
 const cCch=s=>{const k=nci(s);if(k.includes('physio'))return'Physiotherapist';if(k.includes('nutri')||k.includes('diet'))return'Nutritionist';return s;};
 const CS={mumbai:'Maharashtra',thane:'Maharashtra',pune:'Maharashtra',nashik:'Maharashtra',nagpur:'Maharashtra',ahmednagar:'Maharashtra','ahmed nagar':'Maharashtra',kolhapur:'Maharashtra',amravati:'Maharashtra',jalgaon:'Maharashtra',wardha:'Maharashtra',sangli:'Maharashtra',solapur:'Maharashtra',beed:'Maharashtra',satara:'Maharashtra',nanded:'Maharashtra',yavatmal:'Maharashtra',kamothe:'Maharashtra',raigarh:'Maharashtra',bangalore:'Karnataka',bengaluru:'Karnataka','bangalore rural':'Karnataka',mysore:'Karnataka',dharwad:'Karnataka',shimoga:'Karnataka',chitradurga:'Karnataka',kolar:'Karnataka',gadag:'Karnataka',hassan:'Karnataka',tumkur:'Karnataka',davangere:'Karnataka',koppal:'Karnataka',bijapur:'Karnataka','dakshina kannada':'Karnataka',hyderabad:'Telangana','k.v.rangareddy':'Telangana','kv rangareddy':'Telangana',warangal:'Telangana',khammam:'Telangana',nalgonda:'Telangana','mathrusri nagar':'Telangana',visakhapatnam:'Andhra Pradesh',guntur:'Andhra Pradesh','east godavari':'Andhra Pradesh','west godavari':'Andhra Pradesh',chittoor:'Andhra Pradesh',kurnool:'Andhra Pradesh',chennai:'Tamil Nadu',kanchipuram:'Tamil Nadu',tiruvallur:'Tamil Nadu',coimbatore:'Tamil Nadu',krishnagiri:'Tamil Nadu',namakkal:'Tamil Nadu',dharmapuri:'Tamil Nadu',salem:'Tamil Nadu',cuddalore:'Tamil Nadu',vellore:'Tamil Nadu',tiruchirappalli:'Tamil Nadu',kozhikode:'Kerala',ernakulam:'Kerala',malappuram:'Kerala',thrissur:'Kerala',palakkad:'Kerala',kannur:'Kerala',kollam:'Kerala',kottayam:'Kerala',thiruvananthapuram:'Kerala',kolkata:'West Bengal','north 24 parganas':'West Bengal','south 24 parganas':'West Bengal',hooghly:'West Bengal',nadia:'West Bengal',howrah:'West Bengal','north dinajpur':'West Bengal','west midnapore':'West Bengal',jalpaiguri:'West Bengal',bardhaman:'West Bengal','kolkata east':'West Bengal',delhi:'Delhi','east delhi':'Delhi','west delhi':'Delhi','north delhi':'Delhi','north west delhi':'Delhi','south delhi':'Delhi','south west delhi':'Delhi','central delhi':'Delhi',gurgaon:'Haryana',gurugram:'Haryana',faridabad:'Haryana',ambala:'Haryana',sonipat:'Haryana',panipat:'Haryana',karnal:'Haryana',palwal:'Haryana',jaipur:'Rajasthan',jodhpur:'Rajasthan',pali:'Rajasthan',ahmedabad:'Gujarat',surat:'Gujarat',anand:'Gujarat',kheda:'Gujarat',banaskantha:'Gujarat',vadodara:'Gujarat',rajkot:'Gujarat',indore:'Madhya Pradesh',jhabua:'Madhya Pradesh',satna:'Madhya Pradesh',shahdol:'Madhya Pradesh',anuppur:'Madhya Pradesh',ujjain:'Madhya Pradesh',ghaziabad:'Uttar Pradesh','gautam buddha nagar':'Uttar Pradesh','greater noida':'Uttar Pradesh','kanpur nagar':'Uttar Pradesh',lucknow:'Uttar Pradesh',saharanpur:'Uttar Pradesh',bareilly:'Uttar Pradesh',firozabad:'Uttar Pradesh',kannauj:'Uttar Pradesh',pilibhit:'Uttar Pradesh',sonbhadra:'Uttar Pradesh','sant kabir nagar':'Uttar Pradesh',ghazipur:'Uttar Pradesh',aligarh:'Uttar Pradesh',agra:'Uttar Pradesh',mathura:'Uttar Pradesh',jaunpur:'Uttar Pradesh',ludhiana:'Punjab',amritsar:'Punjab',jalandhar:'Punjab',pathankot:'Punjab',rupnagar:'Punjab',bathinda:'Punjab',patna:'Bihar',saharsa:'Bihar',vaishali:'Bihar',gaya:'Bihar','east singhbhum':'Jharkhand',dhanbad:'Jharkhand',ranchi:'Jharkhand',khorda:'Odisha',ganjam:'Odisha',cuttack:'Odisha',bhadrak:'Odisha',sambalpur:'Odisha',gajapati:'Odisha',raipur:'Chhattisgarh',durg:'Chhattisgarh',kamrup:'Assam',darrang:'Assam',srinagar:'Jammu & Kashmir',jammu:'Jammu & Kashmir',budgam:'Jammu & Kashmir','imphal east':'Manipur','west tripura':'Tripura',changlang:'Arunachal Pradesh',pondicherry:'Puducherry'};
 const ctySt=c=>CS[nci(c)]||'';
+function parseLoyaltyDate(s){
+  const v=n(s);if(!v)return null;
+  const m=v.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(!m)return null;
+  const d=new Date(+m[1],+m[2]-1,+m[3]);
+  return isNaN(d)?null:d;
+}
+function cDrFromPlan(plan){
+  const p=(plan||'').toLowerCase();
+  if(p.includes('semaglyn'))return'Semaglyn';
+  if(p.includes('mashema'))return'Mashema';
+  if(p.includes('alterme'))return'AlterMe';
+  return'';
+}
 const pMDY=s=>{const v=n(s);if(!v)return null;const m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);if(!m)return null;let[,mm,dd,yy]=m;if(yy.length===2)yy=+yy<50?'20'+yy:'19'+yy;const d=new Date(+yy,+mm-1,+dd);return isNaN(d)?null:d;};
 const pDMY=s=>{const v=n(s);if(!v||v==='N/A'||v==='#N/A')return null;const m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);if(!m)return null;let[,dd,mm,yy]=m;if(yy.length===2)yy=+yy<50?'20'+yy:'19'+yy;const d=new Date(+yy,+mm-1,+dd);return isNaN(d)?null:d;};
 const ymd=d=>d.toISOString().slice(0,10);
@@ -535,20 +547,35 @@ const sow=d=>{const x=new Date(d);const diff=(x.getDay()+6)%7;x.setDate(x.getDat
 const fmtD=d=>d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
 const inR=(d,f,t)=>{if(!d)return false;if(f&&d<f)return false;if(t&&d>t)return false;return true;};
 const pTAT=s=>{const v=n(s);if(!v||v==='#N/A'||v==='N/A')return null;const x=parseFloat(v);return isNaN(x)?null:x;};
-const DS={patient:[],logistics:[],consult:[]};
+const DS={patient:[],logistics:[],consult:[],loyalty:[]};
 async function fcsv(url){return new Promise((r,j)=>{Papa.parse(url,{download:true,header:true,skipEmptyLines:true,complete:x=>r(x.data),error:e=>j(e)});});}
 async function loadAll(){
   document.getElementById('loader').classList.remove('hide');
   try{
-    const[p,l,c]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult)]);
+    const[p,l,c,ly]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty)]);
     DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool'])}));
     DS.logistics=l.map(r=>({name:n(r['Customer Name']),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
     DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status'])}));
+    // Transform loyalty — Col D=activityType, F=coinsEarned, G=activityDate, I=planName
+    // Redemption: Col V=amount, W=coin_amount, X=brand_name, Y=order_status, U=redemption date
+    DS.loyalty=ly.map(r=>({
+      activityType: n(r['activityType']),
+      coinsEarned:  parseFloat(n(r['coinsEarned']))||0,
+      _date:        parseLoyaltyDate(n(r['activityDate'])),
+      planName:     n(r['planName']),
+      drug:         cDrFromPlan(n(r['planName'])),
+      // Redemption side
+      amount:       parseFloat(n(r['amount']))||0,
+      coinRedeemed: parseFloat(n(r['coin_amount']))||0,
+      brand:        n(r['brand_name']),
+      redeemStatus: n(r['order_status']),
+      _redeemDate:  parseLoyaltyDate(n(r['activityDate.1']||r['activityDate']||'')),
+    })).filter(r=>r.activityType||r.coinRedeemed>0);
     const img=document.getElementById('zLogo');
     img.src=ZLOGO;img.onload=()=>{img.style.display='block';document.getElementById('lph').style.display='none';};
-    initF();r1();r2();r3();r4();
+    initF();r1();r2();r3();r4();r5();
     document.getElementById('lastUp').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('fSt').textContent=`Patients: ${DS.patient.length} \u00b7 Kits: ${DS.logistics.length} \u00b7 Consultations: ${DS.consult.length}`;
+    document.getElementById('fSt').textContent=`Patients: ${DS.patient.length} \u00b7 Kits: ${DS.logistics.length} \u00b7 Consultations: ${DS.consult.length} \u00b7 Loyalty: ${DS.loyalty.length}`;
   }catch(e){console.error(e);alert('Could not load data. Ensure sheets are published to web.\n'+e);}
   document.getElementById('loader').classList.add('hide');
 }
@@ -623,13 +650,26 @@ function r2(){
   const rows=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;if(fs&&r.state!==fs)return false;return true;});
   const tot=rows.length;const bk={Delivered:0,'In Transit':0,RTO:0,Others:0};
   rows.forEach(r=>{bk[r.bucket]=(bk[r.bucket]||0)+1;});
-  st('k2t',fN(tot));st('k2r',tot?((bk.Delivered/tot)*100).toFixed(1)+'%':'—');
+  st('k2t',fN(tot));st('k2r',tot?((bk.Delivered/tot)*100).toFixed(1)+'%':'—');st('k2rm',fN(bk.Delivered)+' delivered');
   st('k2tr',fN(bk['In Transit']));st('k2trm',tot?`${pct(bk['In Transit'],tot)} of filtered`:'—');
   st('k2rto',fN(bk.RTO+bk.Others));st('k2rtom',`${bk.RTO} RTO \u00b7 ${bk.Others} other`);
   const tv=rows.filter(r=>r.bucket==='Delivered'&&r.tat!==null).map(r=>r.tat);
   if(tv.length){const avg=(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1);st('k2tat',avg);st('k2tatm',`avg days \u00b7 ${tv.length} delivered orders`);}
   else{st('k2tat','\u2014');st('k2tatm','no TAT data in Column L yet');}
   mkC('cLM',{type:'doughnut',data:{labels:['Delivered','In Transit','RTO','Others'],datasets:[{data:[bk.Delivered,bk['In Transit'],bk.RTO,bk.Others],backgroundColor:[C.teal,C.blueLt,C.amber,C.red],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
+  // Status mix breakdown with %
+  const lmPal = [C.teal,C.blueLt,C.amber,C.red];
+  const lmLabels = ['Delivered','In Transit','RTO','Others'];
+  const lmData = [bk.Delivered,bk['In Transit'],bk.RTO,bk.Others];
+  const lmTotal = Math.max(tot,1);
+  document.getElementById('lLMBreak').innerHTML = lmLabels.map((l,i)=>`
+    <div class="bkr">
+      <div class="bkn"><span class="bks" style="background:${lmPal[i]}"></span>${l}</div>
+      <div class="bkv">${fN(lmData[i])}</div>
+      <div class="bkbw"><div class="bkbf" style="width:${pr(lmData[i],lmTotal)}%;background:${lmPal[i]}"></div></div>
+      <div class="bkp">${pct(lmData[i],lmTotal)}</div>
+    </div>`).join('');
+
   /* TRENDLINE — bars = % of total filtered period, tooltip shows count + % */
   const bw=new Map();
   rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{total:0,delivered:0});bw.get(k).total++;if(r.bucket==='Delivered')bw.get(k).delivered++;});
@@ -671,6 +711,16 @@ function r4(){
   const pl=Object.keys(cts).filter(k=>cts[k]>0);
   mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(k=>cts[k]),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
   const pills=Object.entries(cts).filter(([,vv])=>vv>0).sort((a,b)=>b[1]-a[1]);
+  // Doc pie breakdown with %
+  const dpPal=[C.teal,C.amber,C.red,C.blueLt,C.slate];
+  const dpLabels=Object.keys(cts).filter(k=>cts[k]>0);
+  document.getElementById('lDPBreak').innerHTML=dpLabels.map((k,i)=>`
+    <div class="bkr">
+      <div class="bkn"><span class="bks" style="background:${dpPal[i%dpPal.length]}"></span>${esc(k)}</div>
+      <div class="bkv">${fN(cts[k])}</div>
+      <div class="bkbw"><div class="bkbf" style="width:${pr(cts[k],tot)}%;background:${dpPal[i%dpPal.length]}"></div></div>
+      <div class="bkp">${pct(cts[k],tot)}</div>
+    </div>`).join('');
   document.getElementById('lDS').innerHTML=pills.length?pills.map(([k,vv])=>`<div class="spl"><div class="pn">${esc(k)}</div><div class="pv">${fN(vv)}<span class="pp">${pct(vv,tot)}</span></div></div>`).join(''):'<div class="emp">No records for current filters</div>';
   const bw=new Map();
   rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{Completed:0,Rejected:0,'Missing Documents':0,total:0});const b=bw.get(k);if(b[r.docStatus]!=null)b[r.docStatus]++;b.total++;});
@@ -1251,6 +1301,1616 @@ async function changeRole(uid, newRole){
   await selectUser(uid); // refresh panel
   await loadUserList();  // refresh list
   alert('Role updated successfully!');
+}
+
+/* ══ MODULE 5 — LOYALTY REWARDS ══ */
+function oF5(){r5();}
+function rst5(){
+  document.getElementById('p5f').value='';
+  document.getElementById('p5t').value='';
+  document.getElementById('p5d').value='';
+  r5();
+}
+
+function r5(){
+  if(!DS.loyalty||!DS.loyalty.length){
+    document.getElementById('k5earned').textContent='—';
+    document.getElementById('k5redeemed').textContent='—';
+    document.getElementById('k5patients').textContent='—';
+    document.getElementById('k5avg').textContent='—';
+    document.getElementById('l5activity').innerHTML='<div class="emp">No loyalty data available</div>';
+    document.getElementById('l5redemption').innerHTML='<div class="emp">No redemption data</div>';
+    return;
+  }
+
+  const{from,to}=gR('p5f','p5t');
+  const fd=gv('p5d');
+
+  // Filter loyalty rows
+  const rows=DS.loyalty.filter(r=>{
+    if(from||to){if(!inR(r._date,from,to))return false;}
+    if(fd&&r.drug!==fd)return false;
+    return true;
+  });
+
+  // Populate drug filter (cascading)
+  const avDrugs=[...new Set(DS.loyalty.filter(r=>{
+    const{from,to}=gR('p5f','p5t');
+    if(from||to){if(!inR(r._date,from,to))return false;}
+    return true;
+  }).map(r=>r.drug).filter(Boolean))].sort();
+  fsl('p5d',avDrugs,'All Drugs',fd);
+
+  // KPI 1 — Total Points Earned
+  const totalEarned = rows.reduce((s,r)=>s+r.coinsEarned,0);
+  st('k5earned',fN(totalEarned));
+
+  // KPI 2 — Redemption (only rows with redemption data)
+  const redeemRows = rows.filter(r=>r.coinRedeemed>0);
+  const totalRedeemed = redeemRows.reduce((s,r)=>s+r.coinRedeemed,0);
+  const totalAmount = redeemRows.reduce((s,r)=>s+r.amount,0);
+  st('k5redeemed',fN(totalRedeemed));
+  st('k5redeemedm','₹'+fN(totalAmount)+' in value');
+
+  // KPI 3 — Active patients (unique)
+  const uniquePts = new Set(rows.map(r=>r.patientId||r.activityType).filter(Boolean)).size;
+  // Use row count as proxy if patientId not available
+  const earnRows = rows.filter(r=>r.coinsEarned>0);
+  st('k5patients',fN(earnRows.length));
+  st('k5avg', earnRows.length? (totalEarned/earnRows.length).toFixed(1) : '—');
+
+  // Activity breakdown — funnel style
+  const actMap = new Map();
+  rows.filter(r=>r.activityType&&r.coinsEarned>0).forEach(r=>{
+    actMap.set(r.activityType,(actMap.get(r.activityType)||0)+1);
+  });
+  const actEntries=[...actMap.entries()].sort((a,b)=>b[1]-a[1]);
+  const actTotal=actEntries.reduce((s,[,v])=>s+v,0);
+  const actColors={steps:C.teal,diet:C.blue,BCA:C.amber,sleep:C.blueLt,exercise:C.mint,water:C.teal2};
+  const actEl=document.getElementById('l5activity');
+  if(!actEntries.length){actEl.innerHTML='<div class="emp">No activity data for selected filters</div>';}
+  else{
+    const mx=Math.max(actEntries[0][1],1);
+    actEl.innerHTML=actEntries.map(([k,v])=>`
+      <div class="fnr">
+        <div class="fnl2" style="text-transform:capitalize">${esc(k)}</div>
+        <div class="fnb"><div class="fnf" style="width:${pr(v,mx)}%;background:${actColors[k]||C.slate}">
+          <span>${fN(v)}</span>
+        </div></div>
+        <div class="fnv" style="font-size:12px;color:var(--muted)">${pct(v,actTotal)}</div>
+      </div>`).join('');
+  }
+
+  // Redemption breakdown — brand wise
+  const redemEl=document.getElementById('l5redemption');
+  if(!redeemRows.length){
+    redemEl.innerHTML='<div class="emp">No redemptions in selected filters</div>';
+  } else {
+    // Group by brand
+    const brandMap=new Map();
+    redeemRows.forEach(r=>{
+      const b=r.brand||'Other';
+      if(!brandMap.has(b))brandMap.set(b,{coins:0,amount:0,count:0});
+      const bv=brandMap.get(b);
+      bv.coins+=r.coinRedeemed; bv.amount+=r.amount; bv.count++;
+    });
+    const brands=[...brandMap.entries()].sort((a,b)=>b[1].coins-a[1].coins);
+    redemEl.innerHTML=`
+      <div style="margin-bottom:10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600">Brand Breakdown</div>
+      ${brands.map(([brand,v])=>`
+        <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px 16px;padding:10px 0;border-bottom:1px solid var(--line2);align-items:center">
+          <div style="font-size:13px;font-weight:500;color:var(--ink)">${esc(brand)}</div>
+          <div style="text-align:right"><div style="font-family:'Fraunces',serif;font-size:15px">${fN(v.coins)}</div><div style="font-size:10px;color:var(--muted)">coins</div></div>
+          <div style="text-align:right"><div style="font-family:'Fraunces',serif;font-size:15px">₹${fN(v.amount)}</div><div style="font-size:10px;color:var(--muted)">value</div></div>
+        </div>`).join('')}
+      <div style="padding-top:10px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+        <span>${redeemRows.length} redemption${redeemRows.length!==1?'s':''}</span>
+        <span>Total: ${fN(totalRedeemed)} coins · ₹${fN(totalAmount)}</span>
+      </div>`;
+  }
+
+  // Trend — daily points
+  const dayMap=new Map();
+  rows.filter(r=>r._date&&r.coinsEarned>0).forEach(r=>{
+    const k=ymd(r._date);
+    dayMap.set(k,(dayMap.get(k)||0)+r.coinsEarned);
+  });
+  const dayArr=[...dayMap.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  mkC('c5trend',{type:'line',
+    data:{labels:dayArr.map(([k])=>fmtD(new Date(k))),
+      datasets:[{label:'Points Earned',data:dayArr.map(([,v])=>v),
+        borderColor:C.teal,backgroundColor:'rgba(15,118,110,.12)',
+        borderWidth:2.5,tension:.35,fill:true,pointRadius:2.5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},
+              y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}}}}
+  });
+}
+
+Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
+// loadAll() is called by Firebase auth state listener
+</script>
+
+<!-- ══ CHANGE PASSWORD MODAL ══ -->
+<div class="chpwd-modal" id="chpwdModal">
+  <div class="chpwd-card">
+    <h3 id="chpwdTitle">Change Password</h3>
+    <p id="chpwdSubtitle">Enter your current password and choose a new one.</p>
+    <div class="chpwd-user-tag" id="chpwdUserTag" style="display:none"></div>
+    <div class="chpwd-error" id="chpwdError"></div>
+    <div class="chpwd-success" id="chpwdSuccess"></div>
+    <!-- Current password — only for self-change -->
+    <div class="chpwd-field" id="chpwdCurrentWrap">
+      <label>Current Password</label>
+      <div class="pwd-wrap">
+        <input type="password" id="chpwdCurrent" placeholder="Enter current password">
+        <button type="button" class="eye" onclick="toggleChPwd('chpwdCurrent',this)">👁</button>
+      </div>
+    </div>
+    <div class="chpwd-field">
+      <label>New Password</label>
+      <div class="pwd-wrap">
+        <input type="password" id="chpwdNew" placeholder="Min 6 characters">
+        <button type="button" class="eye" onclick="toggleChPwd('chpwdNew',this)">👁</button>
+      </div>
+    </div>
+    <div class="chpwd-field">
+      <label>Confirm New Password</label>
+      <div class="pwd-wrap">
+        <input type="password" id="chpwdConfirm" placeholder="Re-enter new password">
+        <button type="button" class="eye" onclick="toggleChPwd('chpwdConfirm',this)">👁</button>
+      </div>
+    </div>
+    <div class="chpwd-actions">
+      <button class="chpwd-save" id="chpwdSaveBtn" onclick="savePassword()">Update Password</button>
+      <button class="chpwd-cancel" onclick="closeChPwd()">Cancel</button>
+    </div>
+  </div>
+</div>
+</body>
+</html<section class="module">
+    <div class="mh"><span class="mn">05</span><h2>Loyalty Rewards</h2></div>
+    <div class="mf">
+      <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p5f" onchange="oF5()"><span>→</span><input type="date" id="p5t" onchange="oF5()"></div></div>
+      <div class="fg"><label>Drug</label><select id="p5d" onchange="oF5()"><option value="">All Drugs</option></select></div>
+      <div class="fgrst"><button class="brst" onclick="rst5()">Reset</button></div>
+    </div>
+    <div class="krow">
+      <div class="kpi"><div class="kl">Total Points Earned</div><div class="kv" id="k5earned">—</div><div class="km" id="k5earnedm">across all activities</div></div>
+      <div class="kpi blue"><div class="kl">Total Points Redeemed</div><div class="kv" id="k5redeemed">—</div><div class="km" id="k5redeemedm">— in value</div></div>
+      <div class="kpi amb"><div class="kl">Active Patients</div><div class="kv" id="k5patients">—</div><div class="km">earning points</div></div>
+      <div class="kpi"><div class="kl">Avg Points / Patient</div><div class="kv" id="k5avg">—</div><div class="km">earned per patient</div></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><div class="ct">Activity Type Breakdown</div><div class="fnl" id="l5activity"></div></div>
+      <div class="card"><div class="ct">Redemption Details</div><div id="l5redemption"></div></div>
+    </div>
+    <div class="card" style="margin-top:14px"><div class="ct">Daily Points Earned Trend</div><div class="cw"><canvas id="c5trend"></canvas></div></div>
+  </section> html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MySaathi Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<style>
+:root{--ink:#0e2a33;--ink2:#476069;--muted:#7a8c93;--line:#e4ebee;--line2:#eff3f5;--bg:#f5f8f8;--card:#fff;--teal:#0f766e;--teal2:#14b8a6;--teal-soft:#e7f4f2;--blue:#1e6091;--amber:#b7791f;--red:#b54747;--shadow:0 1px 2px rgba(14,42,51,.04),0 6px 20px rgba(14,42,51,.06);--r:14px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:'Inter',-apple-system,sans-serif;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{background-image:radial-gradient(1200px 500px at 10% -10%,rgba(20,184,166,.06),transparent 60%),radial-gradient(900px 400px at 100% 0%,rgba(30,96,145,.05),transparent 60%);background-attachment:fixed}
+.shell{max-width:1440px;margin:0 auto;padding:28px 32px 80px}
+header.top{display:flex;justify-content:space-between;align-items:center;padding-bottom:20px;margin-bottom:24px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:16px}
+.brand-logo{height:42px;width:auto;object-fit:contain;display:none}
+.logo-ph{height:42px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#00a99d,#005b8e);border-radius:8px;padding:0 14px}
+.logo-ph span{color:#fff;font-weight:700;font-size:13px;letter-spacing:.04em}
+.brand-div{width:1px;height:34px;background:var(--line)}
+.brand-text .ey{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:600}
+.brand-text h1{font-family:'Fraunces',serif;font-weight:500;font-size:27px;letter-spacing:-.01em;color:var(--ink);line-height:1.1}
+.brand-text h1 em{font-style:italic;color:var(--teal)}
+.hdr{display:flex;align-items:center;gap:14px;font-size:12px;color:var(--ink2)}
+.ldot{width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;margin-right:5px;box-shadow:0 0 0 3px rgba(34,197,94,.15)}
+.rbtn{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--ink);font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.rbtn:hover{border-color:var(--teal);color:var(--teal)}
+.rbtn svg{width:13px;height:13px}
+section.module{margin-bottom:32px}
+.mh{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.mn{font-family:'Fraunces',serif;font-size:13px;color:var(--teal);font-weight:500}
+.mh h2{font-family:'Fraunces',serif;font-weight:500;font-size:22px;color:var(--ink);letter-spacing:-.005em}
+hr.dv{border:0;border-top:1px dashed var(--line);margin:4px 0 28px}
+.mf{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:14px 18px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:5px;min-width:115px}
+.fg label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.fg select,.fg input[type=date]{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--ink);font-family:inherit;outline:none;cursor:pointer;transition:border-color .15s}
+.fg select:focus,.fg input[type=date]:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.08)}
+.dp{display:flex;gap:6px;align-items:center}
+.dp span{font-size:11px;color:var(--muted)}
+.fgrst{margin-left:auto;align-self:flex-end}
+.brst{background:transparent;border:1px solid var(--line);border-radius:8px;padding:7px 14px;font-size:12px;color:var(--ink2);cursor:pointer;font-family:inherit;transition:all .15s}
+.brst:hover{border-color:var(--red);color:var(--red)}
+.drf{position:relative;min-width:190px}
+.drt{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--ink);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;user-select:none;transition:border-color .15s;min-height:34px}
+.drt:hover{border-color:var(--teal)}
+.drt.open{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.08)}
+.drt svg{width:12px;height:12px;color:var(--muted);flex-shrink:0;transition:transform .15s}
+.drt.open svg{transform:rotate(180deg)}
+.drd{position:absolute;top:calc(100% + 4px);left:0;width:280px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(14,42,51,.12);z-index:200;display:none;overflow:hidden}
+.drd.show{display:block}
+.drs{padding:10px;border-bottom:1px solid var(--line2)}
+.drs input{width:100%;border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none;background:var(--bg)}
+.drs input:focus{border-color:var(--teal)}
+.drl{max-height:190px;overflow-y:auto;padding:4px 0}
+.dri{display:flex;align-items:center;gap:9px;padding:7px 12px;cursor:pointer;font-size:13px;transition:background .1s}
+.dri:hover{background:var(--teal-soft)}
+.dri input[type=checkbox]{accent-color:var(--teal);width:14px;height:14px;cursor:pointer;flex-shrink:0}
+.dri label{cursor:pointer;color:var(--ink);flex:1;line-height:1.3}
+.dre{padding:12px;text-align:center;font-size:12px;color:var(--muted);font-style:italic}
+.dra{border-top:1px solid var(--line2);padding:8px 12px;display:flex;gap:8px}
+.dra button{flex:1;border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-size:11px;font-family:inherit;cursor:pointer;background:#fff;color:var(--ink2);transition:all .12s}
+.dra button:first-child:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-soft)}
+.dra button:last-child:hover{border-color:var(--red);color:var(--red)}
+.drb{background:var(--teal);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:600}
+.krow{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}.kpi.ov{overflow:visible}
+.kpi::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--teal)}
+.kpi.blue::before{background:var(--blue)}.kpi.amb::before{background:var(--amber)}.kpi.red::before{background:var(--red)}
+.kl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:4px}
+.kv{font-family:'Fraunces',serif;font-size:30px;font-weight:500;color:var(--ink);margin-top:6px;line-height:1.1;letter-spacing:-.01em}
+.km{font-size:11px;color:var(--ink2);margin-top:4px}
+.tip{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--line);color:var(--muted);font-size:9px;cursor:help;font-weight:700;flex-shrink:0;position:relative}
+.tip:hover::after{content:attr(data-t);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#0e2a33;color:#fff;font-size:11px;padding:6px 10px;border-radius:6px;white-space:normal;max-width:240px;z-index:300;font-weight:400;line-height:1.4;pointer-events:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+.ct{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:14px}
+.grid{display:grid;gap:14px}.g2{grid-template-columns:1fr 1fr}.g12{grid-template-columns:1fr 2fr}.g21{grid-template-columns:2fr 1fr}
+@media(max-width:900px){.g2,.g12,.g21{grid-template-columns:1fr}}
+.cw{position:relative;height:260px}.cw.sh{height:210px}
+.bkl{display:flex;flex-direction:column;gap:11px}
+.bkr{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center}
+.bkn{font-size:13px;font-weight:500;display:flex;align-items:center;gap:7px}
+.bks{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.bkv{font-family:'Fraunces',serif;font-size:15px;font-weight:500;text-align:right}
+.bkbw{grid-column:1/-1;background:var(--line2);border-radius:4px;height:4px;overflow:hidden;margin-top:1px}
+.bkbf{height:100%;border-radius:4px;transition:width .4s ease}
+.bkp{font-size:11px;color:var(--muted)}
+.lbr{display:grid;grid-template-columns:26px 1fr auto;gap:10px;padding:9px 0;border-bottom:1px solid var(--line2);align-items:center}
+.lbr:last-child{border-bottom:0}
+.rnk{font-family:'Fraunces',serif;font-size:15px;color:var(--muted);text-align:center;font-weight:500}
+.rnk.r1{color:#c69a4b}.rnk.r2{color:#a4a4a4}.rnk.r3{color:#b87333}
+.drnm{font-size:13px;font-weight:500}
+.drct{font-family:'Fraunces',serif;font-size:15px;font-weight:500}
+.drct small{font-family:'Inter';font-size:11px;color:var(--muted);font-weight:400}
+.sgrd{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px}
+.spl{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg)}
+.spl .pn{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:3px}
+.spl .pv{font-family:'Fraunces',serif;font-size:18px;font-weight:500;color:var(--ink);display:flex;align-items:baseline;gap:6px}
+.spl .pp{font-size:11px;color:var(--ink2);font-family:'Inter'}
+.fnl{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.fnr{display:grid;grid-template-columns:120px 1fr 44px;gap:10px;align-items:center}
+.fnl2{font-size:12px;color:var(--ink2);font-weight:500}
+.fnb{background:var(--line2);height:28px;border-radius:6px;overflow:hidden}
+.fnf{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;transition:width .5s cubic-bezier(.2,.6,.2,1)}
+.fnf span{color:#fff;font-size:12px;font-weight:600}
+.fnv{font-family:'Fraunces',serif;font-size:14px;font-weight:500;text-align:right}
+.phc{background:repeating-linear-gradient(135deg,#fff,#fff 10px,var(--line2) 10px,var(--line2) 11px);border:1px dashed var(--line);border-radius:var(--r);padding:40px 28px;text-align:center}
+.phi{width:44px;height:44px;border-radius:50%;background:var(--teal-soft);color:var(--teal);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px}
+.phc h3{font-family:'Fraunces',serif;margin:0 0 4px;font-weight:500;font-size:18px}
+.phc p{color:var(--muted);font-size:13px}
+.emp{text-align:center;color:var(--muted);font-size:12px;padding:28px;font-style:italic}
+.ldr{position:fixed;inset:0;background:rgba(245,248,248,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .3s}
+.ldr.hide{opacity:0;pointer-events:none}
+.ldd{width:10px;height:10px;border-radius:50%;background:var(--teal);animation:pulse 1.2s infinite ease-in-out}
+.ldt{font-family:'Fraunces',serif;font-size:17px;color:var(--ink);margin-top:18px;font-style:italic}
+.lds{font-size:12px;color:var(--muted);margin-top:4px}
+@keyframes pulse{0%,100%{transform:scale(.6);opacity:.5}50%{transform:scale(1);opacity:1}}
+/* ── Patient Search ── */
+.psearch-wrap{width:100%;margin-top:10px;border-top:1px solid var(--line2);padding-top:12px}
+.psearch-row{display:flex;gap:8px;align-items:center}
+.psearch-input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 12px 8px 34px;font-size:13px;color:var(--ink);font-family:inherit;outline:none;transition:border-color .15s;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%237a8c93' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center}
+.psearch-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.08)}
+.psearch-input::placeholder{color:var(--muted)}
+.psearch-clear{background:transparent;border:none;font-size:18px;color:var(--muted);cursor:pointer;padding:0 4px;line-height:1;display:none}
+.psearch-clear.show{display:block}
+.psearch-results{margin-top:10px;display:none}
+.psearch-results.show{display:block}
+.psearch-meta{font-size:11px;color:var(--muted);margin-bottom:8px;font-style:italic}
+.psearch-table{width:100%;border-collapse:collapse;font-size:13px}
+.psearch-table th{text-align:left;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 12px;border-bottom:2px solid var(--line);white-space:nowrap}
+.psearch-table td{padding:10px 12px;border-bottom:1px solid var(--line2);color:var(--ink);vertical-align:middle}
+.psearch-table tr:last-child td{border-bottom:none}
+.psearch-table tr:hover td{background:var(--teal-soft)}
+.pst-name{font-weight:500}
+.pst-status{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.pst-delivered{background:#e7f4f2;color:#0f766e}
+.pst-transit{background:#e6eff6;color:#1e6091}
+.pst-rto{background:#fbeaea;color:#b54747}
+.pst-others{background:#f5f5f5;color:#64748b}
+.pst-blank{color:var(--muted);font-style:italic;font-size:12px}
+.psearch-empty{text-align:center;padding:20px;color:var(--muted);font-size:13px;font-style:italic}
+.btn-export{background:var(--teal);border:1px solid var(--teal);border-radius:8px;padding:7px 14px;font-size:12px;color:#fff;cursor:pointer;font-family:inherit;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
+.btn-export:hover{background:#0d6660;border-color:#0d6660}
+.btn-export svg{width:13px;height:13px;flex-shrink:0}
+.btn-export:disabled{opacity:.5;cursor:not-allowed}
+.chpwd-modal{display:none;position:fixed;inset:0;background:rgba(14,42,51,.7);z-index:9000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.chpwd-modal.show{display:flex}
+.chpwd-card{background:#fff;border-radius:16px;padding:32px 36px;width:100%;max-width:400px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+.chpwd-card h3{font-family:'Fraunces',serif;font-weight:500;font-size:20px;color:#0e2a33;margin-bottom:4px}
+.chpwd-card p{font-size:12px;color:#7a8c93;margin-bottom:22px}
+.chpwd-field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.chpwd-field label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#476069;font-weight:600}
+.chpwd-field .pwd-wrap{position:relative}
+.chpwd-field .pwd-wrap input{width:100%;border:1px solid #e4ebee;border-radius:8px;padding:10px 36px 10px 12px;font-size:13px;font-family:'Inter',sans-serif;outline:none;background:#f5f8f8;transition:border-color .15s}
+.chpwd-field .pwd-wrap input:focus{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.08);background:#fff}
+.chpwd-field .pwd-wrap .eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#7a8c93;font-size:14px;padding:0}
+.chpwd-error{background:#fbeaea;border:1px solid #f0c0c0;border-radius:7px;padding:9px 12px;font-size:12px;color:#b54747;margin-bottom:12px;display:none}
+.chpwd-error.show{display:block}
+.chpwd-success{background:#e7f4f2;border:1px solid #a3d9d0;border-radius:7px;padding:9px 12px;font-size:12px;color:#0f766e;margin-bottom:12px;display:none}
+.chpwd-success.show{display:block}
+.chpwd-actions{display:flex;gap:8px;margin-top:6px}
+.chpwd-save{flex:1;background:#0f766e;border:none;border-radius:8px;padding:11px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s}
+.chpwd-save:hover{background:#0d6660}
+.chpwd-save:disabled{opacity:.6;cursor:not-allowed}
+.chpwd-cancel{flex:1;background:transparent;border:1px solid #e4ebee;border-radius:8px;padding:11px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;color:#476069}
+.chpwd-cancel:hover{border-color:#b54747;color:#b54747}
+.chpwd-user-tag{font-size:11px;background:#e6eff6;color:#1e6091;padding:3px 10px;border-radius:10px;font-weight:600;margin-bottom:18px;display:inline-block}
+.reset-pwd-btn{background:transparent;border:1px solid #e4ebee;border-radius:6px;padding:6px 12px;font-size:11px;color:#476069;cursor:pointer;font-family:'Inter',sans-serif;transition:all .12s}
+.reset-pwd-btn:hover{border-color:#0f766e;color:#0f766e;background:#e7f4f2}
+footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+
+/* ══ AUTH LAYER ══ */
+#authLayer{position:fixed;inset:0;background:linear-gradient(135deg,#0e2a33 0%,#1a4a5a 50%,#0f4a3a 100%);display:flex;align-items:center;justify-content:center;z-index:9999;font-family:'Inter',sans-serif}
+#authLayer.hide{display:none}
+.auth-card{background:#fff;border-radius:20px;padding:40px 44px;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.auth-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.auth-logo-pill{background:linear-gradient(135deg,#00a99d,#005b8e);border-radius:8px;padding:6px 14px;color:#fff;font-weight:700;font-size:13px}
+.auth-logo-title{font-family:'Fraunces',serif;font-size:20px;color:#0e2a33;font-weight:500}
+.auth-logo-title em{font-style:italic;color:#0f766e}
+.auth-card h2{font-family:'Fraunces',serif;font-weight:500;font-size:24px;color:#0e2a33;margin-bottom:6px}
+.auth-card p{font-size:13px;color:#7a8c93;margin-bottom:28px}
+.auth-field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.auth-field label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#476069;font-weight:600}
+.auth-field input{border:1px solid #e4ebee;border-radius:8px;padding:11px 14px;font-size:14px;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s;background:#f5f8f8}
+.auth-field input:focus{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.08);background:#fff}
+.auth-btn{width:100%;background:#0f766e;border:none;border-radius:10px;padding:13px;color:#fff;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;transition:background .15s;margin-top:8px}
+.auth-btn:hover{background:#0d6660}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed}
+.auth-error{background:#fbeaea;border:1px solid #f0c0c0;border-radius:8px;padding:10px 14px;font-size:12px;color:#b54747;margin-bottom:14px;display:none}
+.auth-error.show{display:block}
+/* ══ ADMIN PANEL ══ */
+#adminPanel{display:none;position:fixed;inset:0;background:rgba(14,42,51,.7);z-index:8888;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#adminPanel.show{display:flex}
+.ap-modal{background:#fff;border-radius:20px;width:100%;max-width:820px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.ap-head{padding:24px 28px;border-bottom:1px solid #e4ebee;display:flex;justify-content:space-between;align-items:center}
+.ap-head h2{font-family:'Fraunces',serif;font-size:22px;font-weight:500;color:#0e2a33}
+.ap-head-right{display:flex;gap:10px;align-items:center}
+.ap-close{background:transparent;border:1px solid #e4ebee;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;color:#476069;font-family:'Inter',sans-serif}
+.ap-close:hover{border-color:#b54747;color:#b54747}
+.ap-body{display:grid;grid-template-columns:340px 1fr;overflow:hidden;flex:1}
+.ap-users{border-right:1px solid #e4ebee;overflow-y:auto}
+.ap-users-head{padding:16px 20px;border-bottom:1px solid #eff3f5;display:flex;justify-content:space-between;align-items:center}
+.ap-users-head span{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#7a8c93;font-weight:600}
+.ap-add-btn{background:#0f766e;border:none;border-radius:7px;padding:6px 12px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.ap-add-btn:hover{background:#0d6660}
+.user-item{padding:14px 20px;border-bottom:1px solid #eff3f5;cursor:pointer;transition:background .1s}
+.user-item:hover{background:#f5f8f8}
+.user-item.active{background:#e7f4f2;border-left:3px solid #0f766e}
+.user-item .un{font-size:13px;font-weight:500;color:#0e2a33}
+.user-item .ue{font-size:11px;color:#7a8c93;margin-top:2px}
+.user-item .ur{display:inline-block;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;margin-top:4px}
+.ur-admin{background:#e7f4f2;color:#0f766e}
+.ur-user{background:#e6eff6;color:#1e6091}
+.ap-perms{padding:24px 28px;overflow-y:auto}
+.ap-perms-title{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#7a8c93;font-weight:600;margin-bottom:16px}
+.ap-no-sel{color:#7a8c93;font-size:13px;font-style:italic;text-align:center;padding:40px 0}
+.perm-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #eff3f5}
+.perm-row:last-child{border-bottom:0}
+.perm-label{font-size:13px;color:#0e2a33;font-weight:500}
+.perm-sub{font-size:11px;color:#7a8c93;margin-top:2px}
+.toggle-wrap{position:relative;width:42px;height:24px;flex-shrink:0}
+.toggle-wrap input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:#e4ebee;border-radius:24px;cursor:pointer;transition:.2s}
+.toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle-wrap input:checked + .toggle-slider{background:#0f766e}
+.toggle-wrap input:checked + .toggle-slider:before{transform:translateX(18px)}
+/* Add user form */
+.add-user-form{padding:20px 28px;border-top:1px solid #e4ebee;background:#f5f8f8;display:none}
+.add-user-form.show{display:block}
+.auf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.auf-field{display:flex;flex-direction:column;gap:5px}
+.auf-field label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#7a8c93;font-weight:600}
+.auf-field input,.auf-field select{border:1px solid #e4ebee;border-radius:7px;padding:8px 10px;font-size:12px;font-family:'Inter',sans-serif;outline:none;background:#fff}
+.auf-field input:focus{border-color:#0f766e}
+.auf-actions{display:flex;gap:8px}
+.auf-save{background:#0f766e;border:none;border-radius:7px;padding:8px 16px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif}
+.auf-cancel{background:transparent;border:1px solid #e4ebee;border-radius:7px;padding:8px 16px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;color:#476069}
+/* Top bar auth info */
+#authBar{display:flex;align-items:center;gap:10px;font-size:12px;color:#476069}
+.auth-user-pill{background:#e7f4f2;border-radius:20px;padding:4px 12px;font-size:11px;color:#0f766e;font-weight:600;display:flex;align-items:center;gap:6px}
+.admin-panel-btn{background:#0f766e;border:none;border-radius:7px;padding:5px 11px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:none}
+.admin-panel-btn.show{display:block}
+.logout-btn{background:transparent;border:1px solid #e4ebee;border-radius:7px;padding:5px 11px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;color:#476069}
+.logout-btn:hover{border-color:#b54747;color:#b54747}
+.del-user-btn{background:transparent;border:1px solid #fbeaea;border-radius:6px;padding:4px 8px;font-size:11px;color:#b54747;cursor:pointer;font-family:'Inter',sans-serif;margin-top:6px}
+.del-user-btn:hover{background:#fbeaea}
+</style>
+</head>
+<body>
+<div class="ldr" id="loader"><div class="ldd"></div><div class="ldt">Fetching live data…</div><div class="lds">Connecting to Google Sheets</div></div>
+
+<!-- ══ AUTH LAYER ══ -->
+<div id="authLayer">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-pill">ZYDUS</div>
+      <div class="auth-logo-title">MySaathi <em>Dashboard</em></div>
+    </div>
+    <h2>Welcome back</h2>
+    <p>Sign in to access your dashboard</p>
+    <div class="auth-error" id="loginError"></div>
+    <div class="auth-field">
+      <label>Email Address</label>
+      <input type="email" id="loginEmail" placeholder="you@example.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="auth-field">
+      <label>Password</label>
+      <div style="position:relative">
+        <input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;padding-right:42px">
+        <button type="button" id="pwdToggle" onclick="togglePwdView()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#7a8c93;font-size:16px;padding:0;line-height:1">👁</button>
+      </div>
+    </div>
+    <button class="auth-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<!-- ══ ADMIN PANEL ══ -->
+<div id="adminPanel">
+  <div class="ap-modal">
+    <div class="ap-head">
+      <h2>User Management</h2>
+      <div class="ap-head-right">
+        <button class="ap-add-btn" onclick="toggleAddForm()">+ Add User</button>
+        <button class="ap-close" onclick="closeAdminPanel()">Close</button>
+      </div>
+    </div>
+    <div class="add-user-form" id="addUserForm">
+      <div class="auf-grid">
+        <div class="auf-field"><label>Email</label><input type="email" id="newEmail" placeholder="user@example.com"></div>
+        <div class="auf-field"><label>Password</label>
+        <div style="position:relative">
+          <input type="password" id="newPwd" placeholder="Min 6 characters" style="width:100%;padding-right:36px">
+          <button type="button" onclick="toggleNewPwd()" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#7a8c93;font-size:14px;padding:0">👁</button>
+        </div></div>
+        <div class="auf-field"><label>Display Name</label><input type="text" id="newName" placeholder="Full name"></div>
+        <div class="auf-field"><label>Role</label><select id="newRole"><option value="user">General User</option><option value="admin">Admin</option></select></div>
+      </div>
+      <div class="auf-actions">
+        <button class="auf-save" onclick="createUser()">Create User</button>
+        <button class="auf-cancel" onclick="toggleAddForm()">Cancel</button>
+      </div>
+    </div>
+    <div class="ap-body">
+      <div class="ap-users">
+        <div class="ap-users-head"><span>Users</span></div>
+        <div id="userList"></div>
+      </div>
+      <div class="ap-perms" id="permPanel">
+        <div class="ap-no-sel">Select a user to manage permissions</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="shell" id="mainShell" style="display:none">
+
+<header class="top">
+  <div class="brand">
+    <img id="zLogo" class="brand-logo" alt="Zydus Lifesciences" onerror="this.style.display='none';document.getElementById('lph').style.display='flex'"/>
+    <div class="logo-ph" id="lph"><span>ZYDUS</span></div>
+    <div class="brand-div"></div>
+    <div class="brand-text">
+      <div class="ey">Patient Programme · Live Dashboard</div>
+      <h1>MySaathi <em>Dashboard</em></h1>
+    </div>
+  </div>
+  <div class="hdr">
+    <span><span class="ldot"></span>Live · <span id="lastUp">—</span></span>
+    <button class="rbtn" onclick="loadAll(true)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.3-6.95"/><path d="M21 4v5h-5"/></svg>Refresh</button>
+    <div id="authBar">
+      <div class="auth-user-pill" id="authUserPill">—</div>
+      <button class="admin-panel-btn" id="adminPanelBtn" onclick="openAdminPanel()">⚙ Admin</button>
+      <button class="logout-btn" style="border-color:#e4ebee" onclick="openSelfChPwd()">🔑 Change Password</button>
+      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+</header>
+
+<!-- MODULE 1 -->
+<section class="module">
+  <div class="mh"><span class="mn">01</span><h2>Patient Distribution</h2></div>
+  <div class="mf">
+    <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p1f" onchange="oF1()"><span>→</span><input type="date" id="p1t" onchange="oF1()"></div></div>
+    <div class="fg"><label>Drug</label><select id="p1d" onchange="oF1()"><option value="">All Drugs</option></select></div>
+    <div class="fg"><label>State</label><select id="p1s" onchange="oF1()"><option value="">All States</option></select></div>
+    <div class="fg"><label>Doctor</label>
+      <div class="drf" id="drf">
+        <div class="drt" id="drt" onclick="tDr()"><span id="drlbl">All Doctors</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="drd" id="drd">
+          <div class="drs"><input type="text" id="drsch" placeholder="Search doctor…" oninput="fDrSch(this.value)" autocomplete="off"></div>
+          <div class="drl" id="drlist"></div>
+          <div class="dra"><button onclick="selAllDr()">Select All</button><button onclick="clrDr()">Clear</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="fg"><label>QR Type</label><select id="p1q" onchange="oF1()"><option value="">All QR Types</option></select></div>
+    <div class="fgrst"><button class="brst" onclick="rst1()">Reset</button></div>
+  </div>
+  <div class="krow">
+    <div class="kpi"><div class="kl">Total Patients</div><div class="kv" id="k1t">—</div><div class="km" id="k1m">—</div></div>
+    <!-- ACTIVE PLANS — hidden, remove style to restore -->
+    <div class="kpi blue" style="display:none"><div class="kl">Active Plans</div><div class="kv" id="k1a">—</div><div class="km" id="k1am">—</div></div>
+    <div class="kpi amb"><div class="kl">Unique Doctors</div><div class="kv" id="k1dr">—</div><div class="km">in filtered selection</div></div>
+    <div class="kpi"><div class="kl">States Covered <span class="tip" data-t="Distinct states after merging spelling variants (e.g. Maharastra → Maharashtra)">?</span></div><div class="kv" id="k1st">—</div><div class="km" id="k1stm">—</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><div class="ct">Drug Distribution</div><div class="grid g12" style="gap:18px;align-items:center"><div class="cw sh"><canvas id="cDrug"></canvas></div><div class="bkl" id="lDrug"></div></div></div>
+    <div class="card"><div class="ct">QR Type Split</div><div class="grid g12" style="gap:18px;align-items:center"><div class="cw sh"><canvas id="cQR"></canvas></div><div class="bkl" id="lQR"></div></div></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><div class="ct">Top 5 States</div><div class="cw"><canvas id="cSt"></canvas></div></div>
+    <div class="card"><div class="ct">Top 5 Doctors by Referrals</div><div id="lDr"></div></div>
+  </div>
+</section>
+<hr class="dv"/>
+
+<!-- MODULE 2 -->
+<section class="module">
+  <div class="mh"><span class="mn">02</span><h2>Welcome Kit · Logistics Tracking</h2></div>
+  <div class="mf">
+    <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p2f" onchange="oF2()"><span>→</span><input type="date" id="p2t" onchange="oF2()"></div></div>
+    <div class="fg"><label>Delivery Status</label><select id="p2st" onchange="oF2()"><option value="">All Statuses</option><option>Delivered</option><option>In Transit</option><option>RTO</option><option>Others</option></select></div>
+    <div class="fg"><label>State</label><select id="p2s" onchange="oF2()"><option value="">All States</option></select></div>
+    <div class="fgrst"><button class="brst" onclick="rst2()">Reset</button></div>
+    <div class="psearch-wrap">
+      <div class="psearch-row">
+        <input type="text" class="psearch-input" id="pSearch" placeholder="Search patient name in logistics…" oninput="onPSearch()" onkeydown="if(event.key==='Enter')onPSearch()">
+        <button class="psearch-clear" id="pSearchClear" onclick="clearPSearch()">×</button>
+      </div>
+      <div class="psearch-results" id="pSearchResults">
+        <div class="psearch-meta" id="pSearchMeta"></div>
+        <table class="psearch-table">
+          <thead><tr>
+            <th>Patient Name</th>
+            <th>Order Placed</th>
+            <th>Order Delivered</th>
+            <th>Status</th>
+            <th>City</th>
+          </tr></thead>
+          <tbody id="pSearchBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="krow">
+    <div class="kpi"><div class="kl">Total Kits</div><div class="kv" id="k2t">—</div><div class="km">shipments created</div></div>
+    <div class="kpi blue"><div class="kl">Delivery Success Rate</div><div class="kv" id="k2r">—</div><div class="km" id="k2rm">— delivered</div></div>
+    <div class="kpi amb" style="overflow:visible">
+      <div class="kl">In Transit</div>
+      <div class="kv" id="k2tr">—</div>
+      <div class="km" id="k2trm">—</div>
+      <div style="margin-top:8px">
+        <button onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.textContent.includes('+')? '▾ What’s included' : '▸ What’s included'" style="background:none;border:none;font-size:10px;color:var(--muted);cursor:pointer;padding:0;font-family:inherit;letter-spacing:.04em;text-transform:uppercase;font-weight:600">▸ What’s included</button>
+        <div style="display:none;margin-top:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--ink2);line-height:1.7;position:relative;z-index:10;box-shadow:0 4px 12px rgba(14,42,51,.08)">
+          <div style="font-weight:600;color:var(--ink);margin-bottom:4px;font-size:10px;letter-spacing:.08em;text-transform:uppercase">Statuses counted as In Transit</div>
+          IN TRANSIT<br>
+          IN TRANSIT-EN-ROUTE<br>
+          IN TRANSIT-AT DESTINATION HUB<br>
+          OUT FOR DELIVERY<br>
+          REACHED DESTINATION HUB<br>
+          PICKED UP<br>
+          PICKUP SCHEDULED<br>
+          SHIPPED<br>
+          FC MANIFEST GENERATED
+        </div>
+      </div>
+    </div>
+    <div class="kpi red"><div class="kl">RTO / Others</div><div class="kv" id="k2rto">—</div><div class="km" id="k2rtom">—</div></div>
+    <div class="kpi"><div class="kl">Avg Delivery TAT <span class="tip" data-t="Average days from kit creation to delivery. Delivered orders only within selected filters. Source: Column L of Logistics sheet.">?</span></div><div class="kv" id="k2tat">—</div><div class="km" id="k2tatm">days · delivered only</div></div>
+  </div>
+  <div class="grid g21">
+    <div class="card"><div class="ct">Weekly Delivery Trend <span style="font-weight:400;color:var(--muted);font-size:10px;text-transform:none;letter-spacing:0;margin-left:6px">% of total filtered period</span></div><div class="cw"><canvas id="cTr"></canvas></div></div>
+    <div class="card"><div class="ct">Status Mix</div><div class="cw sh"><canvas id="cLM"></canvas></div><div class="bkl" id="lLMBreak" style="margin-top:14px"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="ct">Detailed Status Breakdown</div><div class="sgrd" id="lLS"></div></div>
+</section>
+<hr class="dv"/>
+
+<!-- MODULE 3 -->
+<section class="module">
+  <div class="mh"><span class="mn">03</span><h2>Expert Consultation</h2></div>
+  <div class="mf">
+    <div class="fg"><label>Drug / Programme</label><select id="p3d" onchange="oF3()"><option value="">All Programmes</option></select></div>
+    <div class="fg"><label>Coach Type</label><select id="p3t" onchange="oF3()"><option value="">All Types</option><option>Physiotherapist</option><option>Nutritionist</option></select></div>
+    <div class="fg"><label>Status</label><select id="p3s" onchange="oF3()"><option value="">All Statuses</option><option>Booked</option><option>Completed</option><option>No Show</option></select></div>
+    <div class="fgrst"><button class="brst" onclick="rst3()">Reset</button></div>
+  </div>
+  <div class="krow">
+    <div class="kpi"><div class="kl">Total Sessions</div><div class="kv" id="k3t">—</div><div class="km">all consultations</div></div>
+    <div class="kpi blue"><div class="kl">Completed</div><div class="kv" id="k3c">—</div><div class="km" id="k3cm">—</div></div>
+    <div class="kpi red"><div class="kl">No Show</div><div class="kv" id="k3n">—</div><div class="km" id="k3nm">—</div></div>
+    <div class="kpi amb"><div class="kl">Completion Rate</div><div class="kv" id="k3r">—</div><div class="km">completed ÷ total</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><div class="ct">Consultation Funnel</div><div class="fnl" id="lFnl"></div></div>
+    <div class="card"><div class="ct">Status by Coach Type</div><div class="cw sh"><canvas id="cCon"></canvas></div></div>
+  </div>
+</section>
+<hr class="dv"/>
+
+<!-- MODULE 4 -->
+<section class="module">
+  <div class="mh"><span class="mn">04</span><h2>Documentation</h2></div>
+  <div class="mf">
+    <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p4f" onchange="oF4()"><span>→</span><input type="date" id="p4t" onchange="oF4()"></div></div>
+    <div class="fg"><label>Drug</label><select id="p4d" onchange="oF4()"><option value="">All Drugs</option></select></div>
+    <div class="fg"><label>Status</label><select id="p4s" onchange="oF4()"><option value="">All Statuses</option><option>Completed</option><option>Missing Documents</option><option>Rejected</option><option>In Progress</option><option>Completed – Dispatch Pending</option></select></div>
+    <div class="fgrst" style="display:flex;gap:8px">
+      <button class="brst" onclick="rst4()">Reset</button>
+      <button class="btn-export" id="exportBtn" onclick="exportM4CSV()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+  </div>
+  <div class="krow">
+    <div class="kpi"><div class="kl">Total Patients</div><div class="kv" id="k4total">—</div><div class="km" id="k4totalm">in filtered selection</div></div>
+    <div class="kpi"><div class="kl">Completed</div><div class="kv" id="k4c">—</div><div class="km" id="k4cm">—</div></div>
+    <div class="kpi amb"><div class="kl">Missing Documents</div><div class="kv" id="k4ms">—</div><div class="km" id="k4mm">—</div></div>
+    <div class="kpi red"><div class="kl">Rejected</div><div class="kv" id="k4r">—</div><div class="km" id="k4rm">—</div></div>
+    <div class="kpi blue"><div class="kl">Dispatch Pending</div><div class="kv" id="k4p">—</div><div class="km" id="k4pm">—</div></div>
+  </div>
+  <div class="grid g21">
+    <div class="card"><div class="ct">Weekly Trend</div><div class="cw"><canvas id="cDT"></canvas></div></div>
+    <div class="card"><div class="ct">Status Distribution</div><div class="cw sh"><canvas id="cDP"></canvas></div><div class="bkl" id="lDPBreak" style="margin-top:14px"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="ct">Detailed Status Breakdown</div><div class="sgrd" id="lDS"></div></div>
+</section>
+<hr class="dv"/>
+
+
+
+<footer class="pf"><div>MySaathi Dashboard \u00b7 Zydus Lifesciences \u00b7 Live Google Sheets</div><div id="fSt">\u2014</div></footer>
+</div>
+
+<script>
+const SHEETS={
+  patient:'/api/sheet?gid=1310523268',
+  logistics:'/api/sheet?gid=1879543153',
+  consult:'/api/sheet?gid=419247046',
+  loyalty:'/api/sheet?gid=975503331',
+};
+const ZLOGO='https://www.zyduslife.com/public/images/zydus-logo.png';
+const C={teal:'#0f766e',teal2:'#14b8a6',blueLt:'#7ba8c9',blue:'#1e6091',amber:'#b7791f',red:'#b54747',slate:'#64748b',mint:'#6fbfab'};
+const PD=[C.teal,C.blue,C.amber,C.red,C.mint],PQ=[C.teal2,C.blue,C.slate];
+const n=s=>(s==null?'':String(s).trim());
+const nci=s=>n(s).toLowerCase().replace(/[.\u00b7]/g,'').replace(/\s+/g,' ').trim();
+const SM={maharastra:'Maharashtra',maharashtra:'Maharashtra',karnataka:'Karnataka',delhi:'Delhi','new delhi':'Delhi',kerala:'Kerala','west bengal':'West Bengal','west bangal':'West Bengal','tamil nadu':'Tamil Nadu',tamilnadu:'Tamil Nadu',telengana:'Telangana',telangana:'Telangana','uttar pradesh':'Uttar Pradesh',gujrat:'Gujarat',gujarat:'Gujarat',haryana:'Haryana',punjab:'Punjab','madhya pradesh':'Madhya Pradesh',rajasthan:'Rajasthan','andhra pradesh':'Andhra Pradesh',bihar:'Bihar',odisha:'Odisha',orissa:'Odisha',chhattisgarh:'Chhattisgarh',chattisgarh:'Chhattisgarh',jharkhand:'Jharkhand',assam:'Assam','himachal pradesh':'Himachal Pradesh',uttarakhand:'Uttarakhand','jammu and kashmir':'Jammu & Kashmir','jammu & kashmir':'Jammu & Kashmir',goa:'Goa',tripura:'Tripura',manipur:'Manipur','arunachal pradesh':'Arunachal Pradesh',meghalaya:'Meghalaya',mizoram:'Mizoram',nagaland:'Nagaland',sikkim:'Sikkim',puducherry:'Puducherry',pondicherry:'Puducherry',chandigarh:'Chandigarh',ladakh:'Ladakh'};
+const cSt=s=>{const k=nci(s);if(!k)return'';return SM[k]||(k.split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1):'').join(' '));};
+const cDr=s=>{const k=nci(s);if(!k)return'';if(k==='alterme')return'AlterMe';if(k==='semaglyn')return'Semaglyn';if(k==='mashema')return'Mashema';return k.split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1):'').join(' ');};
+const cQR=s=>{const v=n(s);if(!v||v==='\u2014'||v==='-'||v==='N/A'||v==='#N/A')return'Unknown';const k=v.toLowerCase();if(k==='medicine')return'Medicine';if(k==='doctor')return'Doctor';return v;};
+const cDoc=s=>{const v=n(s);if(!v||v==='#N/A'||v==='N/A')return'';let x=v.replace(/\bDr\.?\s+/i,'Dr ').replace(/\s+/g,' ').trim();return x.split(' ').map(w=>w.toLowerCase()==='dr'?'Dr':w?w[0].toUpperCase()+w.slice(1).toLowerCase():'').join(' ');};
+const cSts=s=>{const k=nci(s);if(!k)return'';if(k==='completed')return'Completed';if(k==='rejected')return'Rejected';if(k.includes('missing'))return'Missing Documents';if(k.includes('in progress')||k==='inprogress')return'In Progress';if(k.includes('dispatch pending'))return'Completed – Dispatch Pending';return k.split(' ').map(w=>w?w[0].toUpperCase()+w.slice(1):'').join(' ');};
+const LB={DELIVERED:'Delivered','IN TRANSIT':'In Transit','IN TRANSIT-EN-ROUTE':'In Transit','IN TRANSIT-AT DESTINATION HUB':'In Transit',SHIPPED:'In Transit','OUT FOR DELIVERY':'In Transit','REACHED DESTINATION HUB':'In Transit','PICKED UP':'In Transit','PICKUP SCHEDULED':'In Transit','FC MANIFEST GENERATED':'In Transit','RTO DELIVERED':'RTO','REACHED BACK AT_SELLER_CITY':'RTO','UNDELIVERED-1ST ATTEMPT':'Others','UNDELIVERED-2ND ATTEMPT':'Others','UNDELIVERED-3RD ATTEMPT':'Others','UNDELIVERED-1st Attempt':'Others','UNDELIVERED-2nd Attempt':'Others','UNDELIVERED-3rd Attempt':'Others',CANCELED:'Others',CANCELLED:'Others',MISROUTED:'Others','PICKUP EXCEPTION':'Others',UNTRACEABLE:'Others','SELF FULFILED':'Others','SELF FULFILLED':'Others'};
+const bkL=s=>{const u=n(s);if(LB[u])return LB[u];const uu=u.toUpperCase();if(uu.includes('RTO')||uu.includes('SELLER_CITY'))return'RTO';if(uu==='DELIVERED')return'Delivered';if(uu.includes('TRANSIT')||uu.includes('SHIPPED')||uu.includes('PICKUP')||uu.includes('PICKED')||uu.includes('MANIFEST')||uu.includes('HUB')||uu.includes('OUT FOR'))return'In Transit';return'Others';};
+const cCon=s=>{const k=nci(s);if(k.includes('booked'))return'Booked';if(k.includes('finished')||k.includes('completed'))return'Completed';if(k.includes('cancel')||k.includes('no show')||k.includes('no-show'))return'No Show';return s;};
+const cCch=s=>{const k=nci(s);if(k.includes('physio'))return'Physiotherapist';if(k.includes('nutri')||k.includes('diet'))return'Nutritionist';return s;};
+const CS={mumbai:'Maharashtra',thane:'Maharashtra',pune:'Maharashtra',nashik:'Maharashtra',nagpur:'Maharashtra',ahmednagar:'Maharashtra','ahmed nagar':'Maharashtra',kolhapur:'Maharashtra',amravati:'Maharashtra',jalgaon:'Maharashtra',wardha:'Maharashtra',sangli:'Maharashtra',solapur:'Maharashtra',beed:'Maharashtra',satara:'Maharashtra',nanded:'Maharashtra',yavatmal:'Maharashtra',kamothe:'Maharashtra',raigarh:'Maharashtra',bangalore:'Karnataka',bengaluru:'Karnataka','bangalore rural':'Karnataka',mysore:'Karnataka',dharwad:'Karnataka',shimoga:'Karnataka',chitradurga:'Karnataka',kolar:'Karnataka',gadag:'Karnataka',hassan:'Karnataka',tumkur:'Karnataka',davangere:'Karnataka',koppal:'Karnataka',bijapur:'Karnataka','dakshina kannada':'Karnataka',hyderabad:'Telangana','k.v.rangareddy':'Telangana','kv rangareddy':'Telangana',warangal:'Telangana',khammam:'Telangana',nalgonda:'Telangana','mathrusri nagar':'Telangana',visakhapatnam:'Andhra Pradesh',guntur:'Andhra Pradesh','east godavari':'Andhra Pradesh','west godavari':'Andhra Pradesh',chittoor:'Andhra Pradesh',kurnool:'Andhra Pradesh',chennai:'Tamil Nadu',kanchipuram:'Tamil Nadu',tiruvallur:'Tamil Nadu',coimbatore:'Tamil Nadu',krishnagiri:'Tamil Nadu',namakkal:'Tamil Nadu',dharmapuri:'Tamil Nadu',salem:'Tamil Nadu',cuddalore:'Tamil Nadu',vellore:'Tamil Nadu',tiruchirappalli:'Tamil Nadu',kozhikode:'Kerala',ernakulam:'Kerala',malappuram:'Kerala',thrissur:'Kerala',palakkad:'Kerala',kannur:'Kerala',kollam:'Kerala',kottayam:'Kerala',thiruvananthapuram:'Kerala',kolkata:'West Bengal','north 24 parganas':'West Bengal','south 24 parganas':'West Bengal',hooghly:'West Bengal',nadia:'West Bengal',howrah:'West Bengal','north dinajpur':'West Bengal','west midnapore':'West Bengal',jalpaiguri:'West Bengal',bardhaman:'West Bengal','kolkata east':'West Bengal',delhi:'Delhi','east delhi':'Delhi','west delhi':'Delhi','north delhi':'Delhi','north west delhi':'Delhi','south delhi':'Delhi','south west delhi':'Delhi','central delhi':'Delhi',gurgaon:'Haryana',gurugram:'Haryana',faridabad:'Haryana',ambala:'Haryana',sonipat:'Haryana',panipat:'Haryana',karnal:'Haryana',palwal:'Haryana',jaipur:'Rajasthan',jodhpur:'Rajasthan',pali:'Rajasthan',ahmedabad:'Gujarat',surat:'Gujarat',anand:'Gujarat',kheda:'Gujarat',banaskantha:'Gujarat',vadodara:'Gujarat',rajkot:'Gujarat',indore:'Madhya Pradesh',jhabua:'Madhya Pradesh',satna:'Madhya Pradesh',shahdol:'Madhya Pradesh',anuppur:'Madhya Pradesh',ujjain:'Madhya Pradesh',ghaziabad:'Uttar Pradesh','gautam buddha nagar':'Uttar Pradesh','greater noida':'Uttar Pradesh','kanpur nagar':'Uttar Pradesh',lucknow:'Uttar Pradesh',saharanpur:'Uttar Pradesh',bareilly:'Uttar Pradesh',firozabad:'Uttar Pradesh',kannauj:'Uttar Pradesh',pilibhit:'Uttar Pradesh',sonbhadra:'Uttar Pradesh','sant kabir nagar':'Uttar Pradesh',ghazipur:'Uttar Pradesh',aligarh:'Uttar Pradesh',agra:'Uttar Pradesh',mathura:'Uttar Pradesh',jaunpur:'Uttar Pradesh',ludhiana:'Punjab',amritsar:'Punjab',jalandhar:'Punjab',pathankot:'Punjab',rupnagar:'Punjab',bathinda:'Punjab',patna:'Bihar',saharsa:'Bihar',vaishali:'Bihar',gaya:'Bihar','east singhbhum':'Jharkhand',dhanbad:'Jharkhand',ranchi:'Jharkhand',khorda:'Odisha',ganjam:'Odisha',cuttack:'Odisha',bhadrak:'Odisha',sambalpur:'Odisha',gajapati:'Odisha',raipur:'Chhattisgarh',durg:'Chhattisgarh',kamrup:'Assam',darrang:'Assam',srinagar:'Jammu & Kashmir',jammu:'Jammu & Kashmir',budgam:'Jammu & Kashmir','imphal east':'Manipur','west tripura':'Tripura',changlang:'Arunachal Pradesh',pondicherry:'Puducherry'};
+const ctySt=c=>CS[nci(c)]||'';
+function parseLoyaltyDate(s){
+  const v=n(s);if(!v)return null;
+  const m=v.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(!m)return null;
+  const d=new Date(+m[1],+m[2]-1,+m[3]);
+  return isNaN(d)?null:d;
+}
+function cDrFromPlan(plan){
+  const p=(plan||'').toLowerCase();
+  if(p.includes('semaglyn'))return'Semaglyn';
+  if(p.includes('mashema'))return'Mashema';
+  if(p.includes('alterme'))return'AlterMe';
+  return'';
+}
+const pMDY=s=>{const v=n(s);if(!v)return null;const m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);if(!m)return null;let[,mm,dd,yy]=m;if(yy.length===2)yy=+yy<50?'20'+yy:'19'+yy;const d=new Date(+yy,+mm-1,+dd);return isNaN(d)?null:d;};
+const pDMY=s=>{const v=n(s);if(!v||v==='N/A'||v==='#N/A')return null;const m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);if(!m)return null;let[,dd,mm,yy]=m;if(yy.length===2)yy=+yy<50?'20'+yy:'19'+yy;const d=new Date(+yy,+mm-1,+dd);return isNaN(d)?null:d;};
+const ymd=d=>d.toISOString().slice(0,10);
+const sow=d=>{const x=new Date(d);const diff=(x.getDay()+6)%7;x.setDate(x.getDate()-diff);x.setHours(0,0,0,0);return x;};
+const fmtD=d=>d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
+const inR=(d,f,t)=>{if(!d)return false;if(f&&d<f)return false;if(t&&d>t)return false;return true;};
+const pTAT=s=>{const v=n(s);if(!v||v==='#N/A'||v==='N/A')return null;const x=parseFloat(v);return isNaN(x)?null:x;};
+const DS={patient:[],logistics:[],consult:[],loyalty:[]};
+async function fcsv(url){return new Promise((r,j)=>{Papa.parse(url,{download:true,header:true,skipEmptyLines:true,complete:x=>r(x.data),error:e=>j(e)});});}
+async function loadAll(){
+  document.getElementById('loader').classList.remove('hide');
+  try{
+    const[p,l,c,ly]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty)]);
+    DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool'])}));
+    DS.logistics=l.map(r=>({name:n(r['Customer Name']),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
+    DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status'])}));
+    // Transform loyalty — Col D=activityType, F=coinsEarned, G=activityDate, I=planName
+    // Redemption: Col V=amount, W=coin_amount, X=brand_name, Y=order_status, U=redemption date
+    DS.loyalty=ly.map(r=>({
+      activityType: n(r['activityType']),
+      coinsEarned:  parseFloat(n(r['coinsEarned']))||0,
+      _date:        parseLoyaltyDate(n(r['activityDate'])),
+      planName:     n(r['planName']),
+      drug:         cDrFromPlan(n(r['planName'])),
+      // Redemption side
+      amount:       parseFloat(n(r['amount']))||0,
+      coinRedeemed: parseFloat(n(r['coin_amount']))||0,
+      brand:        n(r['brand_name']),
+      redeemStatus: n(r['order_status']),
+      _redeemDate:  parseLoyaltyDate(n(r['activityDate.1']||r['activityDate']||'')),
+    })).filter(r=>r.activityType||r.coinRedeemed>0);
+    const img=document.getElementById('zLogo');
+    img.src=ZLOGO;img.onload=()=>{img.style.display='block';document.getElementById('lph').style.display='none';};
+    initF();r1();r2();r3();r4();r5();
+    document.getElementById('lastUp').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('fSt').textContent=`Patients: ${DS.patient.length} \u00b7 Kits: ${DS.logistics.length} \u00b7 Consultations: ${DS.consult.length} \u00b7 Loyalty: ${DS.loyalty.length}`;
+  }catch(e){console.error(e);alert('Could not load data. Ensure sheets are published to web.\n'+e);}
+  document.getElementById('loader').classList.add('hide');
+}
+function initF(){
+  fsl('p1d',[...new Set(DS.patient.map(r=>r.drug).filter(Boolean))].sort(),'All Drugs');
+  fsl('p1s',[...new Set(DS.patient.map(r=>r.state).filter(Boolean))].sort(),'All States');
+  fsl('p1q',[...new Set(DS.patient.map(r=>r.qr).filter(Boolean))].sort(),'All QR Types');
+  bldDrList([...new Set(DS.patient.map(r=>r.doctor).filter(Boolean))].sort());
+  fsl('p2s',[...new Set(DS.logistics.map(r=>r.state).filter(Boolean))].sort(),'All States');
+  fsl('p3d',[...new Set(DS.consult.map(r=>r.drug).filter(Boolean))].sort(),'All Programmes');
+  fsl('p4d',[...new Set(DS.patient.map(r=>r.drug).filter(Boolean))].sort(),'All Drugs');
+}
+/* CASCADING FILTER LOGIC
+   When any M1 filter changes, we rebuild each other filter's options
+   from rows that pass all OTHER filters (excluding itself).
+   This means each dropdown only shows values that exist in the currently filtered dataset.
+*/
+function cascM1(){
+  const fd=gv('p1d'),fs=gv('p1s'),fq=gv('p1q');
+  const{from,to}=gR('p1f','p1t');
+  // Rows for drug options: apply state + dr + qr + date (not drug)
+  const rfd=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fs&&r.state!==fs)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;if(fq&&r.qr!==fq)return false;return true;});
+  fsl('p1d',[...new Set(rfd.map(r=>r.drug).filter(Boolean))].sort(),'All Drugs',fd);
+  // Rows for state options: apply drug + dr + qr + date
+  const rfs=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;if(fq&&r.qr!==fq)return false;return true;});
+  fsl('p1s',[...new Set(rfs.map(r=>r.state).filter(Boolean))].sort(),'All States',fs);
+  // Rows for QR options: apply drug + state + dr + date
+  const rfq=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.state!==fs)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;return true;});
+  fsl('p1q',[...new Set(rfq.map(r=>r.qr).filter(Boolean))].sort(),'All QR Types',fq);
+  // Rows for doctor options: apply drug + state + qr + date
+  const rfdr=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.state!==fs)return false;if(fq&&r.qr!==fq)return false;return true;});
+  const avDrs=[...new Set(rfdr.map(r=>r.doctor).filter(Boolean))].sort();
+  selDrs=new Set([...selDrs].filter(d=>avDrs.includes(d)));
+  updDrList(avDrs);updDrLbl();
+}
+function cascM2(){
+  const fst=gv('p2st'),fs=gv('p2s');
+  const{from,to}=gR('p2f','p2t');
+  const rf=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;return true;});
+  fsl('p2s',[...new Set(rf.map(r=>r.state).filter(Boolean))].sort(),'All States',fs);
+}
+function cascM3(){
+  const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
+  const rf=DS.consult.filter(r=>{if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
+  fsl('p3d',[...new Set(rf.map(r=>r.drug).filter(Boolean))].sort(),'All Programmes',fd);
+}
+function oF1(){cascM1();r1();}
+function oF2(){cascM2();r2();}
+function oF3(){cascM3();r3();}
+function oF4(){r4();}
+/* RENDER 1 */
+function r1(){
+  const{from,to}=gR('p1f','p1t');const fd=gv('p1d'),fs=gv('p1s'),fq=gv('p1q');
+  const rows=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.state!==fs)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;if(fq&&r.qr!==fq)return false;return true;});
+  const tot=rows.length,abs=DS.patient.length;
+  st('k1t',fN(tot));st('k1m',(fd||fs||fq||selDrs.size>0||from||to)?`Filtered from ${fN(abs)} total`:'All-time registrations');
+  const act=rows.filter(r=>/active/i.test(r.plan)).length;
+  st('k1a',fN(act));st('k1am',tot?`${pct(act,tot)} of filtered`:'—');
+  st('k1dr',fN(new Set(rows.map(r=>r.doctor).filter(Boolean)).size));
+  st('k1st',fN(new Set(rows.map(r=>r.state).filter(Boolean)).size));st('k1stm','distinct canonical states');
+  rPie(cntB(rows,'drug'),'cDrug','lDrug',PD);
+  rPie(cntB(rows,'qr'),'cQR','lQR',PQ,'doughnut');
+  rBarH('cSt',topN(cntB(rows,'state'),5),C.teal);
+  const dt=topN(cntB(rows,'doctor'),5);
+  const el=document.getElementById('lDr');
+  if(!dt.length){el.innerHTML='<div class="emp">No doctor data for current filters</div>';return;}
+  el.innerHTML=dt.map((d,i)=>`<div class="lbr"><div class="rnk ${i===0?'r1':i===1?'r2':i===2?'r3':''}">${i+1}</div><div class="drnm">${esc(d.k||'(unspecified)')}</div><div class="drct">${fN(d.v)} <small>patients</small></div></div>`).join('');
+}
+/* RENDER 2 */
+function r2(){
+  const{from,to}=gR('p2f','p2t');const fst=gv('p2st'),fs=gv('p2s');
+  const rows=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;if(fs&&r.state!==fs)return false;return true;});
+  const tot=rows.length;const bk={Delivered:0,'In Transit':0,RTO:0,Others:0};
+  rows.forEach(r=>{bk[r.bucket]=(bk[r.bucket]||0)+1;});
+  st('k2t',fN(tot));st('k2r',tot?((bk.Delivered/tot)*100).toFixed(1)+'%':'—');st('k2rm',fN(bk.Delivered)+' delivered');
+  st('k2tr',fN(bk['In Transit']));st('k2trm',tot?`${pct(bk['In Transit'],tot)} of filtered`:'—');
+  st('k2rto',fN(bk.RTO+bk.Others));st('k2rtom',`${bk.RTO} RTO \u00b7 ${bk.Others} other`);
+  const tv=rows.filter(r=>r.bucket==='Delivered'&&r.tat!==null).map(r=>r.tat);
+  if(tv.length){const avg=(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1);st('k2tat',avg);st('k2tatm',`avg days \u00b7 ${tv.length} delivered orders`);}
+  else{st('k2tat','\u2014');st('k2tatm','no TAT data in Column L yet');}
+  mkC('cLM',{type:'doughnut',data:{labels:['Delivered','In Transit','RTO','Others'],datasets:[{data:[bk.Delivered,bk['In Transit'],bk.RTO,bk.Others],backgroundColor:[C.teal,C.blueLt,C.amber,C.red],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
+  // Status mix breakdown with %
+  const lmPal = [C.teal,C.blueLt,C.amber,C.red];
+  const lmLabels = ['Delivered','In Transit','RTO','Others'];
+  const lmData = [bk.Delivered,bk['In Transit'],bk.RTO,bk.Others];
+  const lmTotal = Math.max(tot,1);
+  document.getElementById('lLMBreak').innerHTML = lmLabels.map((l,i)=>`
+    <div class="bkr">
+      <div class="bkn"><span class="bks" style="background:${lmPal[i]}"></span>${l}</div>
+      <div class="bkv">${fN(lmData[i])}</div>
+      <div class="bkbw"><div class="bkbf" style="width:${pr(lmData[i],lmTotal)}%;background:${lmPal[i]}"></div></div>
+      <div class="bkp">${pct(lmData[i],lmTotal)}</div>
+    </div>`).join('');
+
+  /* TRENDLINE — bars = % of total filtered period, tooltip shows count + % */
+  const bw=new Map();
+  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{total:0,delivered:0});bw.get(k).total++;if(r.bucket==='Delivered')bw.get(k).delivered++;});
+  const sw=[...bw.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const pt=Math.max(tot,1);
+  const tpct=sw.map(([,v])=>+((v.total/pt)*100).toFixed(1));
+  const dpct=sw.map(([,v])=>+((v.delivered/pt)*100).toFixed(1));
+  const rawT=sw.map(([,v])=>v.total),rawD=sw.map(([,v])=>v.delivered);
+  mkC('cTr',{type:'bar',data:{labels:sw.map(([k])=>fmtD(new Date(k))),datasets:[{label:'Total Kits',data:tpct,backgroundColor:'rgba(123,168,201,.5)',borderColor:C.blueLt,borderWidth:1.5,borderRadius:4,rawC:rawT},{label:'Delivered',data:dpct,backgroundColor:'rgba(15,118,110,.65)',borderColor:C.teal,borderWidth:1.5,borderRadius:4,rawC:rawD}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.dataset.rawC[ctx.dataIndex]} kits (${ctx.parsed.y}% of period total)`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',callback:vv=>vv+'%'}}}}});
+  const gr=new Map();rows.forEach(r=>{const k=r.rawStatus||'Unknown';gr.set(k,(gr.get(k)||0)+1);});
+  const sorted=[...gr.entries()].sort((a,b)=>b[1]-a[1]);
+  document.getElementById('lLS').innerHTML=sorted.length?sorted.map(([k,vv])=>`<div class="spl"><div class="pn">${esc(k)}</div><div class="pv">${fN(vv)}<span class="pp">${pct(vv,tot)}</span></div></div>`).join(''):'<div class="emp">No shipments for current filters</div>';
+}
+/* RENDER 3 */
+function r3(){
+  const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
+  const rows=DS.consult.filter(r=>{if(fd&&r.drug!==fd)return false;if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
+  const tot=rows.length,comp=rows.filter(r=>r.status==='Completed').length,ns=rows.filter(r=>r.status==='No Show').length,bkd=rows.filter(r=>r.status==='Booked').length;
+  st('k3t',fN(tot));st('k3c',fN(comp));st('k3cm',tot?`${pct(comp,tot)} of total`:'—');
+  st('k3n',fN(ns));st('k3nm',tot?`${pct(ns,tot)} of total`:'—');
+  st('k3r',tot?((comp/tot)*100).toFixed(1)+'%':'—');
+  const mx=Math.max(tot,1);
+  document.getElementById('lFnl').innerHTML=`<div class="fnr"><div class="fnl2">Total</div><div class="fnb"><div class="fnf" style="width:${pr(tot,mx)}%;background:${C.teal}"><span>${fN(tot)}</span></div></div><div class="fnv">${tot?'100%':'—'}</div></div><div class="fnr"><div class="fnl2">Completed</div><div class="fnb"><div class="fnf" style="width:${pr(comp,mx)}%;background:${C.blue}"><span>${fN(comp)}</span></div></div><div class="fnv">${tot?pct(comp,tot):'—'}</div></div><div class="fnr"><div class="fnl2">No Show</div><div class="fnb"><div class="fnf" style="width:${pr(ns,mx)}%;background:${C.red}"><span>${fN(ns)}</span></div></div><div class="fnv">${tot?pct(ns,tot):'—'}</div></div><div class="fnr"><div class="fnl2">Upcoming</div><div class="fnb"><div class="fnf" style="width:${pr(bkd,mx)}%;background:${C.amber}"><span>${fN(bkd)}</span></div></div><div class="fnv">${tot?pct(bkd,tot):'—'}</div></div>`;
+  const ty=['Physiotherapist','Nutritionist'];
+  mkC('cCon',{type:'bar',data:{labels:ty,datasets:[{label:'Completed',backgroundColor:C.teal,borderRadius:4,data:ty.map(t=>rows.filter(r=>r.coachType===t&&r.status==='Completed').length)},{label:'Upcoming',backgroundColor:C.amber,borderRadius:4,data:ty.map(t=>rows.filter(r=>r.coachType===t&&r.status==='Booked').length)},{label:'No Show',backgroundColor:C.red,borderRadius:4,data:ty.map(t=>rows.filter(r=>r.coachType===t&&r.status==='No Show').length)}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}}},scales:{x:{stacked:true,beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}},y:{stacked:true,grid:{display:false},ticks:{font:{size:12},color:'#0e2a33'}}}}});
+}
+/* RENDER 4 */
+function r4(){
+  const{from,to}=gR('p4f','p4t');const fd=gv('p4d'),fs=gv('p4s');
+  const rows=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.docStatus!==fs)return false;return true;});
+  const tot=rows.length;
+  const cts={Completed:0,'Missing Documents':0,Rejected:0,'In Progress':0,'Completed – Dispatch Pending':0};
+  rows.forEach(r=>{if(cts[r.docStatus]!=null)cts[r.docStatus]++;});
+  st('k4total',fN(tot));st('k4totalm',tot!==DS.patient.length?`filtered from ${fN(DS.patient.length)} total`:'all-time registrations');
+  st('k4c',fN(cts.Completed));st('k4cm',tot?`${pct(cts.Completed,tot)} of total`:'—');
+  st('k4ms',fN(cts['Missing Documents']));st('k4mm',tot?`${pct(cts['Missing Documents'],tot)} of total`:'—');
+  st('k4r',fN(cts.Rejected));st('k4rm',tot?`${pct(cts.Rejected,tot)} of total`:'—');
+  st('k4p',fN(cts['Completed – Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed – Dispatch Pending'],tot)} of total`:'—');
+  const pl=Object.keys(cts).filter(k=>cts[k]>0);
+  mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(k=>cts[k]),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
+  const pills=Object.entries(cts).filter(([,vv])=>vv>0).sort((a,b)=>b[1]-a[1]);
+  // Doc pie breakdown with %
+  const dpPal=[C.teal,C.amber,C.red,C.blueLt,C.slate];
+  const dpLabels=Object.keys(cts).filter(k=>cts[k]>0);
+  document.getElementById('lDPBreak').innerHTML=dpLabels.map((k,i)=>`
+    <div class="bkr">
+      <div class="bkn"><span class="bks" style="background:${dpPal[i%dpPal.length]}"></span>${esc(k)}</div>
+      <div class="bkv">${fN(cts[k])}</div>
+      <div class="bkbw"><div class="bkbf" style="width:${pr(cts[k],tot)}%;background:${dpPal[i%dpPal.length]}"></div></div>
+      <div class="bkp">${pct(cts[k],tot)}</div>
+    </div>`).join('');
+  document.getElementById('lDS').innerHTML=pills.length?pills.map(([k,vv])=>`<div class="spl"><div class="pn">${esc(k)}</div><div class="pv">${fN(vv)}<span class="pp">${pct(vv,tot)}</span></div></div>`).join(''):'<div class="emp">No records for current filters</div>';
+  const bw=new Map();
+  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{Completed:0,Rejected:0,'Missing Documents':0,total:0});const b=bw.get(k);if(b[r.docStatus]!=null)b[r.docStatus]++;b.total++;});
+  const sw=[...bw.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  mkC('cDT',{type:'line',data:{labels:sw.map(([k])=>fmtD(new Date(k))),datasets:[
+    {label:'Completed',
+      data:sw.map(([,v])=>v.total?+((v.Completed/v.total)*100).toFixed(1):0),
+      rawC:sw.map(([,v])=>v.Completed), wkTot:sw.map(([,v])=>v.total),
+      borderColor:C.teal,backgroundColor:'rgba(15,118,110,.12)',borderWidth:2.5,tension:.35,fill:true,pointRadius:2.5},
+    {label:'Missing Documents',
+      data:sw.map(([,v])=>v.total?+((v['Missing Documents']/v.total)*100).toFixed(1):0),
+      rawC:sw.map(([,v])=>v['Missing Documents']), wkTot:sw.map(([,v])=>v.total),
+      borderColor:C.amber,backgroundColor:'rgba(183,121,31,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2},
+    {label:'Rejected',
+      data:sw.map(([,v])=>v.total?+((v.Rejected/v.total)*100).toFixed(1):0),
+      rawC:sw.map(([,v])=>v.Rejected), wkTot:sw.map(([,v])=>v.total),
+      borderColor:C.red,backgroundColor:'rgba(181,71,71,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}},
+      tooltip:{callbacks:{label:ctx=>{const rc=ctx.dataset.rawC[ctx.dataIndex];const wt=ctx.dataset.wkTot[ctx.dataIndex];return`${ctx.dataset.label}: ${rc} patients (${ctx.parsed.y}% of ${wt} that week)`;}}}
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},
+      y:{beginAtZero:true,max:100,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',callback:vv=>vv+'%'}}
+    }}});
+}
+/* RESETS */
+function rst1(){document.getElementById('p1f').value='';document.getElementById('p1t').value='';document.getElementById('p1d').value='';document.getElementById('p1s').value='';document.getElementById('p1q').value='';selDrs=new Set();updDrLbl();initF();r1();}
+function rst2(){document.getElementById('p2f').value='';document.getElementById('p2t').value='';document.getElementById('p2st').value='';document.getElementById('p2s').value='';cascM2();r2();}
+function rst3(){document.getElementById('p3d').value='';document.getElementById('p3t').value='';document.getElementById('p3s').value='';cascM3();r3();}
+function rst4(){document.getElementById('p4f').value='';document.getElementById('p4t').value='';document.getElementById('p4d').value='';document.getElementById('p4s').value='';r4();}
+/* DOCTOR MULTI-SELECT */
+let selDrs=new Set();
+function bldDrList(drs){document.getElementById('drlist').innerHTML=drs.length?drs.map(d=>`<div class="dri" data-n="${esc(d)}"><input type="checkbox" id="dc_${esc(d)}" value="${esc(d)}" onchange="onDrChk()"><label for="dc_${esc(d)}">${esc(d)}</label></div>`).join(''):'<div class="dre">No doctors available</div>';}
+function updDrList(drs){const q=document.getElementById('drsch').value.toLowerCase();document.getElementById('drlist').innerHTML=drs.length?drs.map(d=>`<div class="dri" data-n="${esc(d)}" style="${d.toLowerCase().includes(q)||!q?'':'display:none'}"><input type="checkbox" id="dc_${esc(d)}" value="${esc(d)}" ${selDrs.has(d)?'checked':''} onchange="onDrChk()"><label for="dc_${esc(d)}">${esc(d)}</label></div>`).join(''):'<div class="dre">No doctors for current selection</div>';}
+function fDrSch(q){document.querySelectorAll('#drlist .dri').forEach(i=>{i.style.display=i.dataset.n.toLowerCase().includes(q.toLowerCase())||!q?'flex':'none';});}
+function tDr(){const dd=document.getElementById('drd'),tr=document.getElementById('drt');const s=!dd.classList.contains('show');dd.classList.toggle('show',s);tr.classList.toggle('open',s);if(s)document.getElementById('drsch').focus();}
+function onDrChk(){selDrs=new Set([...document.querySelectorAll('#drlist input[type=checkbox]:checked')].map(c=>c.value));updDrLbl();cascM1();r1();}
+function updDrLbl(){const nm=selDrs.size;document.getElementById('drlbl').innerHTML=nm===0?'All Doctors':`<span class="drb">${nm}</span> doctor${nm>1?'s':''} selected`;}
+function selAllDr(){document.querySelectorAll('#drlist input[type=checkbox]').forEach(c=>c.checked=true);onDrChk();}
+function clrDr(){document.querySelectorAll('#drlist input[type=checkbox]').forEach(c=>c.checked=false);selDrs=new Set();updDrLbl();cascM1();r1();}
+document.addEventListener('click',e=>{const f=document.getElementById('drf');if(f&&!f.contains(e.target)){document.getElementById('drd').classList.remove('show');document.getElementById('drt').classList.remove('open');}});
+/* CHART HELPERS */
+const _ch={};
+function mkC(id,cfg){if(_ch[id]){_ch[id].destroy();delete _ch[id];}_ch[id]=new Chart(document.getElementById(id),cfg);}
+function rPie(m,cid,lid,pal,type='pie'){
+  const e=[...m.entries()].sort((a,b)=>b[1]-a[1]);const tot=e.reduce((s,[,v])=>s+v,0);
+  mkC(cid,{type,data:{labels:e.map(([k])=>k),datasets:[{data:e.map(([,v])=>v),backgroundColor:pal.slice(0,e.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:type==='doughnut'?'62%':0,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fN(ctx.parsed)} (${pct(ctx.parsed,tot)})`}}}}});
+  const el=document.getElementById(lid);
+  if(!e.length){el.innerHTML='<div class="emp">No data</div>';return;}
+  el.innerHTML=e.map(([k,v],i)=>`<div class="bkr"><div class="bkn"><span class="bks" style="background:${pal[i%pal.length]}"></span>${esc(k)}</div><div class="bkv">${fN(v)}</div><div class="bkbw"><div class="bkbf" style="width:${pr(v,tot)}%;background:${pal[i%pal.length]}"></div></div><div class="bkp">${pct(v,tot)}</div></div>`).join('');
+}
+function rBarH(cid,entries,color){mkC(cid,{type:'bar',data:{labels:entries.map(e=>e.k),datasets:[{data:entries.map(e=>e.v),backgroundColor:color,borderRadius:6,barThickness:26}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}},y:{grid:{display:false},ticks:{font:{size:12},color:'#0e2a33'}}}}});}
+const cntB=(rows,field)=>{const m=new Map();rows.forEach(r=>{const k=r[field];if(!k)return;m.set(k,(m.get(k)||0)+1);});return m;};
+const topN=(m,nm)=>[...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,nm).map(([k,v])=>({k,v}));
+const fN=nm=>(nm||0).toLocaleString('en-IN');
+const pct=(a,b)=>b?((a/b)*100).toFixed(1)+'%':'—';
+const pr=(a,b)=>b?(a/b)*100:0;
+const st=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val;};
+const gv=id=>document.getElementById(id).value;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const gR=(f,t)=>({from:document.getElementById(f).value?new Date(document.getElementById(f).value+'T00:00:00'):null,to:document.getElementById(t).value?new Date(document.getElementById(t).value+'T23:59:59'):null});
+function fsl(id,vals,ph,pres=''){const el=document.getElementById(id);el.innerHTML=`<option value="">${ph}</option>`+vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');if(pres&&vals.includes(pres))el.value=pres;}
+/* ── Module 4 CSV Export ── */
+function exportM4CSV(){
+  const btn=document.getElementById('exportBtn');
+  btn.disabled=true;btn.textContent='Preparing…';
+
+  // Get currently filtered rows (same logic as r4)
+  const{from,to}=gR('p4f','p4t');
+  const fd=gv('p4d'),fs=gv('p4s');
+  const rows=DS.patient.filter(r=>{
+    if(!inR(r._date,from,to))return false;
+    if(fd&&r.drug!==fd)return false;
+    if(fs&&r.docStatus!==fs)return false;
+    return true;
+  });
+
+  if(!rows.length){
+    alert('No data to export for the current filters.');
+    btn.disabled=false;btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV`;
+    return;
+  }
+
+  // Build CSV
+  const headers=['Patient Name','Mobile','State','Purchase Date','Drug Name','QR Type','Doctor Name','Documentation Status','Plan'];
+  const csvRows=[headers];
+
+  rows.forEach(r=>{
+    const purchaseDate=r._date?r._date.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
+    csvRows.push([
+      csvCell(r.name),
+      csvCell(r.mobile),
+      csvCell(r.state),
+      csvCell(purchaseDate),
+      csvCell(r.drug),
+      csvCell(r.qr),
+      csvCell(r.doctor),
+      csvCell(r.docStatus),
+      csvCell(r.plan),
+    ]);
+  });
+
+  const csvContent=csvRows.map(row=>row.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csvContent],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+
+  // File name includes active filters + date
+  const today=new Date().toISOString().slice(0,10);
+  const filterTag=[fd,fs].filter(Boolean).join('_').replace(/\s/g,'-')||'all';
+  a.download=`MySaathi_Documentation_${filterTag}_${today}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  btn.disabled=false;
+  btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV`;
+}
+
+// Safely wrap a CSV cell — escape quotes, wrap in quotes if contains comma/newline/quote
+function csvCell(val){
+  const s=String(val==null?'':val);
+  if(s.includes(',') || s.includes('"') || s.indexOf('\n') > -1){
+    return'"'+s.replace(/"/g,'""')+'"';
+  }
+  return s;
+}
+
+/* ── Patient Logistics Search ── */
+function onPSearch(){
+  const q=document.getElementById('pSearch').value.trim();
+  const clr=document.getElementById('pSearchClear');
+  const res=document.getElementById('pSearchResults');
+  clr.classList.toggle('show', q.length>0);
+  if(q.length<2){res.classList.remove('show');return;}
+  // Search across ALL logistics data (not just filtered — so user can find any patient)
+  const ql=q.toLowerCase();
+  const matches=DS.logistics.filter(r=>r.name&&r.name.toLowerCase().includes(ql));
+  renderPSearchResults(matches, q);
+  res.classList.add('show');
+}
+function clearPSearch(){
+  document.getElementById('pSearch').value='';
+  document.getElementById('pSearchClear').classList.remove('show');
+  document.getElementById('pSearchResults').classList.remove('show');
+}
+function renderPSearchResults(rows, q){
+  const meta=document.getElementById('pSearchMeta');
+  const body=document.getElementById('pSearchBody');
+  if(!rows.length){
+    meta.textContent='';
+    body.innerHTML=`<tr><td colspan="5" class="psearch-empty">No patient found matching "${esc(q)}"</td></tr>`;
+    return;
+  }
+  meta.textContent=`${rows.length} result${rows.length>1?'s':''} found`;
+  body.innerHTML=rows.map(r=>{
+    const bucket=r.bucket||'Others';
+    const stClass=bucket==='Delivered'?'pst-delivered':bucket==='In Transit'?'pst-transit':bucket==='RTO'?'pst-rto':'pst-others';
+    const placedDate=r._date?fmtDFull(r._date):'<span class="pst-blank">—</span>';
+    const deliveredDate=r._deliveredDate?fmtDFull(r._deliveredDate):'<span class="pst-blank">Not yet delivered</span>';
+    return`<tr>
+      <td class="pst-name">${esc(r.name)}</td>
+      <td>${placedDate}</td>
+      <td>${deliveredDate}</td>
+      <td><span class="pst-status ${stClass}">${esc(bucket)}</span></td>
+      <td>${esc(r.city||'—')}</td>
+    </tr>`;
+  }).join('');
+}
+function fmtDFull(d){return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+
+/* ══════════════════════════════════════════════════════
+   FIREBASE AUTH + ROLE-BASED ACCESS CONTROL
+══════════════════════════════════════════════════════ */
+const FB_CONFIG = {
+  apiKey: "AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8",
+  authDomain: "mysaathi-dashboard.firebaseapp.com",
+  databaseURL: "https://mysaathi-dashboard-default-rtdb.firebaseio.com",
+  projectId: "mysaathi-dashboard",
+  storageBucket: "mysaathi-dashboard.firebasestorage.app",
+  messagingSenderId: "755642238347",
+  appId: "1:755642238347:web:be8a39c6852021c4761b8e"
+};
+const ADMIN_UID = "VzNDpj9MfDMDVx9Cc6RD4xdj93N2";
+
+// Module permission keys — map to section IDs
+const MODULE_PERMS = [
+  {key:'mod1', label:'Patient Distribution',      sub:'Module 01'},
+  {key:'mod2', label:'Welcome Kit & Logistics',   sub:'Module 02'},
+  {key:'mod3', label:'Expert Consultation',        sub:'Module 03'},
+  {key:'mod4', label:'Documentation',              sub:'Module 04'},
+  {key:'mod5', label:'Loyalty Rewards',            sub:'Module 05'},
+  {key:'mod6', label:'App Engagement',             sub:'Module 06'},
+  {key:'export', label:'Data Export (CSV)',        sub:'Module 04 export button'},
+];
+
+// Initialize Firebase
+firebase.initializeApp(FB_CONFIG);
+const fbAuth = firebase.auth();
+const fbDB   = firebase.database();
+
+let currentUser  = null;
+let currentRole  = null;
+let currentPerms = {};
+let selectedUid  = null;
+
+/* ── Auth state listener ── */
+fbAuth.onAuthStateChanged(async user => {
+  if(!user){
+    showLoginScreen();
+    return;
+  }
+  currentUser = user;
+  // Load user profile from DB
+  const snap = await fbDB.ref('users/'+user.uid).get();
+  if(snap.exists()){
+    const profile = snap.val();
+    // Check if user has been disabled/removed by admin
+    if(profile.disabled === true){
+      await fbAuth.signOut();
+      showLoginScreen();
+      showLoginError('Your account has been removed. Please contact your administrator.');
+      return;
+    }
+    currentRole  = profile.role || 'user';
+    currentPerms = profile.permissions || {};
+  } else {
+    // First time — check if admin UID
+    currentRole = (user.uid === ADMIN_UID) ? 'admin' : 'user';
+    currentPerms = {};
+    // Save to DB
+    await fbDB.ref('users/'+user.uid).set({
+      email: user.email,
+      name: user.displayName || user.email.split('@')[0],
+      role: currentRole,
+      permissions: currentRole==='admin' ? {mod1:true,mod2:true,mod3:true,mod4:true,mod5:true,mod6:true,export:true} : {},
+      createdAt: Date.now()
+    });
+    if(currentRole==='admin') currentPerms = {mod1:true,mod2:true,mod3:true,mod4:true,mod5:true,mod6:true,export:true};
+  }
+  hideLoginScreen();
+  applyAccessControl();
+  // Load dashboard data
+  loadAll();
+});
+
+/* ── Login ── */
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  const btn   = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginError');
+  errEl.classList.remove('show');
+  if(!email||!pwd){ showLoginError('Please enter email and password.'); return; }
+  btn.disabled=true; btn.textContent='Signing in…';
+  try{
+    await fbAuth.signInWithEmailAndPassword(email, pwd);
+  } catch(e){
+    let msg = 'Invalid email or password. Please try again.';
+    if(e.code==='auth/too-many-requests') msg='Too many attempts. Please wait a moment.';
+    if(e.code==='auth/user-disabled') msg='This account has been disabled.';
+    showLoginError(msg);
+    btn.disabled=false; btn.textContent='Sign In';
+  }
+}
+
+/* ── Logout ── */
+async function doLogout(){
+  await fbAuth.signOut();
+  currentUser=null; currentRole=null; currentPerms={};
+  document.getElementById('mainShell').style.display='none';
+  showLoginScreen();
+}
+
+function showLoginScreen(){
+  document.getElementById('authLayer').classList.remove('hide');
+  document.getElementById('mainShell').style.display='none';
+}
+function hideLoginScreen(){
+  document.getElementById('authLayer').classList.add('hide');
+  document.getElementById('mainShell').style.display='block';
+  // Update auth bar
+  const name = currentUser.displayName || currentUser.email.split('@')[0];
+  document.getElementById('authUserPill').textContent = name + (currentRole==='admin'?' (Admin)':'');
+  const adminBtn = document.getElementById('adminPanelBtn');
+  if(currentRole==='admin') adminBtn.classList.add('show'); else adminBtn.classList.remove('show');
+}
+function showLoginError(msg){
+  const el=document.getElementById('loginError');
+  el.textContent=msg; el.classList.add('show');
+}
+
+/* ── Access Control ── */
+function applyAccessControl(){
+  if(currentRole==='admin'){
+    // Admin sees everything
+    document.querySelectorAll('section.module').forEach(s=>s.style.display='');
+    const expBtn=document.getElementById('exportBtn');
+    if(expBtn) expBtn.style.display='';
+    return;
+  }
+  // General user — apply permissions
+  const modMap = {
+    mod1: document.querySelectorAll('section.module')[0],
+    mod2: document.querySelectorAll('section.module')[1],
+    mod3: document.querySelectorAll('section.module')[2],
+    mod4: document.querySelectorAll('section.module')[3],
+    mod5: document.querySelectorAll('section.module')[4],
+    mod6: document.querySelectorAll('section.module')[5],
+  };
+  // Also handle hr dividers
+  const dividers = document.querySelectorAll('hr.dv');
+  MODULE_PERMS.filter(p=>p.key!=='export').forEach((p,i)=>{
+    const el=modMap[p.key];
+    if(el){
+      const allowed = currentPerms[p.key]===true;
+      el.style.display = allowed?'':'none';
+      if(dividers[i]) dividers[i].style.display = allowed?'':'none';
+    }
+  });
+  // Export button
+  const expBtn=document.getElementById('exportBtn');
+  if(expBtn) expBtn.style.display = currentPerms.export===true ? '' : 'none';
+}
+
+/* ── Admin Panel ── */
+function openAdminPanel(){
+  if(currentRole!=='admin') return;
+  document.getElementById('adminPanel').classList.add('show');
+  loadUserList();
+}
+function closeAdminPanel(){
+  document.getElementById('adminPanel').classList.remove('show');
+  selectedUid=null;
+}
+
+async function loadUserList(){
+  const snap = await fbDB.ref('users').get();
+  const listEl = document.getElementById('userList');
+  if(!snap.exists()){ listEl.innerHTML='<div style="padding:20px;font-size:12px;color:#7a8c93">No users yet</div>'; return; }
+  const users = snap.val();
+  // Filter out hidden/removed users
+  const visibleUsers = Object.entries(users).filter(([uid,u]) => !u.hidden);
+  if(!visibleUsers.length){ listEl.innerHTML='<div style="padding:20px;font-size:12px;color:#7a8c93">No active users</div>'; return; }
+  listEl.innerHTML = visibleUsers.map(([uid,u])=>`
+    <div class="user-item ${selectedUid===uid?'active':''}" onclick="selectUser('${uid}')">
+      <div class="un">${esc(u.name||u.email||'Unknown')}</div>
+      <div class="ue">${esc(u.email||'')}</div>
+      <span class="ur ${u.role==='admin'?'ur-admin':'ur-user'}">${u.role==='admin'?'Admin':'General User'}</span>
+    </div>`).join('');
+}
+
+async function selectUser(uid){
+  selectedUid=uid;
+  await loadUserList(); // refresh active state
+  const snap = await fbDB.ref('users/'+uid).get();
+  if(!snap.exists()) return;
+  const u = snap.val();
+  const perms = u.permissions||{};
+  const isAdmin = u.role==='admin';
+  const permEl = document.getElementById('permPanel');
+  permEl.innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="font-size:15px;font-weight:600;color:#0e2a33">${esc(u.name||u.email)}</div>
+      <div style="font-size:12px;color:#7a8c93;margin-top:2px">${esc(u.email||'')}</div>
+      ${isAdmin?'<div style="margin-top:8px;font-size:12px;color:#0f766e;background:#e7f4f2;padding:6px 10px;border-radius:6px">Admin has full access to all modules</div>':''}
+    </div>
+    <div class="ap-perms-title">Module Access Permissions</div>
+    ${MODULE_PERMS.map(p=>`
+      <div class="perm-row">
+        <div>
+          <div class="perm-label">${p.label}</div>
+          <div class="perm-sub">${p.sub}</div>
+        </div>
+        <label class="toggle-wrap">
+          <input type="checkbox" ${(isAdmin||perms[p.key]===true)?'checked':''} ${isAdmin?'disabled':''}
+            onchange="updatePerm('${uid}','${p.key}',this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>`).join('')}
+    <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid #eff3f5;flex-wrap:wrap">
+      ${!isAdmin ? `<button class="auf-save" style="background:#1e6091;font-size:12px;padding:7px 14px" onclick="changeRole('${uid}','admin')">⬆ Make Admin</button>` : uid !== ADMIN_UID ? `<button class="auf-save" style="background:#b7791f;font-size:12px;padding:7px 14px" onclick="changeRole('${uid}','user')">⬇ Remove Admin</button>` : '<span style="font-size:11px;color:#7a8c93;font-style:italic">Primary admin — role cannot be changed</span>'}
+      <button class="reset-pwd-btn" onclick="openAdminResetPwd('${uid}','${esc(u.email||'')}')">🔑 Reset Password</button>
+      <button class="del-user-btn" style="margin-top:0" onclick="deleteUser('${uid}','${esc(u.email||'')}')">🗑 Remove User</button>
+    </div>
+  `;
+}
+
+async function updatePerm(uid, key, val){
+  await fbDB.ref('users/'+uid+'/permissions/'+key).set(val);
+}
+
+async function createUser(){
+  const email  = document.getElementById('newEmail').value.trim();
+  const pwd    = document.getElementById('newPwd').value;
+  const name   = document.getElementById('newName').value.trim();
+  const role   = document.getElementById('newRole').value;
+  if(!email||!pwd||pwd.length<6){ alert('Please fill all fields. Password must be at least 6 characters.'); return; }
+
+  // Create via Firebase REST API (client SDK createUser creates & signs in — we avoid that)
+  // Instead: use Admin REST endpoint via fetch with current user's ID token
+  const idToken = await currentUser.getIdToken();
+  try{
+    const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({email,password:pwd,returnSecureToken:false})
+    });
+    const data = await resp.json();
+    if(data.error){ alert('Error: '+data.error.message); return; }
+    const newUid = data.localId;
+    const defaultPerms = role==='admin'?{mod1:true,mod2:true,mod3:true,mod4:true,mod5:true,mod6:true,export:true}:{};
+    await fbDB.ref('users/'+newUid).set({
+      email, name:name||email.split('@')[0], role,
+      permissions:defaultPerms, createdAt:Date.now()
+    });
+    document.getElementById('newEmail').value='';
+    document.getElementById('newPwd').value='';
+    document.getElementById('newName').value='';
+    document.getElementById('addUserForm').classList.remove('show');
+    await loadUserList();
+    alert('User created successfully!');
+  } catch(e){ alert('Failed to create user: '+e.message); }
+}
+
+async function deleteUser(uid, email){
+  if(!confirm('Remove '+email+' from dashboard? They will be permanently blocked from accessing the dashboard.')) return;
+  // Set disabled flag — blocks login. Also mark hidden so they don't appear in user list.
+  await fbDB.ref('users/'+uid).update({disabled: true, hidden: true, permissions: {}});
+  selectedUid=null;
+  document.getElementById('permPanel').innerHTML='<div class="ap-no-sel">Select a user to manage permissions</div>';
+  await loadUserList();
+  alert(email+' has been removed. They can no longer access the dashboard.');
+}
+
+function toggleAddForm(){
+  document.getElementById('addUserForm').classList.toggle('show');
+}
+
+/* ══ CHANGE PASSWORD ══ */
+let chpwdMode = 'self'; // 'self' or 'admin'
+let chpwdTargetUid = null;
+let chpwdTargetEmail = null;
+
+function openSelfChPwd(){
+  chpwdMode = 'self';
+  chpwdTargetUid = null;
+  document.getElementById('chpwdTitle').textContent = 'Change Your Password';
+  document.getElementById('chpwdSubtitle').textContent = 'Enter your current password and choose a new one.';
+  document.getElementById('chpwdUserTag').style.display = 'none';
+  document.getElementById('chpwdCurrentWrap').style.display = 'flex';
+  resetChPwdForm();
+  document.getElementById('chpwdModal').classList.add('show');
+}
+
+function openAdminResetPwd(uid, email){
+  chpwdMode = 'admin';
+  chpwdTargetUid = uid;
+  chpwdTargetEmail = email;
+  document.getElementById('chpwdTitle').textContent = 'Reset User Password';
+  document.getElementById('chpwdSubtitle').textContent = 'Set a new password for this user.';
+  const tag = document.getElementById('chpwdUserTag');
+  tag.textContent = email;
+  tag.style.display = 'inline-block';
+  document.getElementById('chpwdCurrentWrap').style.display = 'none';
+  resetChPwdForm();
+  document.getElementById('chpwdModal').classList.add('show');
+}
+
+function closeChPwd(){
+  document.getElementById('chpwdModal').classList.remove('show');
+  resetChPwdForm();
+}
+
+function resetChPwdForm(){
+  ['chpwdCurrent','chpwdNew','chpwdConfirm'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){ el.value=''; el.type='password'; }
+  });
+  document.querySelectorAll('.chpwd-card .eye').forEach(b=>b.textContent='👁');
+  document.getElementById('chpwdError').classList.remove('show');
+  document.getElementById('chpwdSuccess').classList.remove('show');
+  const btn = document.getElementById('chpwdSaveBtn');
+  btn.disabled=false; btn.textContent='Update Password';
+}
+
+function toggleChPwd(inputId, btn){
+  const inp = document.getElementById(inputId);
+  if(inp.type==='password'){ inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
+}
+
+async function savePassword(){
+  const newPwd     = document.getElementById('chpwdNew').value;
+  const confirmPwd = document.getElementById('chpwdConfirm').value;
+  const errEl      = document.getElementById('chpwdError');
+  const sucEl      = document.getElementById('chpwdSuccess');
+  const btn        = document.getElementById('chpwdSaveBtn');
+
+  errEl.classList.remove('show');
+  sucEl.classList.remove('show');
+
+  if(newPwd.length < 6){ showChPwdError('New password must be at least 6 characters.'); return; }
+  if(newPwd !== confirmPwd){ showChPwdError('Passwords do not match. Please try again.'); return; }
+
+  btn.disabled=true; btn.textContent='Updating…';
+
+  if(chpwdMode === 'self'){
+    // Self change — re-authenticate first with current password
+    const currentPwd = document.getElementById('chpwdCurrent').value;
+    if(!currentPwd){ showChPwdError('Please enter your current password.'); btn.disabled=false; btn.textContent='Update Password'; return; }
+    try{
+      const credential = firebase.auth.EmailAuthProvider.credential(currentUser.email, currentPwd);
+      await currentUser.reauthenticateWithCredential(credential);
+      await currentUser.updatePassword(newPwd);
+      showChPwdSuccess('Password changed successfully!');
+      setTimeout(()=>closeChPwd(), 2000);
+    } catch(e){
+      let msg = 'Failed to update password. Please try again.';
+      if(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential') msg='Current password is incorrect.';
+      if(e.code==='auth/too-many-requests') msg='Too many attempts. Please wait a moment.';
+      showChPwdError(msg);
+      btn.disabled=false; btn.textContent='Update Password';
+    }
+  } else {
+    // Admin reset — use Firebase REST API to update password
+    try{
+      const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:update?key=AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({localId: chpwdTargetUid, password: newPwd, returnSecureToken:false})
+      });
+      const data = await resp.json();
+      if(data.error){ showChPwdError('Error: '+data.error.message); btn.disabled=false; btn.textContent='Update Password'; return; }
+      showChPwdSuccess('Password reset successfully for '+chpwdTargetEmail+'!');
+      setTimeout(()=>closeChPwd(), 2000);
+    } catch(e){
+      showChPwdError('Failed to reset password. Please try again.');
+      btn.disabled=false; btn.textContent='Update Password';
+    }
+  }
+}
+
+function showChPwdError(msg){
+  const el=document.getElementById('chpwdError');
+  el.textContent=msg; el.classList.add('show');
+}
+function showChPwdSuccess(msg){
+  const el=document.getElementById('chpwdSuccess');
+  el.textContent=msg; el.classList.add('show');
+}
+
+// Close modal on backdrop click
+document.getElementById('chpwdModal').addEventListener('click', function(e){
+  if(e.target===this) closeChPwd();
+});
+
+function togglePwdView(){
+  const inp = document.getElementById('loginPwd');
+  const btn = document.getElementById('pwdToggle');
+  if(inp.type==='password'){ inp.type='text'; btn.textContent='🙈'; }
+  else { inp.type='password'; btn.textContent='👁'; }
+}
+function toggleNewPwd(){
+  const inp = document.getElementById('newPwd');
+  inp.type = inp.type==='password' ? 'text' : 'password';
+}
+
+async function changeRole(uid, newRole){
+  const action = newRole==='admin' ? 'make this user an Admin' : 'remove Admin access from this user';
+  if(!confirm('Are you sure you want to '+action+'?')) return;
+  const newPerms = newRole==='admin' ? {mod1:true,mod2:true,mod3:true,mod4:true,mod5:true,mod6:true,export:true} : {};
+  await fbDB.ref('users/'+uid).update({role: newRole, permissions: newPerms});
+  await selectUser(uid); // refresh panel
+  await loadUserList();  // refresh list
+  alert('Role updated successfully!');
+}
+
+/* ══ MODULE 5 — LOYALTY REWARDS ══ */
+function oF5(){r5();}
+function rst5(){
+  document.getElementById('p5f').value='';
+  document.getElementById('p5t').value='';
+  document.getElementById('p5d').value='';
+  r5();
+}
+
+function r5(){
+  if(!DS.loyalty||!DS.loyalty.length){
+    document.getElementById('k5earned').textContent='—';
+    document.getElementById('k5redeemed').textContent='—';
+    document.getElementById('k5patients').textContent='—';
+    document.getElementById('k5avg').textContent='—';
+    document.getElementById('l5activity').innerHTML='<div class="emp">No loyalty data available</div>';
+    document.getElementById('l5redemption').innerHTML='<div class="emp">No redemption data</div>';
+    return;
+  }
+
+  const{from,to}=gR('p5f','p5t');
+  const fd=gv('p5d');
+
+  // Filter loyalty rows
+  const rows=DS.loyalty.filter(r=>{
+    if(from||to){if(!inR(r._date,from,to))return false;}
+    if(fd&&r.drug!==fd)return false;
+    return true;
+  });
+
+  // Populate drug filter (cascading)
+  const avDrugs=[...new Set(DS.loyalty.filter(r=>{
+    const{from,to}=gR('p5f','p5t');
+    if(from||to){if(!inR(r._date,from,to))return false;}
+    return true;
+  }).map(r=>r.drug).filter(Boolean))].sort();
+  fsl('p5d',avDrugs,'All Drugs',fd);
+
+  // KPI 1 — Total Points Earned
+  const totalEarned = rows.reduce((s,r)=>s+r.coinsEarned,0);
+  st('k5earned',fN(totalEarned));
+
+  // KPI 2 — Redemption (only rows with redemption data)
+  const redeemRows = rows.filter(r=>r.coinRedeemed>0);
+  const totalRedeemed = redeemRows.reduce((s,r)=>s+r.coinRedeemed,0);
+  const totalAmount = redeemRows.reduce((s,r)=>s+r.amount,0);
+  st('k5redeemed',fN(totalRedeemed));
+  st('k5redeemedm','₹'+fN(totalAmount)+' in value');
+
+  // KPI 3 — Active patients (unique)
+  const uniquePts = new Set(rows.map(r=>r.patientId||r.activityType).filter(Boolean)).size;
+  // Use row count as proxy if patientId not available
+  const earnRows = rows.filter(r=>r.coinsEarned>0);
+  st('k5patients',fN(earnRows.length));
+  st('k5avg', earnRows.length? (totalEarned/earnRows.length).toFixed(1) : '—');
+
+  // Activity breakdown — funnel style
+  const actMap = new Map();
+  rows.filter(r=>r.activityType&&r.coinsEarned>0).forEach(r=>{
+    actMap.set(r.activityType,(actMap.get(r.activityType)||0)+1);
+  });
+  const actEntries=[...actMap.entries()].sort((a,b)=>b[1]-a[1]);
+  const actTotal=actEntries.reduce((s,[,v])=>s+v,0);
+  const actColors={steps:C.teal,diet:C.blue,BCA:C.amber,sleep:C.blueLt,exercise:C.mint,water:C.teal2};
+  const actEl=document.getElementById('l5activity');
+  if(!actEntries.length){actEl.innerHTML='<div class="emp">No activity data for selected filters</div>';}
+  else{
+    const mx=Math.max(actEntries[0][1],1);
+    actEl.innerHTML=actEntries.map(([k,v])=>`
+      <div class="fnr">
+        <div class="fnl2" style="text-transform:capitalize">${esc(k)}</div>
+        <div class="fnb"><div class="fnf" style="width:${pr(v,mx)}%;background:${actColors[k]||C.slate}">
+          <span>${fN(v)}</span>
+        </div></div>
+        <div class="fnv" style="font-size:12px;color:var(--muted)">${pct(v,actTotal)}</div>
+      </div>`).join('');
+  }
+
+  // Redemption breakdown — brand wise
+  const redemEl=document.getElementById('l5redemption');
+  if(!redeemRows.length){
+    redemEl.innerHTML='<div class="emp">No redemptions in selected filters</div>';
+  } else {
+    // Group by brand
+    const brandMap=new Map();
+    redeemRows.forEach(r=>{
+      const b=r.brand||'Other';
+      if(!brandMap.has(b))brandMap.set(b,{coins:0,amount:0,count:0});
+      const bv=brandMap.get(b);
+      bv.coins+=r.coinRedeemed; bv.amount+=r.amount; bv.count++;
+    });
+    const brands=[...brandMap.entries()].sort((a,b)=>b[1].coins-a[1].coins);
+    redemEl.innerHTML=`
+      <div style="margin-bottom:10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600">Brand Breakdown</div>
+      ${brands.map(([brand,v])=>`
+        <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px 16px;padding:10px 0;border-bottom:1px solid var(--line2);align-items:center">
+          <div style="font-size:13px;font-weight:500;color:var(--ink)">${esc(brand)}</div>
+          <div style="text-align:right"><div style="font-family:'Fraunces',serif;font-size:15px">${fN(v.coins)}</div><div style="font-size:10px;color:var(--muted)">coins</div></div>
+          <div style="text-align:right"><div style="font-family:'Fraunces',serif;font-size:15px">₹${fN(v.amount)}</div><div style="font-size:10px;color:var(--muted)">value</div></div>
+        </div>`).join('')}
+      <div style="padding-top:10px;display:flex;justify-content:space-between;font-size:12px;color:var(--muted)">
+        <span>${redeemRows.length} redemption${redeemRows.length!==1?'s':''}</span>
+        <span>Total: ${fN(totalRedeemed)} coins · ₹${fN(totalAmount)}</span>
+      </div>`;
+  }
+
+  // Trend — daily points
+  const dayMap=new Map();
+  rows.filter(r=>r._date&&r.coinsEarned>0).forEach(r=>{
+    const k=ymd(r._date);
+    dayMap.set(k,(dayMap.get(k)||0)+r.coinsEarned);
+  });
+  const dayArr=[...dayMap.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  mkC('c5trend',{type:'line',
+    data:{labels:dayArr.map(([k])=>fmtD(new Date(k))),
+      datasets:[{label:'Points Earned',data:dayArr.map(([,v])=>v),
+        borderColor:C.teal,backgroundColor:'rgba(15,118,110,.12)',
+        borderWidth:2.5,tension:.35,fill:true,pointRadius:2.5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},
+              y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}}}}
+  });
 }
 
 Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
