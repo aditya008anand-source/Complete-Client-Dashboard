@@ -504,11 +504,9 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     <div class="krow">
       <div class="kpi"><div class="kl">Total Points Earned</div><div class="kv" id="k5earned">—</div><div class="km" id="k5earnedm">across all activities</div></div>
       <div class="kpi blue"><div class="kl">Total Points Redeemed</div><div class="kv" id="k5redeemed">—</div><div class="km" id="k5redeemedm">— in value</div></div>
-      <div class="kpi amb"><div class="kl">Active Patients</div><div class="kv" id="k5patients">—</div><div class="km">earning points</div></div>
-      <div class="kpi"><div class="kl">Avg Points / Patient</div><div class="kv" id="k5avg">—</div><div class="km">earned per patient</div></div>
     </div>
     <div class="grid g2">
-      <div class="card"><div class="ct">Activity Type Breakdown</div><div class="fnl" id="l5activity"></div></div>
+      <div class="card"><div class="ct">Coins Earned by Activity</div><div class="cw" style="height:260px"><canvas id="c5activity"></canvas></div></div>
       <div class="card"><div class="ct">Redemption Details</div><div id="l5redemption"></div></div>
     </div>
     <div class="card" style="margin-top:14px"><div class="ct">Daily Points Earned Trend</div><div class="cw"><canvas id="c5trend"></canvas></div></div>
@@ -1300,8 +1298,6 @@ function r5(){
   if(!DS.loyalty||!DS.loyalty.length){
     document.getElementById('k5earned').textContent='—';
     document.getElementById('k5redeemed').textContent='—';
-    document.getElementById('k5patients').textContent='—';
-    document.getElementById('k5avg').textContent='—';
     document.getElementById('l5activity').innerHTML='<div class="emp">No loyalty data available</div>';
     document.getElementById('l5redemption').innerHTML='<div class="emp">No redemption data</div>';
     return;
@@ -1337,34 +1333,33 @@ function r5(){
   st('k5redeemedm','₹'+fN(totalAmount)+' in value');
 
   // KPI 3 — Active patients (unique)
-  const uniquePts = new Set(rows.map(r=>r.patientId||r.activityType).filter(Boolean)).size;
   // Use row count as proxy if patientId not available
   const earnRows = rows.filter(r=>r.coinsEarned>0);
-  st('k5patients',fN(earnRows.length));
-  st('k5avg', earnRows.length? (totalEarned/earnRows.length).toFixed(1) : '—');
 
-  // Activity breakdown — funnel style
-  const actMap = new Map();
+  // Activity breakdown — coins earned per activity (vertical bar chart)
+  const actCoins=new Map();
   rows.filter(r=>r.activityType&&r.coinsEarned>0).forEach(r=>{
-    actMap.set(r.activityType,(actMap.get(r.activityType)||0)+1);
+    actCoins.set(r.activityType,(actCoins.get(r.activityType)||0)+r.coinsEarned);
   });
-  const actEntries=[...actMap.entries()].sort((a,b)=>b[1]-a[1]);
-  const actTotal=actEntries.reduce((s,[,v])=>s+v,0);
+  const actEntries=[...actCoins.entries()].sort((a,b)=>b[1]-a[1]);
   const actColors={steps:C.teal,diet:C.blue,BCA:C.amber,sleep:C.blueLt,exercise:C.mint,water:C.teal2};
-  const actEl=document.getElementById('l5activity');
-  if(!actEntries.length){actEl.innerHTML='<div class="emp">No activity data for selected filters</div>';}
-  else{
-    const mx=Math.max(actEntries[0][1],1);
-    actEl.innerHTML=actEntries.map(([k,v])=>`
-      <div class="fnr">
-        <div class="fnl2" style="text-transform:capitalize">${esc(k)}</div>
-        <div class="fnb"><div class="fnf" style="width:${pr(v,mx)}%;background:${actColors[k]||C.slate}">
-          <span>${fN(v)}</span>
-        </div></div>
-        <div class="fnv" style="font-size:12px;color:var(--muted)">${pct(v,actTotal)}</div>
-      </div>`).join('');
-  }
-
+  mkC('c5activity',{type:'bar',
+    data:{
+      labels:actEntries.map(function(e){return e[0].charAt(0).toUpperCase()+e[0].slice(1);}),
+      datasets:[{
+        label:'Coins Earned',
+        data:actEntries.map(function(e){return e[1];}),
+        backgroundColor:actEntries.map(function(e){return actColors[e[0]]||C.slate;}),
+        borderRadius:6,
+        borderWidth:0
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.label+': '+fN(ctx.parsed.y)+' coins';}}},},
+      scales:{x:{grid:{display:false},ticks:{font:{size:12},color:'#0e2a33'}},
+              y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}}}
+    }
+  });
   // Redemption breakdown — brand wise
   const redemEl=document.getElementById('l5redemption');
   if(!redeemRows.length){
@@ -1394,18 +1389,18 @@ function r5(){
     redemEl.innerHTML=redemHtml;
   }
 
-  // Trend — daily points
-  const dayMap=new Map();
+  // Trend — weekly points earned
+  const wkMap=new Map();
   rows.filter(r=>r._date&&r.coinsEarned>0).forEach(r=>{
-    const k=ymd(r._date);
-    dayMap.set(k,(dayMap.get(k)||0)+r.coinsEarned);
+    const k=ymd(sow(r._date));
+    wkMap.set(k,(wkMap.get(k)||0)+r.coinsEarned);
   });
-  const dayArr=[...dayMap.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const wkArr=[...wkMap.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
   mkC('c5trend',{type:'line',
-    data:{labels:dayArr.map(([k])=>fmtD(new Date(k))),
-      datasets:[{label:'Points Earned',data:dayArr.map(([,v])=>v),
+    data:{labels:wkArr.map(function(e){return fmtD(new Date(e[0]));}),
+      datasets:[{label:'Points Earned',data:wkArr.map(function(e){return e[1];}),
         borderColor:C.teal,backgroundColor:'rgba(15,118,110,.12)',
-        borderWidth:2.5,tension:.35,fill:true,pointRadius:2.5}]},
+        borderWidth:2.5,tension:.35,fill:true,pointRadius:3,pointBackgroundColor:C.teal}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false}},
       scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},
