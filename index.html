@@ -678,6 +678,20 @@ function r2(){
   if(tv.length){const avg=(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1);st('k2tat',avg);st('k2tatm',avg+' days avg');}
   else{st('k2tat','\u2014');st('k2tatm','no TAT data in Column L yet');}
   mkC('cLM',{type:'doughnut',data:{labels:['Delivered','In Transit','RTO','Others'],datasets:[{data:[bk.Delivered,bk['In Transit'],bk.RTO,bk.Others],backgroundColor:[C.teal,C.blueLt,C.amber,C.red],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?((ctx.parsed/t)*100).toFixed(1):0;return ctx.label+': '+fN(ctx.parsed)+' ('+p+'%)';}}}}}});
+// Weekly trend
+  const bw=new Map();
+  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{total:0,delivered:0});bw.get(k).total++;if(r.bucket==='Delivered')bw.get(k).delivered++;});
+  const sw=[...bw.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const pt=Math.max(tot,1);
+  const tpct=sw.map(function(e){return +((e[1].total/pt)*100).toFixed(1);});
+  const dpct=sw.map(function(e){return +((e[1].delivered/pt)*100).toFixed(1);});
+  const rawT=sw.map(function(e){return e[1].total;});
+  const rawD=sw.map(function(e){return e[1].delivered;});
+  mkC('cTr',{type:'bar',data:{labels:sw.map(function(e){return fmtD(new Date(e[0]));}),datasets:[{label:'Total Kits',data:tpct,backgroundColor:'rgba(123,168,201,.5)',borderColor:C.blueLt,borderWidth:1.5,borderRadius:4,rawC:rawT},{label:'Delivered',data:dpct,backgroundColor:'rgba(15,118,110,.65)',borderColor:C.teal,borderWidth:1.5,borderRadius:4,rawC:rawD}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.dataset.rawC[ctx.dataIndex]+' kits ('+ctx.parsed.y+'% of period total)';}}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',callback:function(v){return v+'%';}}}}}}); 
+  // Granular status pills
+  const gr=new Map();rows.forEach(r=>{const k=r.rawStatus||'Unknown';gr.set(k,(gr.get(k)||0)+1);});
+  const sorted=[...gr.entries()].sort((a,b)=>b[1]-a[1]);
+  document.getElementById('lLS').innerHTML=sorted.length?sorted.map(function(e){return '<div class="spl"><div class="pn">'+esc(e[0])+'</div><div class="pv">'+fN(e[1])+'<span class="pp">'+pct(e[1],tot)+'</span></div></div>';}).join(''):'<div class="emp">No shipments for current filters</div>';
 }
 /* RENDER 3 */
 function r3(){
@@ -706,6 +720,17 @@ function r4(){
   st('k4p',fN(cts['Completed – Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed – Dispatch Pending'],tot)} of total`:'—');
   const pl=Object.keys(cts).filter(k=>cts[k]>0);
   mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(function(k){return cts[k];}),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?((ctx.parsed/t)*100).toFixed(1):0;return ctx.label+': '+fN(ctx.parsed)+' ('+p+'%)';}}}}}});
+// Status pills
+  const pills=Object.entries(cts).filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];});
+  document.getElementById('lDS').innerHTML=pills.length?pills.map(function(e){return '<div class="spl"><div class="pn">'+esc(e[0])+'</div><div class="pv">'+fN(e[1])+'<span class="pp">'+pct(e[1],tot)+'</span></div></div>';}).join(''):'<div class="emp">No records for current filters</div>';
+  // Doc pie breakdown
+  const dpPal=[C.teal,C.amber,C.red,C.blueLt,C.slate];
+  document.getElementById('lDPBreak')?document.getElementById('lDPBreak').innerHTML='':null;
+  // Weekly trend
+  const bw2=new Map();
+  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw2.has(k))bw2.set(k,{Completed:0,Rejected:0,'Missing Documents':0,total:0});const b=bw2.get(k);if(b[r.docStatus]!=null)b[r.docStatus]++;b.total++;});
+  const sw2=[...bw2.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  mkC('cDT',{type:'line',data:{labels:sw2.map(function(e){return fmtD(new Date(e[0]));}),datasets:[{label:'Completed',data:sw2.map(function(e){return e[1].total?+((e[1].Completed/e[1].total)*100).toFixed(1):0;}),rawC:sw2.map(function(e){return e[1].Completed;}),wkTot:sw2.map(function(e){return e[1].total;}),borderColor:C.teal,backgroundColor:'rgba(15,118,110,.12)',borderWidth:2.5,tension:.35,fill:true,pointRadius:2.5},{label:'Missing Documents',data:sw2.map(function(e){return e[1].total?+((e[1]['Missing Documents']/e[1].total)*100).toFixed(1):0;}),rawC:sw2.map(function(e){return e[1]['Missing Documents'];}),wkTot:sw2.map(function(e){return e[1].total;}),borderColor:C.amber,backgroundColor:'rgba(183,121,31,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2},{label:'Rejected',data:sw2.map(function(e){return e[1].total?+((e[1].Rejected/e[1].total)*100).toFixed(1):0;}),rawC:sw2.map(function(e){return e[1].Rejected;}),wkTot:sw2.map(function(e){return e[1].total;}),borderColor:C.red,backgroundColor:'rgba(181,71,71,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.dataset.rawC[ctx.dataIndex]+' patients ('+ctx.parsed.y+'% of '+ctx.dataset.wkTot[ctx.dataIndex]+' that week)';}}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},y:{beginAtZero:true,max:100,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',callback:function(v){return v+'%';}}}}}});
 }
 /* RESETS */
 function rst1(){document.getElementById('p1f').value='';document.getElementById('p1t').value='';document.getElementById('p1d').value='';document.getElementById('p1s').value='';document.getElementById('p1q').value='';selDrs=new Set();updDrLbl();initF();r1();}
