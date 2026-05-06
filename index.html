@@ -630,7 +630,7 @@ async function loadAll(){
     img.src=ZLOGO;img.onload=()=>{img.style.display='block';document.getElementById('lph').style.display='none';};
     initF();r1();r2();r3();r4();r5();r6();
     document.getElementById('lastUp').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('fSt').textContent=`Patients: ${DS.patient.length} \u00b7 Kits: ${DS.logistics.length} \u00b7 Consultations: ${DS.consult.length} \u00b7 Loyalty: ${DS.loyalty.length} \u00b7 App: ${DS.app.length}`;
+    document.getElementById('fSt').textContent='Patients: '+DS.patient.length+' · Kits: '+DS.logistics.length+' · Consultations: '+DS.consult.length+' · Loyalty pts: '+fN(DS.loyalty.reduce(function(s,r){return s+r.coinsEarned;},0))+' · DAU avg: '+(DS.app.filter(function(r){return r.dau>0;}).length?( DS.app.filter(function(r){return r.dau>0;}).reduce(function(s,r){return s+r.dau;},0)/DS.app.filter(function(r){return r.dau>0;}).length).toFixed(1):'—');
   }catch(e){console.error(e);alert('Could not load data. Ensure sheets are published to web.\n'+e);}
   document.getElementById('loader').classList.add('hide');
 }
@@ -1491,9 +1491,12 @@ function r6(){
   var latestDiet = dietRows.length ? dietRows[dietRows.length-1].diet    : '—';
   var latestEx   = exRows.length   ? exRows[exRows.length-1].exercise   : '—';
 
-  st('k6dau',  fN(latestDAU));  st('k6daum',  'avg: '+avgDAU+' · latest day');
-  st('k6diet', fN(latestDiet)); st('k6dietm', 'avg: '+avgDiet+' per day');
-  st('k6ex',   fN(latestEx));   st('k6exm',   'avg: '+avgEx+' per day');
+  var totalDAU  = dauRows.reduce(function(s,r){return s+r.dau;},0);
+  var totalDiet = dietRows.reduce(function(s,r){return s+r.diet;},0);
+  var totalEx   = exRows.reduce(function(s,r){return s+r.exercise;},0);
+  st('k6dau',  avgDAU);  st('k6daum',  'total: '+fN(totalDAU)+' over period');
+  st('k6diet', avgDiet); st('k6dietm', 'total: '+fN(totalDiet)+' logs');
+  st('k6ex',   avgEx);   st('k6exm',   'total: '+fN(totalEx)+' logs');
 
   // Combined trend chart — use DAU dates as x-axis labels
   var allRows = filterByDate(DS.app,'_dauDate');
