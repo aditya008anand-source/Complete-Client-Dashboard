@@ -1,5 +1,5 @@
 const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQscA-Y05gGsr6xx54awNYgJJnCLoirIf5IKsNHRmLFYyBqtUL1khVmy3cP_L3U0pG1G6vMPPOqiNNO/pub';
-const ALLOWED_GIDS = ['1310523268', '1879543153', '419247046', '975503331'];
+const ALLOWED_GIDS = ['1310523268', '1879543153', '419247046', '975503331', '1813689722'];
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
