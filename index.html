@@ -515,7 +515,23 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 
   <section class="module" style="margin-top:24px">
   <div class="mh"><span class="mn">06</span><h2>App Engagement</h2></div>
-  <div class="phc"><div class="phi"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div><h3>App Engagement Module</h3><p>Daily active users, session duration, and feature adoption will appear here once the data feed is live.</p></div>
+  <!-- Module 6 Filters -->
+  <div class="mf">
+    <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p6f" onchange="oF6()"><span>→</span><input type="date" id="p6t" onchange="oF6()"></div></div>
+    <div class="fg"><label>Month</label><select id="p6m" onchange="oF6()"><option value="">All Months</option></select></div>
+    <div class="fgrst"><button class="brst" onclick="rst6()">Reset</button></div>
+  </div>
+  <!-- KPI Cards -->
+  <div class="krow">
+    <div class="kpi"><div class="kl">Daily Active Users</div><div class="kv" id="k6dau">—</div><div class="km" id="k6daum">avg over period</div></div>
+    <div class="kpi blue"><div class="kl">Diet Logs</div><div class="kv" id="k6diet">—</div><div class="km" id="k6dietm">avg per day</div></div>
+    <div class="kpi amb"><div class="kl">Exercise Logs</div><div class="kv" id="k6ex">—</div><div class="km" id="k6exm">avg per day</div></div>
+  </div>
+  <!-- Combined Trend Chart -->
+  <div class="card">
+    <div class="ct">App Engagement Trend</div>
+    <div class="cw tall"><canvas id="c6trend"></canvas></div>
+  </div>
 </section>
 
 <footer class="pf"><div>MySaathi Dashboard \u00b7 Zydus Lifesciences \u00b7 Live Google Sheets</div><div id="fSt">\u2014</div></footer>
@@ -527,6 +543,7 @@ const SHEETS={
   logistics:'/api/sheet?gid=1879543153',
   consult:'/api/sheet?gid=419247046',
   loyalty:'/api/sheet?gid=975503331',
+  app:'/api/sheet?gid=1813689722',
 };
 const ZLOGO='https://www.zyduslife.com/public/images/zydus-logo.png';
 const C={teal:'#0f766e',teal2:'#14b8a6',blueLt:'#7ba8c9',blue:'#1e6091',amber:'#b7791f',red:'#b54747',slate:'#64748b',mint:'#6fbfab'};
@@ -559,6 +576,16 @@ function cDrFromPlan(plan){
   if(p.includes('alterme'))return'AlterMe';
   return'';
 }
+// App date parser: DD-Mon-YY e.g. 15-Mar-26
+const MON={'Jan':0,'Feb':1,'Mar':2,'Apr':3,'May':4,'Jun':5,'Jul':6,'Aug':7,'Sep':8,'Oct':9,'Nov':10,'Dec':11};
+function parseAppDate(s){
+  const v=n(s); if(!v) return null;
+  const m=v.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2,4})$/);
+  if(!m) return null;
+  const dd=+m[1], mo=MON[m[2].charAt(0).toUpperCase()+m[2].slice(1).toLowerCase()], yy=+m[3]+(+m[3]<100?2000:0);
+  if(mo===undefined) return null;
+  const d=new Date(yy,mo,dd); return isNaN(d)?null:d;
+}
 const pMDY=s=>{const v=n(s);if(!v)return null;const m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);if(!m)return null;let[,mm,dd,yy]=m;if(yy.length===2)yy=+yy<50?'20'+yy:'19'+yy;const d=new Date(+yy,+mm-1,+dd);return isNaN(d)?null:d;};
 const pDMY=s=>{const v=n(s);if(!v||v==='N/A'||v==='#N/A')return null;const m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);if(!m)return null;let[,dd,mm,yy]=m;if(yy.length===2)yy=+yy<50?'20'+yy:'19'+yy;const d=new Date(+yy,+mm-1,+dd);return isNaN(d)?null:d;};
 const ymd=d=>d.toISOString().slice(0,10);
@@ -566,15 +593,24 @@ const sow=d=>{const x=new Date(d);const diff=(x.getDay()+6)%7;x.setDate(x.getDat
 const fmtD=d=>d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'});
 const inR=(d,f,t)=>{if(!d)return false;if(f&&d<f)return false;if(t&&d>t)return false;return true;};
 const pTAT=s=>{const v=n(s);if(!v||v==='#N/A'||v==='N/A')return null;const x=parseFloat(v);return isNaN(x)?null:x;};
-const DS={patient:[],logistics:[],consult:[],loyalty:[]};
+const DS={patient:[],logistics:[],consult:[],loyalty:[],app:[]};
 async function fcsv(url){return new Promise((r,j)=>{Papa.parse(url,{download:true,header:true,skipEmptyLines:true,complete:x=>r(x.data),error:e=>j(e)});});}
 async function loadAll(){
   document.getElementById('loader').classList.remove('hide');
   try{
-    const[p,l,c,ly]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty)]);
+    const[p,l,c,ly,ap]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty),fcsv(SHEETS.app)]);
     DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool'])}));
     DS.logistics=l.map(r=>({name:n(r['Customer Name']),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
     DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status'])}));
+    // App engagement: date format DD-Mon-YY e.g. 15-Mar-26
+    DS.app=ap.filter(r=>r['Date']||r['date']).map(r=>({
+      _dauDate: parseAppDate(r['Date']||r['date']),
+      dau:      parseInt(r['App opened patient count']||'0')||0,
+      _dietDate: parseAppDate(r['Events / Unique users']||r['Date']||''),
+      diet:     parseInt(r['kaira_food_logged']||'0')||0,
+      _exDate:  parseAppDate(r['Events / Unique users.1']||r['Date']||''),
+      exercise: parseInt(r['EXERCISE_ADDED + EXERCISE_PLAN_DONE']||'0')||0,
+    }));
     // Transform loyalty — Col D=activityType, F=coinsEarned, G=activityDate, I=planName
     // Redemption: Col V=amount, W=coin_amount, X=brand_name, Y=order_status, U=redemption date
     DS.loyalty=ly.map(r=>({
@@ -592,9 +628,9 @@ async function loadAll(){
     })).filter(r=>r.activityType||r.coinRedeemed>0);
     const img=document.getElementById('zLogo');
     img.src=ZLOGO;img.onload=()=>{img.style.display='block';document.getElementById('lph').style.display='none';};
-    initF();r1();r2();r3();r4();r5();
+    initF();r1();r2();r3();r4();r5();r6();
     document.getElementById('lastUp').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('fSt').textContent=`Patients: ${DS.patient.length} \u00b7 Kits: ${DS.logistics.length} \u00b7 Consultations: ${DS.consult.length} \u00b7 Loyalty: ${DS.loyalty.length}`;
+    document.getElementById('fSt').textContent=`Patients: ${DS.patient.length} \u00b7 Kits: ${DS.logistics.length} \u00b7 Consultations: ${DS.consult.length} \u00b7 Loyalty: ${DS.loyalty.length} \u00b7 App: ${DS.app.length}`;
   }catch(e){console.error(e);alert('Could not load data. Ensure sheets are published to web.\n'+e);}
   document.getElementById('loader').classList.add('hide');
 }
@@ -1405,6 +1441,86 @@ function r5(){
       plugins:{legend:{display:false}},
       scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},
               y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}}}}
+  });
+}
+
+/* ══ MODULE 6 — APP ENGAGEMENT ══ */
+function oF6(){r6();}
+function rst6(){
+  document.getElementById('p6f').value='';
+  document.getElementById('p6t').value='';
+  document.getElementById('p6m').value='';
+  r6();
+}
+
+function r6(){
+  if(!DS.app||!DS.app.length){
+    ['k6dau','k6diet','k6ex'].forEach(function(id){document.getElementById(id).textContent='—';});
+    return;
+  }
+  const{from,to}=gR('p6f','p6t');
+  const fm=document.getElementById('p6m').value;
+
+  // Filter: each metric uses its own date
+  function filterByDate(rows, dateField){
+    return rows.filter(function(r){
+      var d=r[dateField]; if(!d) return false;
+      if(from&&d<from) return false;
+      if(to&&d>to) return false;
+      if(fm){var mon=d.toLocaleString('en',{month:'short'})+'-'+String(d.getFullYear()).slice(2);if(mon!==fm)return false;}
+      return true;
+    });
+  }
+
+  var dauRows  = filterByDate(DS.app,'_dauDate').filter(function(r){return r.dau>0;});
+  var dietRows = filterByDate(DS.app,'_dauDate').filter(function(r){return r.diet>=0;});
+  var exRows   = filterByDate(DS.app,'_dauDate').filter(function(r){return r.exercise>=0;});
+
+  // Populate month filter from DAU dates
+  var months=[...new Set(DS.app.filter(function(r){return r._dauDate;}).map(function(r){
+    return r._dauDate.toLocaleString('en',{month:'short'})+'-'+String(r._dauDate.getFullYear()).slice(2);
+  }))].sort();
+  fsl('p6m',months,'All Months',fm);
+
+  // KPI: latest value + avg
+  var avgDAU  = dauRows.length  ? (dauRows.reduce(function(s,r){return s+r.dau;},0)/dauRows.length).toFixed(1)   : '—';
+  var avgDiet = dietRows.length ? (dietRows.reduce(function(s,r){return s+r.diet;},0)/dietRows.length).toFixed(1) : '—';
+  var avgEx   = exRows.length   ? (exRows.reduce(function(s,r){return s+r.exercise;},0)/exRows.length).toFixed(1) : '—';
+
+  var latestDAU  = dauRows.length  ? dauRows[dauRows.length-1].dau      : '—';
+  var latestDiet = dietRows.length ? dietRows[dietRows.length-1].diet    : '—';
+  var latestEx   = exRows.length   ? exRows[exRows.length-1].exercise   : '—';
+
+  st('k6dau',  fN(latestDAU));  st('k6daum',  'avg: '+avgDAU+' · latest day');
+  st('k6diet', fN(latestDiet)); st('k6dietm', 'avg: '+avgDiet+' per day');
+  st('k6ex',   fN(latestEx));   st('k6exm',   'avg: '+avgEx+' per day');
+
+  // Combined trend chart — use DAU dates as x-axis labels
+  var allRows = filterByDate(DS.app,'_dauDate');
+  var labels  = allRows.map(function(r){return fmtD(r._dauDate);});
+  var dauData  = allRows.map(function(r){return r.dau;});
+  var dietData = allRows.map(function(r){return r.diet;});
+  var exData   = allRows.map(function(r){return r.exercise;});
+
+  mkC('c6trend',{type:'line',
+    data:{labels:labels,datasets:[
+      {label:'Daily Active Users',data:dauData,borderColor:C.teal,backgroundColor:'rgba(15,118,110,.08)',borderWidth:2.5,tension:.35,fill:true,pointRadius:2,yAxisID:'y'},
+      {label:'Diet Logs',         data:dietData,borderColor:C.blue,backgroundColor:'transparent',borderWidth:2,tension:.35,fill:false,pointRadius:2,yAxisID:'y1'},
+      {label:'Exercise Logs',     data:exData,  borderColor:C.amber,backgroundColor:'transparent',borderWidth:2,tension:.35,fill:false,pointRadius:2,yAxisID:'y1'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93',maxTicksLimit:15}},
+        y:{type:'linear',position:'left',beginAtZero:true,grid:{color:'#eff3f5'},
+           ticks:{font:{size:11},color:'#7a8c93',precision:0},
+           title:{display:true,text:'Active Users',font:{size:10},color:'#7a8c93'}},
+        y1:{type:'linear',position:'right',beginAtZero:true,grid:{display:false},
+            ticks:{font:{size:11},color:'#7a8c93',precision:0},
+            title:{display:true,text:'Logs',font:{size:10},color:'#7a8c93'}},
+      }
+    }
   });
 }
 
