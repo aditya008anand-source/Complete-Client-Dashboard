@@ -523,9 +523,9 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   </div>
   <!-- KPI Cards -->
   <div class="krow">
-    <div class="kpi"><div class="kl">Daily Active Users</div><div class="kv" id="k6dau">—</div><div class="km" id="k6daum">avg over period</div></div>
-    <div class="kpi blue"><div class="kl">Diet Logs</div><div class="kv" id="k6diet">—</div><div class="km" id="k6dietm">avg per day</div></div>
-    <div class="kpi amb"><div class="kl">Exercise Logs</div><div class="kv" id="k6ex">—</div><div class="km" id="k6exm">avg per day</div></div>
+    <div class="kpi"><div class="kl">Avg. Daily Active Users</div><div class="kv" id="k6dau">—</div><div class="km" id="k6daum">Cumulative DAU (selected period): —</div></div>
+    <div class="kpi blue"><div class="kl">Avg. Daily Diet Logs</div><div class="kv" id="k6diet">—</div><div class="km" id="k6dietm">Cumulative Diet Logs (selected period): —</div></div>
+    <div class="kpi amb"><div class="kl">Avg. Daily Exercise Logs</div><div class="kv" id="k6ex">—</div><div class="km" id="k6exm">Cumulative Exercise Logs (selected period): —</div></div>
   </div>
   <!-- Combined Trend Chart -->
   <div class="card">
@@ -1495,9 +1495,9 @@ function r6(){
   var totalDAU  = dauRows.reduce(function(s,r){return s+r.dau;},0);
   var totalDiet = dietRows.reduce(function(s,r){return s+r.diet;},0);
   var totalEx   = exRows.reduce(function(s,r){return s+r.exercise;},0);
-  st('k6dau',  avgDAU);  st('k6daum',  'total: '+fN(totalDAU)+' over period');
-  st('k6diet', avgDiet); st('k6dietm', 'total: '+fN(totalDiet)+' logs');
-  st('k6ex',   avgEx);   st('k6exm',   'total: '+fN(totalEx)+' logs');
+  st('k6dau',  avgDAU);  st('k6daum',  'Cumulative DAU (selected period): '+fN(totalDAU));
+  st('k6diet', avgDiet); st('k6dietm', 'Cumulative Diet Logs (selected period): '+fN(totalDiet));
+  st('k6ex',   avgEx);   st('k6exm',   'Cumulative Exercise Logs (selected period): '+fN(totalEx));
 
   // Combined trend chart — use DAU dates as x-axis labels
   var allRows = filterByDate(DS.app,'_dauDate');
