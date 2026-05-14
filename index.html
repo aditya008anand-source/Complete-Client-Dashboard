@@ -359,7 +359,13 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
       </div>
     </div>
     <div class="fg"><label>QR Type</label><select id="p1q" onchange="oF1()"><option value="">All QR Types</option></select></div>
-    <div class="fgrst"><button class="brst" onclick="rst1()">Reset</button></div>
+    <div class="fgrst" style="display:flex;gap:8px">
+      <button class="brst" onclick="rst1()">Reset</button>
+      <button class="btn-export" id="drReportBtn" onclick="exportDrWeekly()" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Dr. Weekly Report
+      </button>
+    </div>
   </div>
   <div class="krow">
     <div class="kpi"><div class="kl">Total Patients</div><div class="kv" id="k1t">—</div><div class="km" id="k1m">—</div></div>
@@ -1043,6 +1049,8 @@ function applyAccessControl(){
     document.querySelectorAll('section.module').forEach(s=>s.style.display='');
     const expBtn=document.getElementById('exportBtn');
     if(expBtn) expBtn.style.display='';
+    const drRptBtn=document.getElementById('drReportBtn');
+    if(drRptBtn) drRptBtn.style.display='';
     return;
   }
   // General user — apply permissions
@@ -1067,6 +1075,8 @@ function applyAccessControl(){
   // Export button
   const expBtn=document.getElementById('exportBtn');
   if(expBtn) expBtn.style.display = currentPerms.export===true ? '' : 'none';
+  const drRptBtn=document.getElementById('drReportBtn');
+  if(drRptBtn) drRptBtn.style.display = currentPerms.export===true ? '' : 'none';
 }
 
 /* ── Admin Panel ── */
@@ -1526,6 +1536,99 @@ function r6(){
       }
     }
   });
+}
+
+/* ══ DR. WEEKLY REPORT EXPORT ══ */
+function exportDrWeekly(){
+  const btn = document.getElementById('drReportBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Preparing…';
+
+  // Apply same M1 filters (date range only — show all doctors regardless of other filters)
+  const{from,to}=gR('p1f','p1t');
+  const rows = DS.patient.filter(function(r){
+    if(!inR(r._date, from, to)) return false;
+    return true;
+  });
+
+  if(!rows.length){
+    alert('No patient data for the selected date range.');
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Dr. Weekly Report';
+    return;
+  }
+
+  // ── Build week buckets ──
+  // Get all weeks (Mon-Sun) that appear in the data
+  var weekMap = new Map(); // weekKey -> {start, end, label}
+  rows.forEach(function(r){
+    if(!r._date) return;
+    var ws = sow(r._date); // start of week (Monday)
+    var k = ymd(ws);
+    if(!weekMap.has(k)){
+      var we = new Date(ws); we.setDate(we.getDate()+6); // Sunday
+      var label = fmtD(ws) + ' – ' + fmtD(we);
+      weekMap.set(k, {start: ws, end: we, label: label});
+    }
+  });
+  var weeks = [...weekMap.entries()].sort(function(a,b){return a[0].localeCompare(b[0]);});
+
+  // ── Get ALL doctors in the system (from full DS.patient, not filtered) ──
+  var allDoctors = [...new Set(DS.patient.map(function(r){return r.doctor;}).filter(Boolean))].sort();
+
+  // ── Build pivot: doctor -> weekKey -> count ──
+  var pivot = {};
+  allDoctors.forEach(function(dr){ pivot[dr] = {}; });
+  rows.forEach(function(r){
+    if(!r._date || !r.doctor) return;
+    var k = ymd(sow(r._date));
+    if(!pivot[r.doctor]) pivot[r.doctor] = {};
+    pivot[r.doctor][k] = (pivot[r.doctor][k] || 0) + 1;
+  });
+
+  // ── Build CSV ──
+  var weekLabels = weeks.map(function(w){ return w[1].label; });
+  var headers = ['Doctor Name'].concat(weekLabels).concat(['Total']);
+  var csvRows = [headers];
+
+  allDoctors.forEach(function(dr){
+    var row = [csvCell(dr)];
+    var total = 0;
+    weeks.forEach(function(w){
+      var cnt = pivot[dr][w[0]] || 0;
+      total += cnt;
+      row.push(String(cnt));
+    });
+    row.push(String(total));
+    csvRows.push(row);
+  });
+
+  // ── Add totals row at bottom ──
+  var totRow = ['TOTAL'];
+  var grandTotal = 0;
+  weeks.forEach(function(w){
+    var wTotal = allDoctors.reduce(function(s,dr){ return s + (pivot[dr][w[0]] || 0); }, 0);
+    grandTotal += wTotal;
+    totRow.push(String(wTotal));
+  });
+  totRow.push(String(grandTotal));
+  csvRows.push(totRow);
+
+  var csvContent = csvRows.map(function(r){ return r.join(','); }).join('\n');
+  var blob = new Blob(['\uFEFF' + csvContent], {type: 'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  var today = new Date().toISOString().slice(0,10);
+  var rangeTag = (from ? fmtD(from) : 'all') + '_to_' + (to ? fmtD(to) : 'all');
+  a.download = 'Dr_Weekly_Report_' + rangeTag + '_' + today + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  btn.disabled = false;
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Dr. Weekly Report';
 }
 
 Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
