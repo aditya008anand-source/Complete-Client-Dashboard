@@ -538,6 +538,17 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     <div class="ct">App Engagement Trend</div>
     <div class="cw tall"><canvas id="c6trend"></canvas></div>
   </div>
+  <!-- Feature Adoption -->
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card">
+      <div class="ct">Feature Adoption — Total Unique Users</div>
+      <div class="cw" style="height:280px"><canvas id="c6feat"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ct">Feature Usage Trend (Weekly — Top 5)</div>
+      <div class="cw" style="height:280px"><canvas id="c6feattrend"></canvas></div>
+    </div>
+  </div>
 </section>
 
 <footer class="pf"><div>MySaathi Dashboard \u00b7 Zydus Lifesciences \u00b7 Live Google Sheets</div><div id="fSt">\u2014</div></footer>
@@ -610,12 +621,36 @@ async function loadAll(){
     DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status'])}));
     // App engagement: date format DD-Mon-YY e.g. 15-Mar-26
     DS.app=ap.filter(r=>r['Date']||r['date']).map(r=>({
+      _featDate: parseAppDate(r['Events / Unique users']||r['Date']||''),
+      diet_feat:  parseInt(r['Diet']||'0')||0,
+      exercise_feat: parseInt(r['Exercise']||'0')||0,
+      steps:      parseInt(r['Steps']||'0')||0,
+      sleep:      parseInt(r['Sleep']||'0')||0,
+      water:      parseInt(r['Water']||'0')||0,
+      edu:        parseInt(r['Educational Content']||'0')||0,
+      achieve:    parseInt(r['Achieve Section']||'0')||0,
+      aiMed:      parseInt(r['AI Med Report']||'0')||0,
+      cgm:        parseInt(r['CGM']||'0')||0,
+      bca:        parseInt(r['BCA']||'0')||0,
+      _dauDate: parseAppDate(r['Date']||r['date']),
       _dauDate: parseAppDate(r['Date']||r['date']),
       dau:      parseInt(r['App opened patient count']||'0')||0,
       _dietDate: parseAppDate(r['Events / Unique users']||r['Date']||''),
       diet:     parseInt(r['kaira_food_logged']||'0')||0,
       _exDate:  parseAppDate(r['Events / Unique users.1']||r['Date']||''),
       exercise: parseInt(r['EXERCISE_ADDED + EXERCISE_PLAN_DONE']||'0')||0,
+      // Feature/Activity columns O-Y (Col O = date, P-Y = feature counts)
+      _featDate: parseAppDate(r['Events / Unique users.2']||r['Date']||''),
+      fDiet:     parseInt(r['Diet']||'0')||0,
+      fExercise: parseInt(r['Exercise']||'0')||0,
+      fSteps:    parseInt(r['Steps']||'0')||0,
+      fSleep:    parseInt(r['Sleep']||'0')||0,
+      fWater:    parseInt(r['Water']||'0')||0,
+      fEdu:      parseInt(r['Educational Content']||'0')||0,
+      fAchieve:  parseInt(r['Achieve Section']||'0')||0,
+      fAIMed:    parseInt(r['AI Med Report']||'0')||0,
+      fCGM:      parseInt(r['CGM']||'0')||0,
+      fBCA:      parseInt(r['BCA']||'0')||0,
     }));
     // Transform loyalty — Col D=activityType, F=coinsEarned, G=activityDate, I=planName
     // Redemption: Col V=amount, W=coin_amount, X=brand_name, Y=order_status, U=redemption date
@@ -1464,6 +1499,15 @@ function rst6(){
   r6();
 }
 
+
+function oF6(){r6();}
+function rst6(){
+  document.getElementById('p6f').value='';
+  document.getElementById('p6t').value='';
+  document.getElementById('p6m').value='';
+  r6();
+}
+
 function r6(){
   if(!DS.app||!DS.app.length){
     ['k6dau','k6diet','k6ex'].forEach(function(id){document.getElementById(id).textContent='—';});
@@ -1536,6 +1580,20 @@ function r6(){
       }
     }
   });
+
+  // Feature Adoption & Trend Charts
+  var FEATS=['CGM','BCA','Steps','Sleep','Diet','Water','Exercise','Educational Content','AI Med Report','Achieve Section'];
+  var FEAT_KEYS=['cgm','bca','steps','sleep','diet_feat','water','exercise_feat','edu','aiMed','achieve'];
+  var FEAT_COLORS=[C.teal,C.blue,C.amber,C.blueLt,'#6366f1','#06b6d4','#f97316','#8b5cf6','#ec4899','#94a3b8'];
+  var featRows=filterByDate(DS.app,'_featDate').filter(function(r){return r._featDate;});
+  var featTotals=FEATS.map(function(f,i){return{name:f,key:FEAT_KEYS[i],color:FEAT_COLORS[i],total:featRows.reduce(function(s,r){return s+(r[FEAT_KEYS[i]]||0);},0)};}).sort(function(a,b){return b.total-a.total;});
+  mkC('c6feat',{type:'bar',data:{labels:featTotals.map(function(f){return f.name;}),datasets:[{label:'Unique Users',data:featTotals.map(function(f){return f.total;}),backgroundColor:featTotals.map(function(f){return f.color;}),borderRadius:4,borderWidth:0}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+fN(ctx.parsed.x)+' unique users';}}}},scales:{x:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}},y:{grid:{display:false},ticks:{font:{size:11},color:'#0e2a33'}}}}});
+  var top5=featTotals.slice(0,5);
+  var wkFeatMap=new Map();
+  featRows.forEach(function(r){if(!r._featDate)return;var k=ymd(sow(r._featDate));if(!wkFeatMap.has(k))wkFeatMap.set(k,{});var wk=wkFeatMap.get(k);top5.forEach(function(f){wk[f.key]=(wk[f.key]||0)+(r[f.key]||0);});});
+  var wkFeatArr=[...wkFeatMap.entries()].sort(function(a,b){return a[0].localeCompare(b[0]);});
+  var wkLabels=wkFeatArr.map(function(e){return fmtD(new Date(e[0]));});
+  mkC('c6feattrend',{type:'line',data:{labels:wkLabels,datasets:top5.map(function(f){return{label:f.name,data:wkFeatArr.map(function(e){return e[1][f.key]||0;}),borderColor:f.color,backgroundColor:'transparent',borderWidth:2,tension:.35,fill:false,pointRadius:2.5};})},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:10,family:'Inter'}}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}}}}});
 }
 
 /* ══ DR. WEEKLY REPORT EXPORT ══ */
