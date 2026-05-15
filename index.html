@@ -541,7 +541,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   <!-- Feature Adoption -->
   <div class="grid g2" style="margin-top:14px">
     <div class="card">
-      <div class="ct">Feature Adoption — Total Unique Users</div>
+      <div class="ct">Top Features Explored — Accumulative Users</div>
       <div class="cw" style="height:280px"><canvas id="c6feat"></canvas></div>
     </div>
     <div class="card">
@@ -630,7 +630,7 @@ async function loadAll(){
       edu:        parseInt(r['Educational Content']||'0')||0,
       achieve:    parseInt(r['Achieve Section']||'0')||0,
       aiMed:      parseInt(r['AI Med Report']||'0')||0,
-      cgm:        parseInt(r['CGM']||'0')||0,
+      flipFeed:   parseInt(r['Flip Feed']||'0')||0,
       bca:        parseInt(r['BCA']||'0')||0,
       _dauDate: parseAppDate(r['Date']||r['date']),
       _dauDate: parseAppDate(r['Date']||r['date']),
@@ -649,7 +649,7 @@ async function loadAll(){
       fEdu:      parseInt(r['Educational Content']||'0')||0,
       fAchieve:  parseInt(r['Achieve Section']||'0')||0,
       fAIMed:    parseInt(r['AI Med Report']||'0')||0,
-      fCGM:      parseInt(r['CGM']||'0')||0,
+      fFlipFeed: parseInt(r['Flip Feed']||'0')||0,
       fBCA:      parseInt(r['BCA']||'0')||0,
     }));
     // Transform loyalty — Col D=activityType, F=coinsEarned, G=activityDate, I=planName
@@ -1582,12 +1582,12 @@ function r6(){
   });
 
   // Feature Adoption & Trend Charts
-  var FEATS=['CGM','BCA','Steps','Sleep','Diet','Water','Exercise','Educational Content','AI Med Report','Achieve Section'];
-  var FEAT_KEYS=['cgm','bca','steps','sleep','diet_feat','water','exercise_feat','edu','aiMed','achieve'];
+  var FEATS=['BCA','Flip Feed','Steps','Sleep','Diet','Water','Exercise','Educational Content','AI Med Report','Achieve Section'];
+  var FEAT_KEYS=['bca','flipFeed','steps','sleep','diet_feat','water','exercise_feat','edu','aiMed','achieve'];
   var FEAT_COLORS=[C.teal,C.blue,C.amber,C.blueLt,'#6366f1','#06b6d4','#f97316','#8b5cf6','#ec4899','#94a3b8'];
   var featRows=filterByDate(DS.app,'_featDate').filter(function(r){return r._featDate;});
   var featTotals=FEATS.map(function(f,i){return{name:f,key:FEAT_KEYS[i],color:FEAT_COLORS[i],total:featRows.reduce(function(s,r){return s+(r[FEAT_KEYS[i]]||0);},0)};}).sort(function(a,b){return b.total-a.total;});
-  mkC('c6feat',{type:'bar',data:{labels:featTotals.map(function(f){return f.name;}),datasets:[{label:'Unique Users',data:featTotals.map(function(f){return f.total;}),backgroundColor:featTotals.map(function(f){return f.color;}),borderRadius:4,borderWidth:0}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+fN(ctx.parsed.x)+' unique users';}}}},scales:{x:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}},y:{grid:{display:false},ticks:{font:{size:11},color:'#0e2a33'}}}}});
+  mkC('c6feat',{type:'bar',data:{labels:featTotals.map(function(f){return f.name;}),datasets:[{label:'Unique Users',data:featTotals.map(function(f){return f.total;}),backgroundColor:featTotals.map(function(f){return f.color;}),borderRadius:4,borderWidth:0}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+fN(ctx.parsed.x)+' accumulative users';}}}},scales:{x:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}},y:{grid:{display:false},ticks:{font:{size:11},color:'#0e2a33'}}}}});
   var top5=featTotals.slice(0,5);
   var wkFeatMap=new Map();
   featRows.forEach(function(r){if(!r._featDate)return;var k=ymd(sow(r._featDate));if(!wkFeatMap.has(k))wkFeatMap.set(k,{});var wk=wkFeatMap.get(k);top5.forEach(function(f){wk[f.key]=(wk[f.key]||0)+(r[f.key]||0);});});
