@@ -555,6 +555,25 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 </div>
 
 <script>
+const FB_CONFIG = {
+  apiKey: "AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8",
+  authDomain: "mysaathi-dashboard.firebaseapp.com",
+  databaseURL: "https://mysaathi-dashboard-default-rtdb.firebaseio.com",
+  projectId: "mysaathi-dashboard",
+  storageBucket: "mysaathi-dashboard.firebasestorage.app",
+  messagingSenderId: "755642238347",
+  appId: "1:755642238347:web:be8a39c6852021c4761b8e"
+};
+firebase.initializeApp(FB_CONFIG);
+const fbAuth = firebase.auth();
+const fbDB   = firebase.database();
+
+let currentUser  = null;
+let currentRole  = null;
+let currentPerms = {};
+let selectedUid  = null;
+
+
 const SHEETS={
   patient:'/api/sheet?gid=1310523268',
   logistics:'/api/sheet?gid=1879543153',
@@ -646,162 +665,145 @@ async function loadAll(){
     });
     // Store feature column names for r6() to use
     DS.appFeatCols=featCols;
+    // Loyalty transform
+    DS.loyalty=ly.map(r=>({
+      activityType: n(r['activityType']),
+      coinsEarned:  parseFloat(n(r['coinsEarned']))||0,
+      _date:        parseLoyaltyDate(n(r['activityDate'])),
+      planName:     n(r['planName']),
+      drug:         cDrFromPlan(n(r['planName'])),
+      amount:       parseFloat(n(r['amount']))||0,
+      coinRedeemed: parseFloat(n(r['coin_amount']))||0,
+      brand:        n(r['brand_name']),
+      redeemStatus: n(r['order_status']),
+    })).filter(r=>r.activityType||r.coinRedeemed>0);
+    r1();r2();r3();r4();r5();r6();
+    document.getElementById('lastUp').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('fSt').textContent='Patients: '+DS.patient.length+' · Kits: '+DS.logistics.length+' · Consultations: '+DS.consult.length+' · Loyalty pts: '+fN(DS.loyalty.reduce(function(s,r){return s+r.coinsEarned;},0))+' · DAU avg: '+(DS.app.filter(function(r){return r.dau>0;}).length?(DS.app.filter(function(r){return r.dau>0;}).reduce(function(s,r){return s+r.dau;},0)/DS.app.filter(function(r){return r.dau>0;}).length).toFixed(1):'—');
+  }catch(e){console.error(e);alert('Could not load data. Ensure sheets are published to web.\n'+e);}
+  document.getElementById('loader').classList.add('hide');
+}
+
+/* RENDER 1 */
+function r1(){
+  const{from,to}=gR('p1f','p1t');const fd=gv('p1d'),fs=gv('p1s'),fq=gv('p1q');
+  const rows=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.state!==fs)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;if(fq&&r.qr!==fq)return false;return true;});
+  const tot=rows.length,abs=DS.patient.length;
+  st('k1t',fN(tot));st('k1m',(fd||fs||fq||selDrs.size>0||from||to)?`Filtered from ${fN(abs)} total`:'All-time registrations');
+  const act=rows.filter(r=>/active/i.test(r.plan)).length;
+  st('k1a',fN(act));st('k1am',tot?`${pct(act,tot)} of filtered`:'—');
+  st('k1dr',fN(new Set(rows.map(r=>r.doctor).filter(Boolean)).size));
+  st('k1st',fN(new Set(rows.map(r=>r.state).filter(Boolean)).size));st('k1stm','distinct canonical states');
+  rPie(cntB(rows,'drug'),'cDrug','lDrug',PD);
+  rPie(cntB(rows,'qr'),'cQR','lQR',PQ,'doughnut');
+  rBarH('cSt',topN(cntB(rows,'state'),5),C.teal);
+  const dt=topN(cntB(rows,'doctor'),5);
+  const el=document.getElementById('lDr');
+  if(!dt.length){el.innerHTML='<div class=\"emp\">No doctor data for current filters</div>';return;}
+  el.innerHTML=dt.map((d,i)=>`<div class=\"lbr\"><div class=\"rnk ${i===0?'r1':i===1?'r2':i===2?'r3':''}\">${i+1}</div><div class=\"drnm\">${esc(d.k||'(unspecified)')}</div><div class=\"drct\">${fN(d.v)} <small>patients</small></div></div>`).join('');
+}
+
+/* RENDER 2 */
+function r2(){
+  const{from,to}=gR('p2f','p2t');const fst=gv('p2st'),fs=gv('p2s');
+  const rows=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;if(fs&&r.state!==fs)return false;return true;});
+  const tot=rows.length;const bk={Delivered:0,'In Transit':0,RTO:0,Others:0};
+  rows.forEach(r=>{bk[r.bucket]=(bk[r.bucket]||0)+1;});
+  st('k2t',fN(tot));st('k2r',tot?((bk.Delivered/tot)*100).toFixed(1)+'%':'—');
+  st('k2tr',fN(bk['In Transit']));st('k2trm',tot?`${pct(bk['In Transit'],tot)} of filtered`:'—');
+  st('k2rto',fN(bk.RTO+bk.Others));st('k2rtom',`${bk.RTO} RTO \\· ${bk.Others} other`);
+  const tv=rows.filter(r=>r.bucket==='Delivered'&&r.tat!==null).map(r=>r.tat);
+  if(tv.length){const avg=(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1);st('k2tat',avg);st('k2tatm',`avg days \\· ${tv.length} delivered orders`);}
+  else{st('k2tat','\\—');st('k2tatm','no TAT data in Column L yet');}
+  mkC('cLM',{type:'doughnut',data:{labels:['Delivered','In Transit','RTO','Others'],datasets:[{data:[bk.Delivered,bk['In Transit'],bk.RTO,bk.Others],backgroundColor:[C.teal,C.blueLt,C.amber,C.red],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
+  /* TRENDLINE — bars = % of total filtered period, tooltip shows count + % */
+  const bw=new Map();
+  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{total:0,delivered:0});bw.get(k).total++;if(r.bucket==='Delivered')bw.get(k).delivered++;});
+  const sw=[...bw.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const pt=Math.max(tot,1);
+  const tpct=sw.map(([,v])=>+((v.total/pt)*100).toFixed(1));
+  const dpct=sw.map(([,v])=>+((v.delivered/pt)*100).toFixed(1));
+  const rawT=sw.map(([,v])=>v.total),rawD=sw.map(([,v])=>v.delivered);
+  mkC('cTr',{type:'bar',data:{labels:sw.map(([k])=>fmtD(new Date(k))),datasets:[{label:'Total Kits',data:tpct,backgroundColor:'rgba(123,168,201,.5)',borderColor:C.blueLt,borderWidth:1.5,borderRadius:4,rawC:rawT},{label:'Delivered',data:dpct,backgroundColor:'rgba(15,118,110,.65)',borderColor:C.teal,borderWidth:1.5,borderRadius:4,rawC:rawD}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.dataset.rawC[ctx.dataIndex]} kits (${ctx.parsed.y}% of period total)`}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',callback:vv=>vv+'%'}}}}});
+  const gr=new Map();rows.forEach(r=>{const k=r.rawStatus||'Unknown';gr.set(k,(gr.get(k)||0)+1);});
+  const sorted=[...gr.entries()].sort((a,b)=>b[1]-a[1]);
+  document.getElementById('lLS').innerHTML=sorted.length?sorted.map(([k,vv])=>`<div class=\"spl\"><div class=\"pn\">${esc(k)}</div><div class=\"pv\">${fN(vv)}<span class=\"pp\">${pct(vv,tot)}</span></div></div>`).join(''):'<div class=\"emp\">No shipments for current filters</div>';
+}
+
+/* RENDER 3 */
+function r3(){
+  const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
+  const rows=DS.consult.filter(r=>{if(fd&&r.drug!==fd)return false;if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
+  const tot=rows.length,comp=rows.filter(r=>r.status==='Completed').length,ns=rows.filter(r=>r.status==='No Show').length,bkd=rows.filter(r=>r.status==='Booked').length;
+  st('k3t',fN(tot));st('k3c',fN(comp));st('k3cm',tot?`${pct(comp,tot)} of total`:'—');
+  st('k3n',fN(ns));st('k3nm',tot?`${pct(ns,tot)} of total`:'—');
+  st('k3r',tot?((comp/tot)*100).toFixed(1)+'%':'—');
+  const mx=Math.max(tot,1);
+  document.getElementById('lFnl').innerHTML=`<div class=\"fnr\"><div class=\"fnl2\">Total</div><div class=\"fnb\"><div class=\"fnf\" style=\"width:${pr(tot,mx)}%;background:${C.teal}\"><span>${fN(tot)}</span></div></div><div class=\"fnv\">${tot?'100%':'—'}</div></div><div class=\"fnr\"><div class=\"fnl2\">Completed</div><div class=\"fnb\"><div class=\"fnf\" style=\"width:${pr(comp,mx)}%;background:${C.blue}\"><span>${fN(comp)}</span></div></div><div class=\"fnv\">${tot?pct(comp,tot):'—'}</div></div><div class=\"fnr\"><div class=\"fnl2\">No Show</div><div class=\"fnb\"><div class=\"fnf\" style=\"width:${pr(ns,mx)}%;background:${C.red}\"><span>${fN(ns)}</span></div></div><div class=\"fnv\">${tot?pct(ns,tot):'—'}</div></div><div class=\"fnr\"><div class=\"fnl2\">Upcoming</div><div class=\"fnb\"><div class=\"fnf\" style=\"width:${pr(bkd,mx)}%;background:${C.amber}\"><span>${fN(bkd)}</span></div></div><div class=\"fnv\">${tot?pct(bkd,tot):'—'}</div></div>`;
+  const ty=['Physiotherapist','Nutritionist'];
+  mkC('cCon',{type:'bar',data:{labels:ty,datasets:[{label:'Completed',backgroundColor:C.teal,borderRadius:4,data:ty.map(t=>rows.filter(r=>r.coachType===t&&r.status==='Completed').length)},{label:'Upcoming',backgroundColor:C.amber,borderRadius:4,data:ty.map(t=>rows.filter(r=>r.coachType===t&&r.status==='Booked').length)},{label:'No Show',backgroundColor:C.red,borderRadius:4,data:ty.map(t=>rows.filter(r=>r.coachType===t&&r.status==='No Show').length)}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}}},scales:{x:{stacked:true,beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}},y:{stacked:true,grid:{display:false},ticks:{font:{size:12},color:'#0e2a33'}}}}});
+}
+
+/* RENDER 4 */
+function r4(){
+  const{from,to}=gR('p4f','p4t');const fd=gv('p4d'),fs=gv('p4s');
+  const rows=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.docStatus!==fs)return false;return true;});
+  const tot=rows.length;
+  const cts={Completed:0,'Missing Documents':0,Rejected:0,'In Progress':0,'Completed \\– Dispatch Pending':0};
+  rows.forEach(r=>{if(cts[r.docStatus]!=null)cts[r.docStatus]++;});
+  st('k4c',fN(cts.Completed));st('k4cm',tot?`${pct(cts.Completed,tot)} of total`:'—');
+  st('k4ms',fN(cts['Missing Documents']));st('k4mm',tot?`${pct(cts['Missing Documents'],tot)} of total`:'—');
+  st('k4r',fN(cts.Rejected));st('k4rm',tot?`${pct(cts.Rejected,tot)} of total`:'—');
+  st('k4p',fN(cts['Completed \\– Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed \\– Dispatch Pending'],tot)} of total`:'—');
+  const pl=Object.keys(cts).filter(k=>cts[k]>0);
+  mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(k=>cts[k]),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
+  const pills=Object.entries(cts).filter(([,vv])=>vv>0).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('lDS').innerHTML=pills.length?pills.map(([k,vv])=>`<div class=\"spl\"><div class=\"pn\">${esc(k)}</div><div class=\"pv\">${fN(vv)}<span class=\"pp\">${pct(vv,tot)}</span></div></div>`).join(''):'<div class=\"emp\">No records for current filters</div>';
+  const bw=new Map();
+  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{Completed:0,Rejected:0,'Missing Documents':0});const b=bw.get(k);if(b[r.docStatus]!=null)b[r.docStatus]++;});
+  const sw=[...bw.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  mkC('cDT',{type:'line',data:{labels:sw.map(([k])=>fmtD(new Date(k))),datasets:[{label:'Completed',data:sw.map(([,v])=>v.Completed),borderColor:C.teal,backgroundColor:'rgba(15,118,110,.12)',borderWidth:2.5,tension:.35,fill:true,pointRadius:2.5},{label:'Missing Documents',data:sw.map(([,v])=>v['Missing Documents']),borderColor:C.amber,backgroundColor:'rgba(183,121,31,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2},{label:'Rejected',data:sw.map(([,v])=>v.Rejected),borderColor:C.red,backgroundColor:'rgba(181,71,71,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}}}}});
+}
+
+/* RESETS */
+function rst1(){document.getElementById('p1f').value='';document.getElementById('p1t').value='';document.getElementById('p1d').value='';document.getElementById('p1s').value='';document.getElementById('p1q').value='';selDrs=new Set();updDrLbl();initF();r1();}
+function rst2(){document.getElementById('p2f').value='';document.getElementById('p2t').value='';document.getElementById('p2st').value='';document.getElementById('p2s').value='';cascM2();r2();}
+function rst3(){document.getElementById('p3d').value='';document.getElementById('p3t').value='';document.getElementById('p3s').value='';cascM3();r3();}
+function rst4(){document.getElementById('p4f').value='';document.getElementById('p4t').value='';document.getElementById('p4d').value='';document.getElementById('p4s').value='';r4();}
+/* DOCTOR MULTI-SELECT */
+let selDrs=new Set();
+function bldDrList(drs){document.getElementById('drlist').innerHTML=drs.length?drs.map(d=>`<div class=\"dri\" data-n=\"${esc(d)}\"><input type=\"checkbox\" id=\"dc_${esc(d)}\" value=\"${esc(d)}\" onchange=\"onDrChk()\"><label for=\"dc_${esc(d)}\">${esc(d)}</label></div>`).join(''):'<div class=\"dre\">No doctors available</div>';}
+function updDrList(drs){const q=document.getElementById('drsch').value.toLowerCase();document.getElementById('drlist').innerHTML=drs.length?drs.map(d=>`<div class=\"dri\" data-n=\"${esc(d)}\" style=\"${d.toLowerCase().includes(q)||!q?'':'display:none'}\"><input type=\"checkbox\" id=\"dc_${esc(d)}\" value=\"${esc(d)}\" ${selDrs.has(d)?'checked':''} onchange=\"onDrChk()\"><label for=\"dc_${esc(d)}\">${esc(d)}</label></div>`).join(''):'<div class=\"dre\">No doctors for current selection</div>';}
+function fDrSch(q){document.querySelectorAll('#drlist .dri').forEach(i=>{i.style.display=i.dataset.n.toLowerCase().includes(q.toLowerCase())||!q?'flex':'none';});}
+function tDr(){const dd=document.getElementById('drd'),tr=document.getElementById('drt');const s=!dd.classList.contains('show');dd.classList.toggle('show',s);tr.classList.toggle('open',s);if(s)document.getElementById('drsch').focus();}
+function onDrChk(){selDrs=new Set([...document.querySelectorAll('#drlist input[type=checkbox]:checked')].map(c=>c.value));updDrLbl();cascM1();r1();}
+function updDrLbl(){const nm=selDrs.size;document.getElementById('drlbl').innerHTML=nm===0?'All Doctors':`<span class=\"drb\">${nm}</span> doctor${nm>1?'s':''} selected`;}
+function selAllDr(){document.querySelectorAll('#drlist input[type=checkbox]').forEach(c=>c.checked=true);onDrChk();}
+function clrDr(){document.querySelectorAll('#drlist input[type=checkbox]').forEach(c=>c.checked=false);selDrs=new Set();updDrLbl();cascM1();r1();}
+document.addEventListener('click',e=>{const f=document.getElementById('drf');if(f&&!f.contains(e.target)){document.getElementById('drd').classList.remove('show');document.getElementById('drt').classList.remove('open');}});
+/* CHART HELPERS */
+const _ch={};
+function mkC(id,cfg){if(_ch[id]){_ch[id].destroy();delete _ch[id];}_ch[id]=new Chart(document.getElementById(id),cfg);}
+function rPie(m,cid,lid,pal,type='pie'){
+  const e=[...m.entries()].sort((a,b)=>b[1]-a[1]);const tot=e.reduce((s,[,v])=>s+v,0);
+  mkC(cid,{type,data:{labels:e.map(([k])=>k),datasets:[{data:e.map(([,v])=>v),backgroundColor:pal.slice(0,e.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:type==='doughnut'?'62%':0,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fN(ctx.parsed)} (${pct(ctx.parsed,tot)})`}}}}});
+  const el=document.getElementById(lid);
+  if(!e.length){el.innerHTML='<div class=\"emp\">No data</div>';return;}
+  el.innerHTML=e.map(([k,v],i)=>`<div class=\"bkr\"><div class=\"bkn\"><span class=\"bks\" style=\"background:${pal[i%pal.length]}\"></span>${esc(k)}</div><div class=\"bkv\">${fN(v)}</div><div class=\"bkbw\"><div class=\"bkbf\" style=\"width:${pr(v,tot)}%;background:${pal[i%pal.length]}\"></div></div><div class=\"bkp\">${pct(v,tot)}</div></div>`).join('');
+}
+function rBarH(cid,entries,color){mkC(cid,{type:'bar',data:{labels:entries.map(e=>e.k),datasets:[{data:entries.map(e=>e.v),backgroundColor:color,borderRadius:6,barThickness:26}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}},y:{grid:{display:false},ticks:{font:{size:12},color:'#0e2a33'}}}}});}
+const cntB=(rows,field)=>{const m=new Map();rows.forEach(r=>{const k=r[field];if(!k)return;m.set(k,(m.get(k)||0)+1);});return m;};
+const topN=(m,nm)=>[...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,nm).map(([k,v])=>({k,v}));
 const fN=nm=>(nm||0).toLocaleString('en-IN');
 const pct=(a,b)=>b?((a/b)*100).toFixed(1)+'%':'—';
 const pr=(a,b)=>b?(a/b)*100:0;
 const st=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val;};
 const gv=id=>document.getElementById(id).value;
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc=s=>String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));
 const gR=(f,t)=>({from:document.getElementById(f).value?new Date(document.getElementById(f).value+'T00:00:00'):null,to:document.getElementById(t).value?new Date(document.getElementById(t).value+'T23:59:59'):null});
-function fsl(id,vals,ph,pres=''){const el=document.getElementById(id);el.innerHTML=`<option value="">${ph}</option>`+vals.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');if(pres&&vals.includes(pres))el.value=pres;}
-/* ── Module 4 CSV Export ── */
-function exportM4CSV(){
-  const btn=document.getElementById('exportBtn');
-  btn.disabled=true;btn.textContent='Preparing…';
+function fsl(id,vals,ph,pres=''){const el=document.getElementById(id);el.innerHTML=`<option value=\"\">${ph}</option>`+vals.map(v=>`<option value=\"${esc(v)}\">${esc(v)}</option>`).join('');if(pres&&vals.includes(pres))el.value=pres;}
+Chart.defaults.font.family=\"'Inter',sans-serif\";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
 
-  // Get currently filtered rows (same logic as r4)
-  const{from,to}=gR('p4f','p4t');
-  const fd=gv('p4d'),fs=gv('p4s');
-  const rows=DS.patient.filter(r=>{
-    if(!inR(r._date,from,to))return false;
-    if(fd&&r.drug!==fd)return false;
-    if(fs&&r.docStatus!==fs)return false;
-    return true;
-  });
-
-  if(!rows.length){
-    alert('No data to export for the current filters.');
-    btn.disabled=false;btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV`;
-    return;
-  }
-
-  // Build CSV
-  const headers=['Patient Name','Mobile','State','City','Purchase Date','Drug Name','QR Type','Doctor Name','Documentation Status','Plan'];
-  const csvRows=[headers];
-
-  rows.forEach(r=>{
-    const purchaseDate=r._date?r._date.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'';
-    csvRows.push([
-      csvCell(r.name),
-      csvCell(r.mobile),
-      csvCell(r.state),
-      csvCell(r.city),
-      csvCell(purchaseDate),
-      csvCell(r.drug),
-      csvCell(r.qr),
-      csvCell(r.doctor),
-      csvCell(r.docStatus),
-      csvCell(r.plan),
-    ]);
-  });
-
-  const csvContent=csvRows.map(row=>row.join(',')).join('\n');
-  const blob=new Blob(['\uFEFF'+csvContent],{type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-
-  // File name includes active filters + date
-  const today=new Date().toISOString().slice(0,10);
-  const filterTag=[fd,fs].filter(Boolean).join('_').replace(/\s/g,'-')||'all';
-  a.download=`MySaathi_Documentation_${filterTag}_${today}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
-  btn.disabled=false;
-  btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export CSV`;
-}
-
-// Safely wrap a CSV cell — escape quotes, wrap in quotes if contains comma/newline/quote
-function csvCell(val){
-  const s=String(val==null?'':val);
-  if(s.includes(',') || s.includes('"') || s.indexOf('\n') > -1){
-    return'"'+s.replace(/"/g,'""')+'"';
-  }
-  return s;
-}
-
-/* ── Patient Logistics Search ── */
-function onPSearch(){
-  const q=document.getElementById('pSearch').value.trim();
-  const clr=document.getElementById('pSearchClear');
-  const res=document.getElementById('pSearchResults');
-  clr.classList.toggle('show', q.length>0);
-  if(q.length<2){res.classList.remove('show');return;}
-  // Search across ALL logistics data (not just filtered — so user can find any patient)
-  const ql=q.toLowerCase();
-  const matches=DS.logistics.filter(r=>r.name&&r.name.toLowerCase().includes(ql));
-  renderPSearchResults(matches, q);
-  res.classList.add('show');
-}
-function clearPSearch(){
-  document.getElementById('pSearch').value='';
-  document.getElementById('pSearchClear').classList.remove('show');
-  document.getElementById('pSearchResults').classList.remove('show');
-}
-function renderPSearchResults(rows, q){
-  const meta=document.getElementById('pSearchMeta');
-  const body=document.getElementById('pSearchBody');
-  if(!rows.length){
-    meta.textContent='';
-    body.innerHTML=`<tr><td colspan="5" class="psearch-empty">No patient found matching "${esc(q)}"</td></tr>`;
-    return;
-  }
-  meta.textContent=`${rows.length} result${rows.length>1?'s':''} found`;
-  body.innerHTML=rows.map(r=>{
-    const bucket=r.bucket||'Others';
-    const stClass=bucket==='Delivered'?'pst-delivered':bucket==='In Transit'?'pst-transit':bucket==='RTO'?'pst-rto':'pst-others';
-    const placedDate=r._date?fmtDFull(r._date):'<span class="pst-blank">—</span>';
-    const deliveredDate=r._deliveredDate?fmtDFull(r._deliveredDate):'<span class="pst-blank">Not yet delivered</span>';
-    return`<tr>
-      <td class="pst-name">${esc(r.name)}</td>
-      <td>${placedDate}</td>
-      <td>${deliveredDate}</td>
-      <td><span class="pst-status ${stClass}">${esc(bucket)}</span></td>
-      <td>${esc(r.city||'—')}</td>
-    </tr>`;
-  }).join('');
-}
-function fmtDFull(d){return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
-
-/* ══════════════════════════════════════════════════════
-   FIREBASE AUTH + ROLE-BASED ACCESS CONTROL
-══════════════════════════════════════════════════════ */
-const FB_CONFIG = {
-  apiKey: "AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8",
-  authDomain: "mysaathi-dashboard.firebaseapp.com",
-  databaseURL: "https://mysaathi-dashboard-default-rtdb.firebaseio.com",
-  projectId: "mysaathi-dashboard",
-  storageBucket: "mysaathi-dashboard.firebasestorage.app",
-  messagingSenderId: "755642238347",
-  appId: "1:755642238347:web:be8a39c6852021c4761b8e"
-};
-const ADMIN_UID = "VzNDpj9MfDMDVx9Cc6RD4xdj93N2";
-
-// Module permission keys — map to section IDs
-const MODULE_PERMS = [
-  {key:'mod1', label:'Patient Distribution',      sub:'Module 01'},
-  {key:'mod2', label:'Welcome Kit & Logistics',   sub:'Module 02'},
-  {key:'mod3', label:'Expert Consultation',        sub:'Module 03'},
-  {key:'mod4', label:'Documentation',              sub:'Module 04'},
-  {key:'mod5', label:'Loyalty Rewards',            sub:'Module 05'},
-  {key:'mod6', label:'App Engagement',             sub:'Module 06'},
-  {key:'export', label:'Data Export (CSV)',        sub:'Module 04 export button'},
-];
-
-// Initialize Firebase
-firebase.initializeApp(FB_CONFIG);
-const fbAuth = firebase.auth();
-const fbDB   = firebase.database();
-
-let currentUser  = null;
-let currentRole  = null;
-let currentPerms = {};
-let selectedUid  = null;
-
-/* ── Auth state listener ── */
 fbAuth.onAuthStateChanged(async user => {
   if(!user){
     showLoginScreen();
@@ -1504,6 +1506,7 @@ function exportDrWeekly(){
 
 Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
 // loadAll() is called by Firebase auth state listener
+
 </script>
 
 <!-- ══ CHANGE PASSWORD MODAL ══ -->
