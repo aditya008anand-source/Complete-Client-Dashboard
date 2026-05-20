@@ -620,222 +620,32 @@ async function loadAll(){
     DS.logistics=l.map(r=>({name:n(r['Customer Name']),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
     DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status'])}));
     // App engagement: date format DD-Mon-YY e.g. 15-Mar-26
-    DS.app=ap.filter(r=>r['Date']||r['date']).map(r=>({
-      _featDate: parseAppDate(r['Events / Unique users']||r['Date']||''),
-      diet_feat:  parseInt(r['Diet']||'0')||0,
-      exercise_feat: parseInt(r['Exercise']||'0')||0,
-      steps:      parseInt(r['Steps']||'0')||0,
-      sleep:      parseInt(r['Sleep']||'0')||0,
-      water:      parseInt(r['Water']||'0')||0,
-      edu:        parseInt(r['Educational Content']||'0')||0,
-      achieve:    parseInt(r['Achieve Section']||'0')||0,
-      aiMed:      parseInt(r['AI Med Report']||'0')||0,
-      flipFeed:   parseInt(r['Flip Feed']||'0')||0,
-      bca:        parseInt(r['BCA']||'0')||0,
-      _dauDate: parseAppDate(r['Date']||r['date']),
-      _dauDate: parseAppDate(r['Date']||r['date']),
-      dau:      parseInt(r['App opened patient count']||'0')||0,
-      _dietDate: parseAppDate(r['Events / Unique users']||r['Date']||''),
-      diet:     parseInt(r['kaira_food_logged']||'0')||0,
-      _exDate:  parseAppDate(r['Events / Unique users.1']||r['Date']||''),
-      exercise: parseInt(r['EXERCISE_ADDED + EXERCISE_PLAN_DONE']||'0')||0,
-      // Feature/Activity columns O-Y (Col O = date, P-Y = feature counts)
-      _featDate: parseAppDate(r['Events / Unique users.2']||r['Date']||''),
-      fDiet:     parseInt(r['Diet']||'0')||0,
-      fExercise: parseInt(r['Exercise']||'0')||0,
-      fSteps:    parseInt(r['Steps']||'0')||0,
-      fSleep:    parseInt(r['Sleep']||'0')||0,
-      fWater:    parseInt(r['Water']||'0')||0,
-      fEdu:      parseInt(r['Educational Content']||'0')||0,
-      fAchieve:  parseInt(r['Achieve Section']||'0')||0,
-      fAIMed:    parseInt(r['AI Med Report']||'0')||0,
-      fFlipFeed: parseInt(r['Flip Feed']||'0')||0,
-      fBCA:      parseInt(r['BCA']||'0')||0,
-    }));
-    // Transform loyalty — Col D=activityType, F=coinsEarned, G=activityDate, I=planName
-    // Redemption: Col V=amount, W=coin_amount, X=brand_name, Y=order_status, U=redemption date
-    DS.loyalty=ly.map(r=>({
-      activityType: n(r['activityType']),
-      coinsEarned:  parseFloat(n(r['coinsEarned']))||0,
-      _date:        parseLoyaltyDate(n(r['activityDate'])),
-      planName:     n(r['planName']),
-      drug:         cDrFromPlan(n(r['planName'])),
-      // Redemption side
-      amount:       parseFloat(n(r['amount']))||0,
-      coinRedeemed: parseFloat(n(r['coin_amount']))||0,
-      brand:        n(r['brand_name']),
-      redeemStatus: n(r['order_status']),
-      _redeemDate:  parseLoyaltyDate(n(r['activityDate.1']||r['activityDate']||'')),
-    })).filter(r=>r.activityType||r.coinRedeemed>0);
-    const img=document.getElementById('zLogo');
-    img.src=ZLOGO;img.onload=()=>{img.style.display='block';document.getElementById('lph').style.display='none';};
-    initF();r1();r2();r3();r4();r5();r6();
-    document.getElementById('lastUp').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
-    document.getElementById('fSt').textContent='Patients: '+DS.patient.length+' · Kits: '+DS.logistics.length+' · Consultations: '+DS.consult.length+' · Loyalty pts: '+fN(DS.loyalty.reduce(function(s,r){return s+r.coinsEarned;},0))+' · DAU avg: '+(DS.app.filter(function(r){return r.dau>0;}).length?( DS.app.filter(function(r){return r.dau>0;}).reduce(function(s,r){return s+r.dau;},0)/DS.app.filter(function(r){return r.dau>0;}).length).toFixed(1):'—');
-  }catch(e){console.error(e);alert('Could not load data. Ensure sheets are published to web.\n'+e);}
-  document.getElementById('loader').classList.add('hide');
-}
-function initF(){
-  fsl('p1d',[...new Set(DS.patient.map(r=>r.drug).filter(Boolean))].sort(),'All Drugs');
-  fsl('p1s',[...new Set(DS.patient.map(r=>r.state).filter(Boolean))].sort(),'All States');
-  fsl('p1q',[...new Set(DS.patient.map(r=>r.qr).filter(Boolean))].sort(),'All QR Types');
-  bldDrList([...new Set(DS.patient.map(r=>r.doctor).filter(Boolean))].sort());
-  fsl('p2s',[...new Set(DS.logistics.map(r=>r.state).filter(Boolean))].sort(),'All States');
-  fsl('p3d',[...new Set(DS.consult.map(r=>r.drug).filter(Boolean))].sort(),'All Programmes');
-  fsl('p4d',[...new Set(DS.patient.map(r=>r.drug).filter(Boolean))].sort(),'All Drugs');
-}
-/* CASCADING FILTER LOGIC
-   When any M1 filter changes, we rebuild each other filter's options
-   from rows that pass all OTHER filters (excluding itself).
-   This means each dropdown only shows values that exist in the currently filtered dataset.
-*/
-function cascM1(){
-  const fd=gv('p1d'),fs=gv('p1s'),fq=gv('p1q');
-  const{from,to}=gR('p1f','p1t');
-  // Rows for drug options: apply state + dr + qr + date (not drug)
-  const rfd=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fs&&r.state!==fs)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;if(fq&&r.qr!==fq)return false;return true;});
-  fsl('p1d',[...new Set(rfd.map(r=>r.drug).filter(Boolean))].sort(),'All Drugs',fd);
-  // Rows for state options: apply drug + dr + qr + date
-  const rfs=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;if(fq&&r.qr!==fq)return false;return true;});
-  fsl('p1s',[...new Set(rfs.map(r=>r.state).filter(Boolean))].sort(),'All States',fs);
-  // Rows for QR options: apply drug + state + dr + date
-  const rfq=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.state!==fs)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;return true;});
-  fsl('p1q',[...new Set(rfq.map(r=>r.qr).filter(Boolean))].sort(),'All QR Types',fq);
-  // Rows for doctor options: apply drug + state + qr + date
-  const rfdr=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.state!==fs)return false;if(fq&&r.qr!==fq)return false;return true;});
-  const avDrs=[...new Set(rfdr.map(r=>r.doctor).filter(Boolean))].sort();
-  selDrs=new Set([...selDrs].filter(d=>avDrs.includes(d)));
-  updDrList(avDrs);updDrLbl();
-}
-function cascM2(){
-  const fst=gv('p2st'),fs=gv('p2s');
-  const{from,to}=gR('p2f','p2t');
-  const rf=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;return true;});
-  fsl('p2s',[...new Set(rf.map(r=>r.state).filter(Boolean))].sort(),'All States',fs);
-}
-function cascM3(){
-  const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
-  const rf=DS.consult.filter(r=>{if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
-  fsl('p3d',[...new Set(rf.map(r=>r.drug).filter(Boolean))].sort(),'All Programmes',fd);
-}
-function oF1(){cascM1();r1();}
-function oF2(){cascM2();r2();}
-function oF3(){cascM3();r3();}
-function oF4(){r4();}
-/* RENDER 1 */
-function r1(){
-  const{from,to}=gR('p1f','p1t');const fd=gv('p1d'),fs=gv('p1s'),fq=gv('p1q');
-  const rows=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.state!==fs)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;if(fq&&r.qr!==fq)return false;return true;});
-  const tot=rows.length,abs=DS.patient.length;
-  st('k1t',fN(tot));st('k1m',(fd||fs||fq||selDrs.size>0||from||to)?`Filtered from ${fN(abs)} total`:'All-time registrations');
-  const act=rows.filter(r=>/active/i.test(r.plan)).length;
-  st('k1a',fN(act));st('k1am',tot?`${pct(act,tot)} of filtered`:'—');
-  st('k1dr',fN(new Set(rows.map(r=>r.doctor).filter(Boolean)).size));
-  st('k1st',fN(new Set(rows.map(r=>r.state).filter(Boolean)).size));st('k1stm','distinct canonical states');
-  rPie(cntB(rows,'drug'),'cDrug','lDrug',PD);
-  rPie(cntB(rows,'qr'),'cQR','lQR',PQ,'doughnut');
-  rBarH('cSt',topN(cntB(rows,'state'),5),C.teal);
-  const dt=topN(cntB(rows,'doctor'),5);
-  const el=document.getElementById('lDr');
-  if(!dt.length){el.innerHTML='<div class="emp">No doctor data for current filters</div>';return;}
-  el.innerHTML=dt.map((d,i)=>`<div class="lbr"><div class="rnk ${i===0?'r1':i===1?'r2':i===2?'r3':''}">${i+1}</div><div class="drnm">${esc(d.k||'(unspecified)')}</div><div class="drct">${fN(d.v)} <small>patients</small></div></div>`).join('');
-}
-/* RENDER 2 */
-function r2(){
-  const{from,to}=gR('p2f','p2t');const fst=gv('p2st'),fs=gv('p2s');
-  const rows=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;if(fs&&r.state!==fs)return false;return true;});
-  const tot=rows.length;const bk={Delivered:0,'In Transit':0,RTO:0,Others:0};
-  rows.forEach(r=>{bk[r.bucket]=(bk[r.bucket]||0)+1;});
-  st('k2t',fN(tot));st('k2r',tot?((bk.Delivered/tot)*100).toFixed(1)+'%':'—');st('k2rm',fN(bk.Delivered)+' delivered');
-  st('k2tr',fN(bk['In Transit']));st('k2trm',tot?`${pct(bk['In Transit'],tot)} of filtered`:'—');
-  st('k2rto',fN(bk.RTO+bk.Others));st('k2rtom',`${bk.RTO} RTO \u00b7 ${bk.Others} other`);
-  const tv=rows.filter(r=>r.bucket==='Delivered'&&r.tat!==null).map(r=>r.tat);
-  if(tv.length){const avg=(tv.reduce((a,b)=>a+b,0)/tv.length).toFixed(1);st('k2tat',avg);st('k2tatm',avg+' days avg');}
-  else{st('k2tat','\u2014');st('k2tatm','no TAT data in Column L yet');}
-  mkC('cLM',{type:'doughnut',data:{labels:['Delivered','In Transit','RTO','Others'],datasets:[{data:[bk.Delivered,bk['In Transit'],bk.RTO,bk.Others],backgroundColor:[C.teal,C.blueLt,C.amber,C.red],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?((ctx.parsed/t)*100).toFixed(1):0;return ctx.label+': '+fN(ctx.parsed)+' ('+p+'%)';}}}}}});
-// Weekly trend
-  const bw=new Map();
-  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw.has(k))bw.set(k,{total:0,delivered:0});bw.get(k).total++;if(r.bucket==='Delivered')bw.get(k).delivered++;});
-  const sw=[...bw.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
-  const pt=Math.max(tot,1);
-  const tpct=sw.map(function(e){return +((e[1].total/pt)*100).toFixed(1);});
-  const dpct=sw.map(function(e){return +((e[1].delivered/pt)*100).toFixed(1);});
-  const rawT=sw.map(function(e){return e[1].total;});
-  const rawD=sw.map(function(e){return e[1].delivered;});
-  mkC('cTr',{type:'bar',data:{labels:sw.map(function(e){return fmtD(new Date(e[0]));}),datasets:[{label:'Total Kits',data:tpct,backgroundColor:'rgba(123,168,201,.5)',borderColor:C.blueLt,borderWidth:1.5,borderRadius:4,rawC:rawT},{label:'Delivered',data:dpct,backgroundColor:'rgba(15,118,110,.65)',borderColor:C.teal,borderWidth:1.5,borderRadius:4,rawC:rawD}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.dataset.rawC[ctx.dataIndex]+' kits ('+ctx.parsed.y+'% of period total)';}}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},y:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',callback:function(v){return v+'%';}}}}}}); 
-  // Granular status pills
-  const gr=new Map();rows.forEach(r=>{const k=r.rawStatus||'Unknown';gr.set(k,(gr.get(k)||0)+1);});
-  const sorted=[...gr.entries()].sort((a,b)=>b[1]-a[1]);
-  document.getElementById('lLS').innerHTML=sorted.length?sorted.map(function(e){return '<div class="spl"><div class="pn">'+esc(e[0])+'</div><div class="pv">'+fN(e[1])+'<span class="pp">'+pct(e[1],tot)+'</span></div></div>';}).join(''):'<div class="emp">No shipments for current filters</div>';
-}
-/* RENDER 3 */
-function r3(){
-  const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
-  const rows=DS.consult.filter(r=>{if(fd&&r.drug!==fd)return false;if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
-  const tot=rows.length,comp=rows.filter(r=>r.status==='Completed').length,ns=rows.filter(r=>r.status==='No Show').length,bkd=rows.filter(r=>r.status==='Booked').length;
-  st('k3t',fN(tot));st('k3c',fN(comp));st('k3cm',tot?`${pct(comp,tot)} of total`:'—');
-  st('k3n',fN(ns));st('k3nm',tot?`${pct(ns,tot)} of total`:'—');
-  st('k3r',tot?((comp/tot)*100).toFixed(1)+'%':'—');
-  const mx=Math.max(tot,1);
-  document.getElementById('lFnl').innerHTML=`<div class="fnr"><div class="fnl2">Total</div><div class="fnb"><div class="fnf" style="width:${pr(tot,mx)}%;background:${C.teal}"><span>${fN(tot)}</span></div></div><div class="fnv">${tot?'100%':'—'}</div></div><div class="fnr"><div class="fnl2">Completed</div><div class="fnb"><div class="fnf" style="width:${pr(comp,mx)}%;background:${C.blue}"><span>${fN(comp)}</span></div></div><div class="fnv">${tot?pct(comp,tot):'—'}</div></div><div class="fnr"><div class="fnl2">No Show</div><div class="fnb"><div class="fnf" style="width:${pr(ns,mx)}%;background:${C.red}"><span>${fN(ns)}</span></div></div><div class="fnv">${tot?pct(ns,tot):'—'}</div></div><div class="fnr"><div class="fnl2">Upcoming</div><div class="fnb"><div class="fnf" style="width:${pr(bkd,mx)}%;background:${C.amber}"><span>${fN(bkd)}</span></div></div><div class="fnv">${tot?pct(bkd,tot):'—'}</div></div>`;
-  const ty=['Physiotherapist','Nutritionist'];
-  mkC('cCon',{type:'bar',data:{labels:ty,datasets:[{label:'Completed',backgroundColor:C.teal,borderRadius:4,data:ty.map(t=>rows.filter(r=>r.coachType===t&&r.status==='Completed').length)},{label:'Upcoming',backgroundColor:C.amber,borderRadius:4,data:ty.map(t=>rows.filter(r=>r.coachType===t&&r.status==='Booked').length)},{label:'No Show',backgroundColor:C.red,borderRadius:4,data:ty.map(t=>rows.filter(r=>r.coachType===t&&r.status==='No Show').length)}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}}},scales:{x:{stacked:true,beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}},y:{stacked:true,grid:{display:false},ticks:{font:{size:12},color:'#0e2a33'}}}}});
-}
-/* RENDER 4 */
-function r4(){
-  const{from,to}=gR('p4f','p4t');const fd=gv('p4d'),fs=gv('p4s');
-  const rows=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.docStatus!==fs)return false;return true;});
-  const tot=rows.length;
-  const cts={Completed:0,'Missing Documents':0,Rejected:0,'In Progress':0,'Completed – Dispatch Pending':0};
-  rows.forEach(r=>{if(cts[r.docStatus]!=null)cts[r.docStatus]++;});
-  st('k4total',fN(tot));st('k4totalm',tot!==DS.patient.length?`filtered from ${fN(DS.patient.length)} total`:'all-time registrations');
-  st('k4c',fN(cts.Completed));st('k4cm',tot?`${pct(cts.Completed,tot)} of total`:'—');
-  st('k4ms',fN(cts['Missing Documents']));st('k4mm',tot?`${pct(cts['Missing Documents'],tot)} of total`:'—');
-  st('k4r',fN(cts.Rejected));st('k4rm',tot?`${pct(cts.Rejected,tot)} of total`:'—');
-  st('k4p',fN(cts['Completed – Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed – Dispatch Pending'],tot)} of total`:'—');
-  const pl=Object.keys(cts).filter(k=>cts[k]>0);
-  mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(function(k){return cts[k];}),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){var t=ctx.dataset.data.reduce(function(a,b){return a+b;},0);var p=t?((ctx.parsed/t)*100).toFixed(1):0;return ctx.label+': '+fN(ctx.parsed)+' ('+p+'%)';}}}}}});
-// Status pills
-  const pills=Object.entries(cts).filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];});
-  document.getElementById('lDS').innerHTML=pills.length?pills.map(function(e){return '<div class="spl"><div class="pn">'+esc(e[0])+'</div><div class="pv">'+fN(e[1])+'<span class="pp">'+pct(e[1],tot)+'</span></div></div>';}).join(''):'<div class="emp">No records for current filters</div>';
-  // Doc pie breakdown
-  const dpPal=[C.teal,C.amber,C.red,C.blueLt,C.slate];
-  document.getElementById('lDPBreak')?document.getElementById('lDPBreak').innerHTML='':null;
-  // Weekly trend
-  const bw2=new Map();
-  rows.forEach(r=>{if(!r._date)return;const k=ymd(sow(r._date));if(!bw2.has(k))bw2.set(k,{Completed:0,Rejected:0,'Missing Documents':0,total:0});const b=bw2.get(k);if(b[r.docStatus]!=null)b[r.docStatus]++;b.total++;});
-  const sw2=[...bw2.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
-  mkC('cDT',{type:'line',data:{labels:sw2.map(function(e){return fmtD(new Date(e[0]));}),datasets:[{label:'Completed',data:sw2.map(function(e){return e[1].total?+((e[1].Completed/e[1].total)*100).toFixed(1):0;}),rawC:sw2.map(function(e){return e[1].Completed;}),wkTot:sw2.map(function(e){return e[1].total;}),borderColor:C.teal,backgroundColor:'rgba(15,118,110,.12)',borderWidth:2.5,tension:.35,fill:true,pointRadius:2.5},{label:'Missing Documents',data:sw2.map(function(e){return e[1].total?+((e[1]['Missing Documents']/e[1].total)*100).toFixed(1):0;}),rawC:sw2.map(function(e){return e[1]['Missing Documents'];}),wkTot:sw2.map(function(e){return e[1].total;}),borderColor:C.amber,backgroundColor:'rgba(183,121,31,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2},{label:'Rejected',data:sw2.map(function(e){return e[1].total?+((e[1].Rejected/e[1].total)*100).toFixed(1):0;}),rawC:sw2.map(function(e){return e[1].Rejected;}),wkTot:sw2.map(function(e){return e[1].total;}),borderColor:C.red,backgroundColor:'rgba(181,71,71,.1)',borderWidth:2,tension:.35,fill:false,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,padding:12,font:{size:11,family:'Inter'}}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.dataset.rawC[ctx.dataIndex]+' patients ('+ctx.parsed.y+'% of '+ctx.dataset.wkTot[ctx.dataIndex]+' that week)';}}}},scales:{x:{grid:{display:false},ticks:{font:{size:11},color:'#7a8c93'}},y:{beginAtZero:true,max:100,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',callback:function(v){return v+'%';}}}}}});
-}
-/* RESETS */
-function rst1(){document.getElementById('p1f').value='';document.getElementById('p1t').value='';document.getElementById('p1d').value='';document.getElementById('p1s').value='';document.getElementById('p1q').value='';selDrs=new Set();updDrLbl();initF();r1();}
-function rst2(){document.getElementById('p2f').value='';document.getElementById('p2t').value='';document.getElementById('p2st').value='';document.getElementById('p2s').value='';cascM2();r2();}
-function rst3(){document.getElementById('p3d').value='';document.getElementById('p3t').value='';document.getElementById('p3s').value='';cascM3();r3();}
-function rst4(){document.getElementById('p4f').value='';document.getElementById('p4t').value='';document.getElementById('p4d').value='';document.getElementById('p4s').value='';r4();}
-/* DOCTOR MULTI-SELECT */
-let selDrs=new Set();
-function bldDrList(drs){document.getElementById('drlist').innerHTML=drs.length?drs.map(d=>`<div class="dri" data-n="${esc(d)}"><input type="checkbox" id="dc_${esc(d)}" value="${esc(d)}" onchange="onDrChk()"><label for="dc_${esc(d)}">${esc(d)}</label></div>`).join(''):'<div class="dre">No doctors available</div>';}
-function updDrList(drs){const q=document.getElementById('drsch').value.toLowerCase();document.getElementById('drlist').innerHTML=drs.length?drs.map(d=>`<div class="dri" data-n="${esc(d)}" style="${d.toLowerCase().includes(q)||!q?'':'display:none'}"><input type="checkbox" id="dc_${esc(d)}" value="${esc(d)}" ${selDrs.has(d)?'checked':''} onchange="onDrChk()"><label for="dc_${esc(d)}">${esc(d)}</label></div>`).join(''):'<div class="dre">No doctors for current selection</div>';}
-function fDrSch(q){document.querySelectorAll('#drlist .dri').forEach(i=>{i.style.display=i.dataset.n.toLowerCase().includes(q.toLowerCase())||!q?'flex':'none';});}
-function tDr(){const dd=document.getElementById('drd'),tr=document.getElementById('drt');const s=!dd.classList.contains('show');dd.classList.toggle('show',s);tr.classList.toggle('open',s);if(s)document.getElementById('drsch').focus();}
-function onDrChk(){selDrs=new Set([...document.querySelectorAll('#drlist input[type=checkbox]:checked')].map(c=>c.value));updDrLbl();cascM1();r1();}
-function updDrLbl(){const nm=selDrs.size;document.getElementById('drlbl').innerHTML=nm===0?'All Doctors':`<span class="drb">${nm}</span> doctor${nm>1?'s':''} selected`;}
-function selAllDr(){document.querySelectorAll('#drlist input[type=checkbox]').forEach(c=>c.checked=true);onDrChk();}
-function clrDr(){document.querySelectorAll('#drlist input[type=checkbox]').forEach(c=>c.checked=false);selDrs=new Set();updDrLbl();cascM1();r1();}
-document.addEventListener('click',e=>{const f=document.getElementById('drf');if(f&&!f.contains(e.target)){document.getElementById('drd').classList.remove('show');document.getElementById('drt').classList.remove('open');}});
-/* CHART HELPERS */
-const _ch={};
-function mkC(id,cfg){if(_ch[id]){_ch[id].destroy();delete _ch[id];}_ch[id]=new Chart(document.getElementById(id),cfg);}
-function rPie(m,cid,lid,pal,type='pie'){
-  const e=[...m.entries()].sort((a,b)=>b[1]-a[1]);const tot=e.reduce((s,[,v])=>s+v,0);
-  mkC(cid,{type,data:{labels:e.map(([k])=>k),datasets:[{data:e.map(([,v])=>v),backgroundColor:pal.slice(0,e.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:type==='doughnut'?'62%':0,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fN(ctx.parsed)} (${pct(ctx.parsed,tot)})`}}}}});
-  const el=document.getElementById(lid);
-  if(!e.length){el.innerHTML='<div class="emp">No data</div>';return;}
-  el.innerHTML=e.map(([k,v],i)=>`<div class="bkr"><div class="bkn"><span class="bks" style="background:${pal[i%pal.length]}"></span>${esc(k)}</div><div class="bkv">${fN(v)}</div><div class="bkbw"><div class="bkbf" style="width:${pr(v,tot)}%;background:${pal[i%pal.length]}"></div></div><div class="bkp">${pct(v,tot)}</div></div>`).join('');
-}
-function rBarH(cid,entries,color){mkC(cid,{type:'bar',data:{labels:entries.map(e=>e.k),datasets:[{data:entries.map(e=>e.v),backgroundColor:color,borderRadius:6,barThickness:26}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}},y:{grid:{display:false},ticks:{font:{size:12},color:'#0e2a33'}}}}});}
-const cntB=(rows,field)=>{const m=new Map();rows.forEach(r=>{const k=r[field];if(!k)return;m.set(k,(m.get(k)||0)+1);});return m;};
-const topN=(m,nm)=>[...m.entries()].sort((a,b)=>b[1]-a[1]).slice(0,nm).map(([k,v])=>({k,v}));
+    // App transform -- index-based for KPIs, dynamic headers for features
+    var apFields=ap.length?Object.keys(ap[0]):[];
+    // Feature columns: index 15-24 (P-Y), get header names dynamically
+    var featCols=apFields.slice(15,25).filter(function(h){return h&&h.trim();});
+    DS.app=ap.filter(function(r){
+      var vals=Object.values(r);
+      return vals[0]&&vals[0].trim();
+    }).map(function(r){
+      var v=Object.values(r);
+      var obj={
+        _dauDate:  parseAppDate(v[0]||''),
+        dau:       parseInt(v[1])||0,
+        _dietDate: parseAppDate(v[4]||v[0]||''),
+        diet:      parseInt(v[5])||0,
+        _exDate:   parseAppDate(v[10]||v[0]||''),
+        exercise:  parseInt(v[11])||0,
+        _featDate: parseAppDate(v[14]||v[0]||''),
+      };
+      // Add feature cols dynamically by their header name
+      featCols.forEach(function(h,i){
+        obj[h]=parseInt(v[15+i])||0;
+      });
+      return obj;
+    });
+    // Store feature column names for r6() to use
+    DS.appFeatCols=featCols;
 const fN=nm=>(nm||0).toLocaleString('en-IN');
 const pct=(a,b)=>b?((a/b)*100).toFixed(1)+'%':'—';
 const pr=(a,b)=>b?(a/b)*100:0;
@@ -1582,11 +1392,14 @@ function r6(){
   });
 
   // Feature Adoption & Trend Charts
-  var FEATS=['BCA','Flip Feed','Steps','Sleep','Diet','Water','Exercise','Educational Content','AI Med Report','Achieve Section'];
-  var FEAT_KEYS=['bca','flipFeed','steps','sleep','diet_feat','water','exercise_feat','edu','aiMed','achieve'];
-  var FEAT_COLORS=[C.teal,C.blue,C.amber,C.blueLt,'#6366f1','#06b6d4','#f97316','#8b5cf6','#ec4899','#94a3b8'];
+  // Dynamic features from sheet headers
+  var FEAT_COLOR_POOL=[C.teal,C.blue,C.amber,C.blueLt,'#6366f1','#06b6d4','#f97316','#8b5cf6','#ec4899','#94a3b8'];
+  var featCols=DS.appFeatCols||[];
   var featRows=filterByDate(DS.app,'_featDate').filter(function(r){return r._featDate;});
-  var featTotals=FEATS.map(function(f,i){return{name:f,key:FEAT_KEYS[i],color:FEAT_COLORS[i],total:featRows.reduce(function(s,r){return s+(r[FEAT_KEYS[i]]||0);},0)};}).sort(function(a,b){return b.total-a.total;});
+  var featTotals=featCols.map(function(h,i){
+    return{name:h,key:h,color:FEAT_COLOR_POOL[i%FEAT_COLOR_POOL.length],
+      total:featRows.reduce(function(s,r){return s+(r[h]||0);},0)};
+  }).filter(function(f){return f.total>0;}).sort(function(a,b){return b.total-a.total;});
   mkC('c6feat',{type:'bar',data:{labels:featTotals.map(function(f){return f.name;}),datasets:[{label:'Unique Users',data:featTotals.map(function(f){return f.total;}),backgroundColor:featTotals.map(function(f){return f.color;}),borderRadius:4,borderWidth:0}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ' '+fN(ctx.parsed.x)+' accumulative users';}}}},scales:{x:{beginAtZero:true,grid:{color:'#eff3f5'},ticks:{font:{size:11},color:'#7a8c93',precision:0}},y:{grid:{display:false},ticks:{font:{size:11},color:'#0e2a33'}}}}});
   var top5=featTotals.slice(0,5);
   var wkFeatMap=new Map();
