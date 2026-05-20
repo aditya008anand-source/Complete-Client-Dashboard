@@ -1288,7 +1288,7 @@ function r5(){
   if(!DS.loyalty||!DS.loyalty.length){
     document.getElementById('k5earned').textContent='—';
     document.getElementById('k5redeemed').textContent='—';
-    document.getElementById('l5activity').innerHTML='<div class="emp">No loyalty data available</div>';
+    var _dummy='';//='<div class="emp">No loyalty data available</div>';
     document.getElementById('l5redemption').innerHTML='<div class="emp">No redemption data</div>';
     return;
   }
@@ -1509,9 +1509,72 @@ function r6(){
 
 /* ══ DR. WEEKLY REPORT EXPORT ══ */
 
-function onPSearch(){r2();}
+function onPSearch(){
+  const q=document.getElementById('pSearch').value.trim();
+  const clr=document.getElementById('pSearchClear');
+  const res=document.getElementById('pSearchResults');
+  if(clr) clr.classList.toggle('show', q.length>0);
+  if(q.length<2){if(res) res.classList.remove('show');r2();return;}
+  const ql=q.toLowerCase();
+  const matches=DS.logistics.filter(r=>r.name&&r.name.toLowerCase().includes(ql));
+  renderPSearchResults(matches, q);
+  if(res) res.classList.add('show');
+}
+function clearPSearch(){
+  const el=document.getElementById('pSearch');
+  if(el) el.value='';
+  const clr=document.getElementById('pSearchClear');
+  if(clr) clr.classList.remove('show');
+  const res=document.getElementById('pSearchResults');
+  if(res) res.classList.remove('show');
+  r2();
+}
+function renderPSearchResults(rows, q){
+  const meta=document.getElementById('pSearchMeta');
+  const body=document.getElementById('pSearchBody');
+  if(!meta||!body) return;
+  if(!rows.length){
+    meta.textContent='';
+    body.innerHTML='<tr><td colspan="5" class="psearch-empty">No patient found matching "'+esc(q)+'"</td></tr>';
+    return;
+  }
+  meta.textContent=rows.length+' result'+(rows.length>1?'s':'')+' found';
+  body.innerHTML=rows.map(function(r){
+    const bucket=r.bucket||'Others';
+    const stClass=bucket==='Delivered'?'pst-delivered':bucket==='In Transit'?'pst-transit':bucket==='RTO'?'pst-rto':'pst-others';
+    const placedDate=r._date?fmtDFull(r._date):'<span class="pst-blank">—</span>';
+    const deliveredDate=r._deliveredDate?fmtDFull(r._deliveredDate):'<span class="pst-blank">Not yet delivered</span>';
+    return '<tr><td class="pst-name">'+esc(r.name)+'</td><td>'+placedDate+'</td><td>'+deliveredDate+'</td><td><span class="pst-status '+stClass+'">'+esc(bucket)+'</span></td><td>'+esc(r.city||'—')+'</td></tr>';
+  }).join('');
+}
+function fmtDFull(d){return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
 function clearPSearch(){const el=document.getElementById('pSearch');if(el){el.value='';r2();}}
 
+function exportM4CSV(){
+  const btn=document.getElementById('exportBtn');
+  if(btn){btn.disabled=true;btn.textContent='Preparing…';}
+  const{from,to}=gR('p4f','p4t');
+  const fd=gv('p4d'),fs=gv('p4s');
+  const rows=DS.patient.filter(r=>{
+    if(!inR(r._date,from,to))return false;
+    if(fd&&r.drug!==fd)return false;
+    if(fs&&r.state!==fs)return false;
+    return true;
+  });
+  if(!rows.length){alert('No data for current filters.');if(btn){btn.disabled=false;btn.textContent='Export CSV';}return;}
+  const headers=['Patient Name','Mobile','State','City','Purchase Date','Drug Name','QR Type','Doctor Name','Documentation Status','Plan'];
+  const csvRows=[headers];
+  rows.forEach(r=>{
+    const pd=r._date?r._date.toLocaleDateString('en-IN'):'';
+    csvRows.push([csvCell(r.name),csvCell(r.mobile),csvCell(r.state),csvCell(r.city),csvCell(pd),csvCell(r.drug),csvCell(r.qr),csvCell(r.doctor),csvCell(r.docStatus),csvCell(r.plan)]);
+  });
+  const blob=new Blob(['﻿'+csvRows.map(r=>r.join(',')).join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='MySaathi_Documentation_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  if(btn){btn.disabled=false;btn.textContent='Export CSV';}
+}
 function exportDrWeekly(){
   const btn = document.getElementById('drReportBtn');
   btn.disabled = true;
