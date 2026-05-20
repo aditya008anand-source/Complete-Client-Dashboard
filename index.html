@@ -709,7 +709,7 @@ function r2(){
   const rows=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;if(fs&&r.state!==fs)return false;return true;});
   const tot=rows.length;const bk={Delivered:0,'In Transit':0,RTO:0,Others:0};
   rows.forEach(r=>{bk[r.bucket]=(bk[r.bucket]||0)+1;});
-  st('k2t',fN(tot));st('k2r',tot?((bk.Delivered/tot)*100).toFixed(1)+'%':'—');
+  st('k2t',fN(tot));st('k2r',tot?((bk.Delivered/tot)*100).toFixed(1)+'%':'—');st('k2rm',fN(bk.Delivered)+' delivered');
   st('k2tr',fN(bk['In Transit']));st('k2trm',tot?`${pct(bk['In Transit'],tot)} of filtered`:'—');
   st('k2rto',fN(bk.RTO+bk.Others));st('k2rtom',`${bk.RTO} RTO \\· ${bk.Others} other`);
   const tv=rows.filter(r=>r.bucket==='Delivered'&&r.tat!==null).map(r=>r.tat);
@@ -751,7 +751,7 @@ function r4(){
   const tot=rows.length;
   const cts={Completed:0,'Missing Documents':0,Rejected:0,'In Progress':0,'Completed \\– Dispatch Pending':0};
   rows.forEach(r=>{if(cts[r.docStatus]!=null)cts[r.docStatus]++;});
-  st('k4c',fN(cts.Completed));st('k4cm',tot?`${pct(cts.Completed,tot)} of total`:'—');
+  st('k4total',fN(tot));st('k4totalm',tot?'in filtered selection':'no records found');st('k4c',fN(cts.Completed));st('k4cm',tot?`${pct(cts.Completed,tot)} of total`:'—');
   st('k4ms',fN(cts['Missing Documents']));st('k4mm',tot?`${pct(cts['Missing Documents'],tot)} of total`:'—');
   st('k4r',fN(cts.Rejected));st('k4rm',tot?`${pct(cts.Rejected,tot)} of total`:'—');
   st('k4p',fN(cts['Completed \\– Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed \\– Dispatch Pending'],tot)} of total`:'—');
@@ -1217,7 +1217,7 @@ function r5(){
 
   // KPI 1 — Total Points Earned
   const totalEarned = rows.reduce((s,r)=>s+r.coinsEarned,0);
-  st('k5earned',fN(totalEarned));
+  st('k5earned',fN(totalEarned));st('k5earnedm','across all activities');
 
   // KPI 2 — Redemption (only rows with redemption data)
   const redeemRows = rows.filter(r=>r.coinRedeemed>0);
