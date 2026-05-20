@@ -799,10 +799,10 @@ const pct=(a,b)=>b?((a/b)*100).toFixed(1)+'%':'—';
 const pr=(a,b)=>b?(a/b)*100:0;
 const st=(id,val)=>{const e=document.getElementById(id);if(e)e.textContent=val;};
 const gv=id=>document.getElementById(id).value;
-const esc=s=>String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',\"'\":'&#39;'}[c]));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const gR=(f,t)=>({from:document.getElementById(f).value?new Date(document.getElementById(f).value+'T00:00:00'):null,to:document.getElementById(t).value?new Date(document.getElementById(t).value+'T23:59:59'):null});
 function fsl(id,vals,ph,pres=''){const el=document.getElementById(id);el.innerHTML=`<option value=\"\">${ph}</option>`+vals.map(v=>`<option value=\"${esc(v)}\">${esc(v)}</option>`).join('');if(pres&&vals.includes(pres))el.value=pres;}
-Chart.defaults.font.family=\"'Inter',sans-serif\";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
+Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
 
 fbAuth.onAuthStateChanged(async user => {
   if(!user){
