@@ -772,6 +772,97 @@ function rst3(){document.getElementById('p3d').value='';document.getElementById(
 function rst4(){document.getElementById('p4f').value='';document.getElementById('p4t').value='';document.getElementById('p4d').value='';document.getElementById('p4s').value='';r4();}
 /* DOCTOR MULTI-SELECT */
 let selDrs=new Set();
+function initF(){
+  fsl('p1d',[...new Set(DS.patient.map(r=>r.drug).filter(Boolean))].sort(),'All Drugs');
+  fsl('p1s',[...new Set(DS.patient.map(r=>r.state).filter(Boolean))].sort(),'All States');
+  fsl('p1q',[...new Set(DS.patient.map(r=>r.qr).filter(Boolean))].sort(),'All QR Types');
+  bldDrList([...new Set(DS.patient.map(r=>r.doctor).filter(Boolean))].sort());
+  fsl('p2s',[...new Set(DS.logistics.map(r=>r.state).filter(Boolean))].sort(),'All States');
+  fsl('p3d',[...new Set(DS.consult.map(r=>r.drug).filter(Boolean))].sort(),'All Programmes');
+  fsl('p4d',[...new Set(DS.patient.map(r=>r.drug).filter(Boolean))].sort(),'All Drugs');
+}
+/* CASCADING FILTER LOGIC
+   When any M1 filter changes, we rebuild each other filter's options
+   from rows that pass all OTHER filters (excluding itself).
+   This means each dropdown only shows values that exist in the currently filtered dataset.
+*/
+function cascM1(){
+  const fd=gv('p1d'),fs=gv('p1s'),fq=gv('p1q');
+  const{from,to}=gR('p1f','p1t');
+  // Rows for drug options: apply state + dr + qr + date (not drug)
+  const rfd=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fs&&r.state!==fs)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;if(fq&&r.qr!==fq)return false;return true;});
+  fsl('p1d',[...new Set(rfd.map(r=>r.drug).filter(Boolean))].sort(),'All Drugs',fd);
+  // Rows for state options: apply drug + dr + qr + date
+  const rfs=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;if(fq&&r.qr!==fq)return false;return true;});
+  fsl('p1s',[...new Set(rfs.map(r=>r.state).filter(Boolean))].sort(),'All States',fs);
+  // Rows for QR options: apply drug + state + dr + date
+  const rfq=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.state!==fs)return false;if(selDrs.size>0&&!selDrs.has(r.doctor))return false;return true;});
+  fsl('p1q',[...new Set(rfq.map(r=>r.qr).filter(Boolean))].sort(),'All QR Types',fq);
+  // Rows for doctor options: apply drug + state + qr + date
+  const rfdr=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.state!==fs)return false;if(fq&&r.qr!==fq)return false;return true;});
+  const avDrs=[...new Set(rfdr.map(r=>r.doctor).filter(Boolean))].sort();
+  selDrs=new Set([...selDrs].filter(d=>avDrs.includes(d)));
+  updDrList(avDrs);updDrLbl();
+}
+function cascM2(){
+  const fst=gv('p2st'),fs=gv('p2s');
+  const{from,to}=gR('p2f','p2t');
+  const rf=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;return true;});
+  fsl('p2s',[...new Set(rf.map(r=>r.state).filter(Boolean))].sort(),'All States',fs);
+}
+function cascM3(){
+  const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
+  const rf=DS.consult.filter(r=>{if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
+  fsl('p3d',[...new Set(rf.map(r=>r.drug).filter(Boolean))].sort(),'All Programmes',fd);
+}
+
+function csvCell(val){
+  const s=String(val==null?'':val);
+  if(s.includes(',') || s.includes('"') || s.indexOf('\n') > -1){
+    return '"'+s.replace(/"/g,'""')+'"';
+  }
+  return s;
+}
+function exportCSV(){
+  const btn=document.getElementById('exportBtn');
+  if(btn){btn.disabled=true;btn.textContent='Preparing…';}
+  const{from,to}=gR('p1f','p1t');
+  const fd=gv('p1d'),fs=gv('p1s'),fq=gv('p1q');
+  const rows=DS.patient.filter(r=>{
+    if(!inR(r._date,from,to))return false;
+    if(fd&&r.drug!==fd)return false;
+    if(fs&&r.state!==fs)return false;
+    if(selDrs.size>0&&!selDrs.has(r.doctor))return false;
+    if(fq&&r.qr!==fq)return false;
+    return true;
+  });
+  if(!rows.length){alert('No data to export for current filters.');if(btn){btn.disabled=false;btn.textContent='Export CSV';}return;}
+  const headers=['Patient Name','Mobile','State','City','Purchase Date','Drug Name','QR Type','Doctor Name','Documentation Status','Plan'];
+  const csvRows=[headers];
+  rows.forEach(r=>{
+    const purchaseDate=r._date?r._date.toLocaleDateString('en-IN'):'';
+    csvRows.push([
+      csvCell(r.name),
+      csvCell(r.mobile),
+      csvCell(r.state),
+      csvCell(r.city),
+      csvCell(purchaseDate),
+      csvCell(r.drug),
+      csvCell(r.qr),
+      csvCell(r.doctor),
+      csvCell(r.docStatus),
+      csvCell(r.plan),
+    ]);
+  });
+  const csvContent=csvRows.map(r=>r.join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csvContent],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='MySaathi_Patients_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  if(btn){btn.disabled=false;btn.textContent='Export CSV';}
+}
+
 function bldDrList(drs){document.getElementById('drlist').innerHTML=drs.length?drs.map(d=>`<div class=\"dri\" data-n=\"${esc(d)}\"><input type=\"checkbox\" id=\"dc_${esc(d)}\" value=\"${esc(d)}\" onchange=\"onDrChk()\"><label for=\"dc_${esc(d)}\">${esc(d)}</label></div>`).join(''):'<div class=\"dre\">No doctors available</div>';}
 function updDrList(drs){const q=document.getElementById('drsch').value.toLowerCase();document.getElementById('drlist').innerHTML=drs.length?drs.map(d=>`<div class=\"dri\" data-n=\"${esc(d)}\" style=\"${d.toLowerCase().includes(q)||!q?'':'display:none'}\"><input type=\"checkbox\" id=\"dc_${esc(d)}\" value=\"${esc(d)}\" ${selDrs.has(d)?'checked':''} onchange=\"onDrChk()\"><label for=\"dc_${esc(d)}\">${esc(d)}</label></div>`).join(''):'<div class=\"dre\">No doctors for current selection</div>';}
 function fDrSch(q){document.querySelectorAll('#drlist .dri').forEach(i=>{i.style.display=i.dataset.n.toLowerCase().includes(q.toLowerCase())||!q?'flex':'none';});}
