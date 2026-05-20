@@ -710,7 +710,8 @@ function r1(){
 /* RENDER 2 */
 function r2(){
   const{from,to}=gR('p2f','p2t');const fst=gv('p2st'),fs=gv('p2s');
-  const rows=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;if(fs&&r.state!==fs)return false;return true;});
+  const pq=(document.getElementById('pSearch')||{value:''}).value.trim().toLowerCase();
+  const rows=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;if(fs&&r.state!==fs)return false;if(pq&&!((r.name||'').toLowerCase().includes(pq)))return false;return true;});
   const tot=rows.length;const bk={Delivered:0,'In Transit':0,RTO:0,Others:0};
   rows.forEach(r=>{bk[r.bucket]=(bk[r.bucket]||0)+1;});
   st('k2t',fN(tot));st('k2r',tot?((bk.Delivered/tot)*100).toFixed(1)+'%':'—');st('k2rm',fN(bk.Delivered)+' delivered');
@@ -1508,20 +1509,8 @@ function r6(){
 
 /* ══ DR. WEEKLY REPORT EXPORT ══ */
 
-function onPSearch(){
-  const q=document.getElementById('pSearch').value.trim().toLowerCase();
-  const{from,to}=gR('p2f','p2t');
-  const fst=gv('p2st'),fs=gv('p2s');
-  const rows=DS.logistics.filter(r=>{
-    if(!inR(r._date,from,to))return false;
-    if(fst&&r.bucket!==fst)return false;
-    if(fs&&r.state!==fs)return false;
-    if(q&&!((r.name||'').toLowerCase().includes(q)))return false;
-    return true;
-  });
-  // Re-render the logistics table/results
-  r2();
-}
+function onPSearch(){r2();}
+function clearPSearch(){const el=document.getElementById('pSearch');if(el){el.value='';r2();}}
 
 function exportDrWeekly(){
   const btn = document.getElementById('drReportBtn');
