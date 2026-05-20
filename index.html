@@ -677,13 +677,17 @@ async function loadAll(){
       brand:        n(r['brand_name']),
       redeemStatus: n(r['order_status']),
     })).filter(r=>r.activityType||r.coinRedeemed>0);
-    r1();r2();r3();r4();r5();r6();
+    initF();r1();r2();r3();r4();r5();r6();
     document.getElementById('lastUp').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
     document.getElementById('fSt').textContent='Patients: '+DS.patient.length+' · Kits: '+DS.logistics.length+' · Consultations: '+DS.consult.length+' · Loyalty pts: '+fN(DS.loyalty.reduce(function(s,r){return s+r.coinsEarned;},0))+' · DAU avg: '+(DS.app.filter(function(r){return r.dau>0;}).length?(DS.app.filter(function(r){return r.dau>0;}).reduce(function(s,r){return s+r.dau;},0)/DS.app.filter(function(r){return r.dau>0;}).length).toFixed(1):'—');
   }catch(e){console.error(e);alert('Could not load data. Ensure sheets are published to web.\n'+e);}
   document.getElementById('loader').classList.add('hide');
 }
 
+function oF1(){cascM1();r1();}
+function oF2(){cascM2();r2();}
+function oF3(){cascM3();r3();}
+function oF4(){r4();}
 /* RENDER 1 */
 function r1(){
   const{from,to}=gR('p1f','p1t');const fd=gv('p1d'),fs=gv('p1s'),fq=gv('p1q');
@@ -1503,6 +1507,22 @@ function r6(){
 }
 
 /* ══ DR. WEEKLY REPORT EXPORT ══ */
+
+function onPSearch(){
+  const q=document.getElementById('pSearch').value.trim().toLowerCase();
+  const{from,to}=gR('p2f','p2t');
+  const fst=gv('p2st'),fs=gv('p2s');
+  const rows=DS.logistics.filter(r=>{
+    if(!inR(r._date,from,to))return false;
+    if(fst&&r.bucket!==fst)return false;
+    if(fs&&r.state!==fs)return false;
+    if(q&&!((r.name||'').toLowerCase().includes(q)))return false;
+    return true;
+  });
+  // Re-render the logistics table/results
+  r2();
+}
+
 function exportDrWeekly(){
   const btn = document.getElementById('drReportBtn');
   btn.disabled = true;
