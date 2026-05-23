@@ -451,6 +451,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 <section class="module">
   <div class="mh"><span class="mn">03</span><h2>Expert Consultation</h2></div>
   <div class="mf">
+    <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p3f" onchange="oF3()"><span>→</span><input type="date" id="p3t" onchange="oF3()"></div></div>
     <div class="fg"><label>Drug / Programme</label><select id="p3d" onchange="oF3()"><option value="">All Programmes</option></select></div>
     <div class="fg"><label>Coach Type</label><select id="p3t" onchange="oF3()"><option value="">All Types</option><option>Physiotherapist</option><option>Nutritionist</option></select></div>
     <div class="fg"><label>Status</label><select id="p3s" onchange="oF3()"><option value="">All Statuses</option><option>Booked</option><option>Completed</option><option>No Show</option></select></div>
@@ -547,13 +548,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     <div class="card">
       <div class="ct">Feature Usage Trend (Weekly — Top 5)</div>
       <div class="cw" style="height:280px"><canvas id="c6feattrend"></canvas></div>
-    </div>
-  </div>
-</section>
-
-<footer class="pf"><div>MySaathi Dashboard \u00b7 Zydus Lifesciences \u00b7 Live Google Sheets</div><div id="fSt">\u2014</div></footer>
-</div>
-
+    </
 <script>
 const FB_CONFIG = {
   apiKey: "AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8",
@@ -622,6 +617,11 @@ function parseAppDate(s){
   if(mo===undefined) return null;
   const d=new Date(yy,mo,dd); return isNaN(d)?null:d;
 }
+// Consult date parser: "May 18, 2026, 1:23 PM"
+function parseConsultDate(s){
+  const v=(s||'').trim(); if(!v) return null;
+  const d=new Date(v); return isNaN(d)?null:d;
+}
 const pMDY=s=>{const v=n(s);if(!v)return null;const m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);if(!m)return null;let[,mm,dd,yy]=m;if(yy.length===2)yy=+yy<50?'20'+yy:'19'+yy;const d=new Date(+yy,+mm-1,+dd);return isNaN(d)?null:d;};
 const pDMY=s=>{const v=n(s);if(!v||v==='N/A'||v==='#N/A')return null;const m=v.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);if(!m)return null;let[,dd,mm,yy]=m;if(yy.length===2)yy=+yy<50?'20'+yy:'19'+yy;const d=new Date(+yy,+mm-1,+dd);return isNaN(d)?null:d;};
 const ymd=d=>d.toISOString().slice(0,10);
@@ -635,9 +635,9 @@ async function loadAll(){
   document.getElementById('loader').classList.remove('hide');
   try{
     const[p,l,c,ly,ap]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty),fcsv(SHEETS.app)]);
-    DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),city:n(r['City']||r['city']||''),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool'])}));
+    DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),city:n(r['City']||r['city']||''),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool']),dietBooked:parseInt(r['Diet booking count']||'0')||0,dietCompleted:parseInt(r['Diet completion count']||'0')||0,physioBooked:parseInt(r['Physio Booking count']||'0')||0,physioCompleted:parseInt(r['Physio completion count']||'0')||0}));
     DS.logistics=l.map(r=>({name:n(r['Customer Name']),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
-    DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status'])}));
+    DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status']),_date:parseConsultDate(n(r['consultation_booked_date']||''))}));
     // App engagement: date format DD-Mon-YY e.g. 15-Mar-26
     // App transform -- index-based for KPIs, dynamic headers for features
     var apFields=ap.length?Object.keys(ap[0]):[];
@@ -737,8 +737,9 @@ function r2(){
 
 /* RENDER 3 */
 function r3(){
+  const{from,to}=gR('p3f','p3t');
   const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
-  const rows=DS.consult.filter(r=>{if(fd&&r.drug!==fd)return false;if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
+  const rows=DS.consult.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
   const tot=rows.length,comp=rows.filter(r=>r.status==='Completed').length,ns=rows.filter(r=>r.status==='No Show').length,bkd=rows.filter(r=>r.status==='Booked').length;
   st('k3t',fN(tot));st('k3c',fN(comp));st('k3cm',tot?`${pct(comp,tot)} of total`:'—');
   st('k3n',fN(ns));st('k3nm',tot?`${pct(ns,tot)} of total`:'—');
@@ -773,7 +774,7 @@ function r4(){
 /* RESETS */
 function rst1(){document.getElementById('p1f').value='';document.getElementById('p1t').value='';document.getElementById('p1d').value='';document.getElementById('p1s').value='';document.getElementById('p1q').value='';selDrs=new Set();updDrLbl();initF();r1();}
 function rst2(){document.getElementById('p2f').value='';document.getElementById('p2t').value='';document.getElementById('p2st').value='';document.getElementById('p2s').value='';cascM2();r2();}
-function rst3(){document.getElementById('p3d').value='';document.getElementById('p3t').value='';document.getElementById('p3s').value='';cascM3();r3();}
+function rst3(){document.getElementById('p3f').value='';document.getElementById('p3t').value='';document.getElementById('p3d').value='';document.getElementById('p3t').value='';document.getElementById('p3s').value='';cascM3();r3();}
 function rst4(){document.getElementById('p4f').value='';document.getElementById('p4t').value='';document.getElementById('p4d').value='';document.getElementById('p4s').value='';r4();}
 /* DOCTOR MULTI-SELECT */
 let selDrs=new Set();
@@ -816,6 +817,7 @@ function cascM2(){
   fsl('p2s',[...new Set(rf.map(r=>r.state).filter(Boolean))].sort(),'All States',fs);
 }
 function cascM3(){
+  const{from,to}=gR('p3f','p3t');
   const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
   const rf=DS.consult.filter(r=>{if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
   fsl('p3d',[...new Set(rf.map(r=>r.drug).filter(Boolean))].sort(),'All Programmes',fd);
@@ -1624,15 +1626,21 @@ function exportDrWeekly(){
 
   // ── Build CSV ──
   var weekLabels = weeks.map(function(w){ return w[1].label; });
-  var headers = ['Doctor Name'].concat(weekLabels).concat(['Total']);
+  var headers = ['Doctor Name','Drug','Diet Booked','Diet Completed','Physio Booked','Physio Completed'].concat(weekLabels).concat(['Total Patients']);
   var csvRows = [headers];
 
   allDoctors.forEach(function(dr){
-    var row = [csvCell(dr)];
-    var total = 0;
+    var drRows = rows.filter(function(r){return r.doctor===dr;});
+    var drugs = [...new Set(drRows.map(function(r){return r.drug;}).filter(Boolean))].join(', ');
+    var dietBkd=drRows.reduce(function(s,r){return s+(r.dietBooked||0);},0);
+    var dietCmp=drRows.reduce(function(s,r){return s+(r.dietCompleted||0);},0);
+    var phyBkd=drRows.reduce(function(s,r){return s+(r.physioBooked||0);},0);
+    var phyCmp=drRows.reduce(function(s,r){return s+(r.physioCompleted||0);},0);
+    var row=[csvCell(dr),csvCell(drugs||'—'),String(dietBkd),String(dietCmp),String(phyBkd),String(phyCmp)];
+    var total=0;
     weeks.forEach(function(w){
-      var cnt = pivot[dr][w[0]] || 0;
-      total += cnt;
+      var cnt=pivot[dr][w[0]]||0;
+      total+=cnt;
       row.push(String(cnt));
     });
     row.push(String(total));
@@ -1640,7 +1648,7 @@ function exportDrWeekly(){
   });
 
   // ── Add totals row at bottom ──
-  var totRow = ['TOTAL'];
+  var totRow = ['TOTAL','','','','',''];
   var grandTotal = 0;
   weeks.forEach(function(w){
     var wTotal = allDoctors.reduce(function(s,dr){ return s + (pivot[dr][w[0]] || 0); }, 0);
@@ -1670,8 +1678,11 @@ function exportDrWeekly(){
 Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
 // loadAll() is called by Firebase auth state listener
 
-</script>
+ltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
+// loadAll() is called by Firebase auth state listener
 
+</script>
+</script>
 <!-- ══ CHANGE PASSWORD MODAL ══ -->
 <div class="chpwd-modal" id="chpwdModal">
   <div class="chpwd-card">
