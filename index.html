@@ -451,9 +451,9 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 <section class="module">
   <div class="mh"><span class="mn">03</span><h2>Expert Consultation</h2></div>
   <div class="mf">
-    <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p3f" onchange="oF3()"><span>→</span><input type="date" id="p3t" onchange="oF3()"></div></div>
+    <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p3df" onchange="oF3()"><span>→</span><input type="date" id="p3dt" onchange="oF3()"></div></div>
     <div class="fg"><label>Drug / Programme</label><select id="p3d" onchange="oF3()"><option value="">All Programmes</option></select></div>
-    <div class="fg"><label>Coach Type</label><select id="p3t" onchange="oF3()"><option value="">All Types</option><option>Physiotherapist</option><option>Nutritionist</option></select></div>
+    <div class="fg"><label>Coach Type</label><select id="p3ct" onchange="oF3()"><option value="">All Types</option><option>Physiotherapist</option><option>Nutritionist</option></select></div>
     <div class="fg"><label>Status</label><select id="p3s" onchange="oF3()"><option value="">All Statuses</option><option>Booked</option><option>Completed</option><option>No Show</option></select></div>
     <div class="fgrst"><button class="brst" onclick="rst3()">Reset</button></div>
   </div>
@@ -744,8 +744,8 @@ function r2(){
 
 /* RENDER 3 */
 function r3(){
-  const{from,to}=gR('p3f','p3t');
-  const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
+  const{from,to}=gR('p3df','p3dt');
+  const fd=gv('p3d'),ft=gv('p3ct'),fs=gv('p3s');
   const rows=DS.consult.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
   const tot=rows.length,comp=rows.filter(r=>r.status==='Completed').length,ns=rows.filter(r=>r.status==='No Show').length,bkd=rows.filter(r=>r.status==='Booked').length;
   st('k3t',fN(tot));st('k3c',fN(comp));st('k3cm',tot?`${pct(comp,tot)} of total`:'—');
@@ -781,7 +781,7 @@ function r4(){
 /* RESETS */
 function rst1(){document.getElementById('p1f').value='';document.getElementById('p1t').value='';document.getElementById('p1d').value='';document.getElementById('p1s').value='';document.getElementById('p1q').value='';selDrs=new Set();updDrLbl();initF();r1();}
 function rst2(){document.getElementById('p2f').value='';document.getElementById('p2t').value='';document.getElementById('p2st').value='';document.getElementById('p2s').value='';cascM2();r2();}
-function rst3(){document.getElementById('p3f').value='';document.getElementById('p3t').value='';document.getElementById('p3d').value='';document.getElementById('p3t').value='';document.getElementById('p3s').value='';cascM3();r3();}
+function rst3(){document.getElementById('p3df').value='';document.getElementById('p3dt').value='';document.getElementById('p3d').value='';document.getElementById('p3ct').value='';document.getElementById('p3s').value='';cascM3();r3();}
 function rst4(){document.getElementById('p4f').value='';document.getElementById('p4t').value='';document.getElementById('p4d').value='';document.getElementById('p4s').value='';r4();}
 /* DOCTOR MULTI-SELECT */
 let selDrs=new Set();
@@ -824,8 +824,8 @@ function cascM2(){
   fsl('p2s',[...new Set(rf.map(r=>r.state).filter(Boolean))].sort(),'All States',fs);
 }
 function cascM3(){
-  const{from,to}=gR('p3f','p3t');
-  const fd=gv('p3d'),ft=gv('p3t'),fs=gv('p3s');
+  const{from,to}=gR('p3df','p3dt');
+  const fd=gv('p3d'),ft=gv('p3ct'),fs=gv('p3s');
   const rf=DS.consult.filter(r=>{if(ft&&r.coachType!==ft)return false;if(fs&&r.status!==fs)return false;return true;});
   fsl('p3d',[...new Set(rf.map(r=>r.drug).filter(Boolean))].sort(),'All Programmes',fd);
 }
