@@ -550,6 +550,10 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
       <div class="cw" style="height:280px"><canvas id="c6feattrend"></canvas></div>
     </
 <script>
+/* ══════════════════════════════════════════════════
+   CRITICAL AUTH BLOCK — DO NOT REMOVE OR MODIFY
+   Login will break if any line below is missing
+   ══════════════════════════════════════════════════ */
 const FB_CONFIG = {
   apiKey: "AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8",
   authDomain: "mysaathi-dashboard.firebaseapp.com",
@@ -560,8 +564,10 @@ const FB_CONFIG = {
   appId: "1:755642238347:web:be8a39c6852021c4761b8e"
 };
 firebase.initializeApp(FB_CONFIG);
+const ADMIN_UID = 'VzNDpj9MfDMDVx9Cc6RD4xdj93N2';
 const fbAuth = firebase.auth();
 const fbDB   = firebase.database();
+/* ══════════════════════════════════════════════════ */
 
 let currentUser  = null;
 let currentRole  = null;
@@ -923,7 +929,7 @@ fbAuth.onAuthStateChanged(async user => {
     currentPerms = profile.permissions || {};
   } else {
     // First time — check if admin UID
-    currentRole = (user.uid === ADMIN_UID) ? 'admin' : 'user';
+    currentRole = (typeof ADMIN_UID !== 'undefined' && user.uid === ADMIN_UID) ? 'admin' : 'user';
     currentPerms = {};
     // Save to DB
     await fbDB.ref('users/'+user.uid).set({
@@ -950,6 +956,13 @@ async function doLogin(){
   errEl.classList.remove('show');
   if(!email||!pwd){ showLoginError('Please enter email and password.'); return; }
   btn.disabled=true; btn.textContent='Signing in…';
+  // Self-check: ensure Firebase is initialized
+  if(typeof fbAuth === 'undefined' || typeof fbDB === 'undefined'){
+    showLoginError('Configuration error. Please contact support.');
+    btn.disabled=false; btn.textContent='Sign In';
+    console.error('CRITICAL: fbAuth or fbDB undefined. ADMIN_UID or Firebase config may be missing.');
+    return;
+  }
   try{
     await fbAuth.signInWithEmailAndPassword(email, pwd);
   } catch(e){
