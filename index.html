@@ -965,13 +965,17 @@ async function doLogin(){
     return;
   }
   try{
-    await fbAuth.signInWithEmailAndPassword(email, pwd);
+    const timeout = new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 10000));
+    await Promise.race([fbAuth.signInWithEmailAndPassword(email, pwd), timeout]);
   } catch(e){
     let msg = 'Invalid email or password. Please try again.';
+    if(e.message==='timeout') msg='Connection timed out. Please check your internet and try again.';
     if(e.code==='auth/too-many-requests') msg='Too many attempts. Please wait a moment.';
     if(e.code==='auth/user-disabled') msg='This account has been disabled.';
+    if(e.code==='auth/network-request-failed') msg='Network error. Please check your connection.';
     showLoginError(msg);
     btn.disabled=false; btn.textContent='Sign In';
+    console.error('Login error:', e.code, e.message);
   }
 }
 
