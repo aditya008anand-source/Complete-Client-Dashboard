@@ -1477,9 +1477,9 @@ function r6(){
   var totalDAU  = dauRows.reduce(function(s,r){return s+r.dau;},0);
   var totalDiet = dietRows.reduce(function(s,r){return s+r.diet;},0);
   var totalEx   = exRows.reduce(function(s,r){return s+r.exercise;},0);
-  st('k6dau',  avgDAU);  st('k6daum',  'Cumulative DAU (selected period): '+fN(totalDAU));
-  st('k6diet', avgDiet); st('k6dietm', 'Cumulative Diet Logs (selected period): '+fN(totalDiet));
-  st('k6ex',   avgEx);   st('k6exm',   'Cumulative Exercise Logs (selected period): '+fN(totalEx));
+  st('k6dau',  avgDAU);  st('k6daum',  'avg per day');
+  st('k6diet', avgDiet); st('k6dietm', 'avg per day');
+  st('k6ex',   avgEx);   st('k6exm',   'avg per day');
 
   // Combined trend chart — use DAU dates as x-axis labels
   var allRows = filterByDate(DS.app,'_dauDate');
