@@ -658,10 +658,10 @@ async function loadAll(){
       var obj={
         _dauDate:  parseAppDate(v[0]||''),
         dau:       parseInt(v[1])||0,
-        _dietDate: parseAppDate(v[4]||v[0]||''),
-        diet:      parseInt(v[5])||0,
-        _exDate:   parseAppDate(v[10]||v[0]||''),
-        exercise:  parseInt(v[11])||0,
+        _dietDate: parseAppDate(v[14]||v[0]||''),
+        diet:      parseInt(v[15])||0,
+        _exDate:   parseAppDate(v[14]||v[0]||''),
+        exercise:  parseInt(v[16])||0,
         _featDate: parseAppDate(v[14]||v[0]||''),
       };
       // Add feature cols dynamically by their header name
