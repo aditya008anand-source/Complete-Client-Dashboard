@@ -649,7 +649,7 @@ async function loadAll(){
     // App transform -- index-based for KPIs, dynamic headers for features
     var apFields=ap.length?Object.keys(ap[0]):[];
     // Feature columns: index 15-24 (P-Y), get header names dynamically
-    var featCols=apFields.slice(15,25).filter(function(h){return h&&h.trim();});
+    var featCols=apFields.slice(15,24).filter(function(h){return h&&h.trim();});
     DS.app=ap.filter(function(r){
       var vals=Object.values(r);
       return vals[0]&&vals[0].trim();
