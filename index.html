@@ -662,7 +662,7 @@ async function loadAll(){
         diet:      parseInt(v[15])||0,
         _exDate:   parseAppDate(v[14]||v[0]||''),
         exercise:  parseInt(v[16])||0,
-        _featDate: parseAppDate(v[14]||v[0]||''),
+        _featDate: parseAppDate(v[0]||''),
       };
       // Add feature cols dynamically by their header name
       featCols.forEach(function(h,i){
