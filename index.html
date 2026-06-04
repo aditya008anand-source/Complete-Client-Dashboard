@@ -851,7 +851,7 @@ function exportCSV(){
     return true;
   });
   if(!rows.length){alert('No data to export for current filters.');if(btn){btn.disabled=false;btn.textContent='Export CSV';}return;}
-  const headers=['Patient Name','Mobile','State','City','Purchase Date','Drug Name','QR Type','Doctor Name','Documentation Status','Plan'];
+  const headers=['Patient Name','Mobile','State','Patient City','Doctor City','Doctor State','Purchase Date','Drug Name','QR Type','Doctor Name','Documentation Status','Plan'];
   const csvRows=[headers];
   rows.forEach(r=>{
     const purchaseDate=r._date?r._date.toLocaleDateString('en-IN'):'';
