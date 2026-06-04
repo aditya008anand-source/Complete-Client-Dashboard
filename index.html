@@ -1644,7 +1644,7 @@ function exportDrWeekly(){
 
   // ── Build CSV ──
   var weekLabels = weeks.map(function(w){ return w[1].label; });
-  var headers = ['Doctor Name','Drug','Diet Booked','Diet Completed','Physio Booked','Physio Completed'].concat(weekLabels).concat(['Total Patients']);
+  var headers = ['Doctor Name','Doctor City','Doctor State','Drug','Diet Booked','Diet Completed','Physio Booked','Physio Completed'].concat(weekLabels).concat(['Total Patients']);
   var csvRows = [headers];
 
   allDoctors.forEach(function(dr){
