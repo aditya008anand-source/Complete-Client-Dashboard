@@ -1666,7 +1666,7 @@ function exportDrWeekly(){
   });
 
   // ── Add totals row at bottom ──
-  var totRow = ['TOTAL','','','','',''];
+  var totRow = ['TOTAL','','','','','','',''];
   var grandTotal = 0;
   weeks.forEach(function(w){
     var wTotal = allDoctors.reduce(function(s,dr){ return s + (pivot[dr][w[0]] || 0); }, 0);
