@@ -1586,7 +1586,7 @@ function exportM4CSV(){
   const csvRows=[headers];
   rows.forEach(r=>{
     const pd=r._date?r._date.toLocaleDateString('en-IN'):'';
-    csvRows.push([csvCell(r.name),csvCell(r.mobile),csvCell(r.state),csvCell(r.city),csvCell(pd),csvCell(r.drug),csvCell(r.qr),csvCell(r.doctor),csvCell(r.docStatus),csvCell(r.plan)]);
+    csvRows.push([csvCell(r.name),csvCell(r.mobile),csvCell(r.state),csvCell(r.city),csvCell(r.doctorCity),csvCell(r.doctorState),csvCell(pd),csvCell(r.drug),csvCell(r.qr),csvCell(r.doctor),csvCell(r.docStatus),csvCell(r.plan)]);
   });
   const blob=new Blob(['﻿'+csvRows.map(r=>r.join(',')).join('\n')],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
