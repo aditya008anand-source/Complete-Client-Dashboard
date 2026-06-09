@@ -1244,15 +1244,8 @@ async function savePassword(){
   } else {
     // Admin reset — use Firebase REST API to update password
     try{
-      const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:update?key=AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({localId: chpwdTargetUid, password: newPwd, returnSecureToken:false})
-      });
-      const data = await resp.json();
-      if(data.error){ showChPwdError('Error: '+data.error.message); btn.disabled=false; btn.textContent='Update Password'; return; }
-      showChPwdSuccess('Password reset successfully for '+chpwdTargetEmail+'!');
-      setTimeout(()=>closeChPwd(), 2000);
+      await fbAuth.sendPasswordResetEmail(chpwdTargetEmail);
+      showChPwdSuccess('Password reset email sent to '+chpwdTargetEmail+'!');
     } catch(e){
       showChPwdError('Failed to reset password. Please try again.');
       btn.disabled=false; btn.textContent='Update Password';
