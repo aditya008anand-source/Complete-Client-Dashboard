@@ -762,12 +762,12 @@ function r4(){
   const{from,to}=gR('p4f','p4t');const fd=gv('p4d'),fs=gv('p4s');
   const rows=DS.patient.filter(r=>{if(!inR(r._date,from,to))return false;if(fd&&r.drug!==fd)return false;if(fs&&r.docStatus!==fs)return false;return true;});
   const tot=rows.length;
-  const cts={Completed:0,'Missing Documents':0,Rejected:0,'In Progress':0,'Completed \\– Dispatch Pending':0};
+  const cts={Completed:0,'Missing Documents':0,Rejected:0,'In Progress':0,'Completed – Dispatch Pending':0};
   rows.forEach(r=>{if(cts[r.docStatus]!=null)cts[r.docStatus]++;});
   st('k4total',fN(tot));st('k4totalm',tot?'in filtered selection':'no records found');st('k4c',fN(cts.Completed));st('k4cm',tot?`${pct(cts.Completed,tot)} of total`:'—');
   st('k4ms',fN(cts['Missing Documents']));st('k4mm',tot?`${pct(cts['Missing Documents'],tot)} of total`:'—');
   st('k4r',fN(cts.Rejected));st('k4rm',tot?`${pct(cts.Rejected,tot)} of total`:'—');
-  st('k4p',fN(cts['Completed \\– Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed \\– Dispatch Pending'],tot)} of total`:'—');
+  st('k4p',fN(cts['Completed \\– Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed – Dispatch Pending'],tot)} of total`:'—');
   const pl=Object.keys(cts).filter(k=>cts[k]>0);
   mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(k=>cts[k]),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
   const pills=Object.entries(cts).filter(([,vv])=>vv>0).sort((a,b)=>b[1]-a[1]);
