@@ -565,7 +565,7 @@ const FB_CONFIG = {
   appId: "1:755642238347:web:be8a39c6852021c4761b8e"
 };
 firebase.initializeApp(FB_CONFIG);
-const ADMIN_UID = 'VzNDpj9MfDMDVx9Cc6RD4xdj93N2'; const MODULE_PERMS = [   {key:'mod1', label:'Patient Distribution', sub:'Module 01'},   {key:'mod2', label:'Logistics Tracking',   sub:'Module 02'},   {key:'mod3', label:'Expert Consultation',  sub:'Module 03'},   {key:'mod4', label:'Documentation',        sub:'Module 04'},   {key:'mod5', label:'Loyalty Rewards',      sub:'Module 05'},   {key:'mod6', label:'App Engagement',       sub:'Module 06'},   {key:'export', label:'Data Export',        sub:'Export CSV + Dr. Weekly Report'}, ];
+const ADMIN_UID = 'VzNDpj9MfDMDVx9Cc6RD4xdj93N2';
 const fbAuth = firebase.auth();
 const fbDB   = firebase.database();
 /* ══════════════════════════════════════════════════ */
@@ -642,14 +642,14 @@ async function loadAll(){
   document.getElementById('loader').classList.remove('hide');
   try{
     const[p,l,c,ly,ap]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty),fcsv(SHEETS.app)]);
-    DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),city:n(r['Patient City']||''),doctorCity:n(r['Doctor City']||''),doctorState:n(r['Doctor State']||''),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool']),dietBooked:parseInt(r['Diet booking count']||'0')||0,dietCompleted:parseInt(r['Diet completion count']||'0')||0,physioBooked:parseInt(r['Physio Booking count']||'0')||0,physioCompleted:parseInt(r['Physio completion count']||'0')||0}));
+    DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),city:n(r['City']||r['city']||''),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool']),dietBooked:parseInt(r['Diet booking count']||'0')||0,dietCompleted:parseInt(r['Diet completion count']||'0')||0,physioBooked:parseInt(r['Physio Booking count']||'0')||0,physioCompleted:parseInt(r['Physio completion count']||'0')||0}));
     DS.logistics=l.map(r=>({name:n(r['Customer Name']),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
     DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status']),_date:parseConsultDate(n(r['consultation_booked_date']||''))}));
     // App engagement: date format DD-Mon-YY e.g. 15-Mar-26
     // App transform -- index-based for KPIs, dynamic headers for features
     var apFields=ap.length?Object.keys(ap[0]):[];
-    // Feature columns: index 15-23 (P-X), get header names dynamically
-    var featCols=apFields.slice(15,24).filter(function(h){return h&&h.trim();});
+    // Feature columns: index 15-24 (P-Y), get header names dynamically
+    var featCols=apFields.slice(15,25).filter(function(h){return h&&h.trim();});
     DS.app=ap.filter(function(r){
       var vals=Object.values(r);
       return vals[0]&&vals[0].trim();
@@ -658,11 +658,11 @@ async function loadAll(){
       var obj={
         _dauDate:  parseAppDate(v[0]||''),
         dau:       parseInt(v[1])||0,
-        _dietDate: parseAppDate(v[14]||v[0]||''),
-        diet:      parseInt(v[15])||0,
-        _exDate:   parseAppDate(v[14]||v[0]||''),
-        exercise:  parseInt(v[16])||0,
-        _featDate: parseAppDate(v[0]||''),
+        _dietDate: parseAppDate(v[4]||v[0]||''),
+        diet:      parseInt(v[5])||0,
+        _exDate:   parseAppDate(v[10]||v[0]||''),
+        exercise:  parseInt(v[11])||0,
+        _featDate: parseAppDate(v[14]||v[0]||''),
       };
       // Add feature cols dynamically by their header name
       featCols.forEach(function(h,i){
@@ -767,7 +767,7 @@ function r4(){
   st('k4total',fN(tot));st('k4totalm',tot?'in filtered selection':'no records found');st('k4c',fN(cts.Completed));st('k4cm',tot?`${pct(cts.Completed,tot)} of total`:'—');
   st('k4ms',fN(cts['Missing Documents']));st('k4mm',tot?`${pct(cts['Missing Documents'],tot)} of total`:'—');
   st('k4r',fN(cts.Rejected));st('k4rm',tot?`${pct(cts.Rejected,tot)} of total`:'—');
-  st('k4p',fN(cts['Completed \\– Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed – Dispatch Pending'],tot)} of total`:'—');
+  st('k4p',fN(cts['Completed – Dispatch Pending']));st('k4pm',tot?`${pct(cts['Completed – Dispatch Pending'],tot)} of total`:'—');
   const pl=Object.keys(cts).filter(k=>cts[k]>0);
   mkC('cDP',{type:'doughnut',data:{labels:pl,datasets:[{data:pl.map(k=>cts[k]),backgroundColor:[C.teal,C.amber,C.red,C.blueLt,C.slate].slice(0,pl.length),borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'right',labels:{boxWidth:10,boxHeight:10,padding:10,font:{size:12,family:'Inter'}}}}}});
   const pills=Object.entries(cts).filter(([,vv])=>vv>0).sort((a,b)=>b[1]-a[1]);
@@ -851,7 +851,7 @@ function exportCSV(){
     return true;
   });
   if(!rows.length){alert('No data to export for current filters.');if(btn){btn.disabled=false;btn.textContent='Export CSV';}return;}
-  const headers=['Patient Name','Mobile','State','Patient City','Doctor City','Doctor State','Purchase Date','Drug Name','QR Type','Doctor Name','Documentation Status','Plan'];
+  const headers=['Patient Name','Mobile','State','City','Purchase Date','Drug Name','QR Type','Doctor Name','Documentation Status','Plan'];
   const csvRows=[headers];
   rows.forEach(r=>{
     const purchaseDate=r._date?r._date.toLocaleDateString('en-IN'):'';
@@ -859,7 +859,7 @@ function exportCSV(){
       csvCell(r.name),
       csvCell(r.mobile),
       csvCell(r.state),
-      csvCell(r.city),csvCell(r.doctorCity),csvCell(r.doctorState),
+      csvCell(r.city),
       csvCell(purchaseDate),
       csvCell(r.drug),
       csvCell(r.qr),
@@ -1244,8 +1244,15 @@ async function savePassword(){
   } else {
     // Admin reset — use Firebase REST API to update password
     try{
-      await fbAuth.sendPasswordResetEmail(chpwdTargetEmail);
-      showChPwdSuccess('Password reset email sent to '+chpwdTargetEmail+'!');
+      const resp = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:update?key=AIzaSyApzx74kp3rT3BzFpsyYPI_33mQU0ws_C8',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({localId: chpwdTargetUid, password: newPwd, returnSecureToken:false})
+      });
+      const data = await resp.json();
+      if(data.error){ showChPwdError('Error: '+data.error.message); btn.disabled=false; btn.textContent='Update Password'; return; }
+      showChPwdSuccess('Password reset successfully for '+chpwdTargetEmail+'!');
+      setTimeout(()=>closeChPwd(), 2000);
     } catch(e){
       showChPwdError('Failed to reset password. Please try again.');
       btn.disabled=false; btn.textContent='Update Password';
@@ -1470,9 +1477,9 @@ function r6(){
   var totalDAU  = dauRows.reduce(function(s,r){return s+r.dau;},0);
   var totalDiet = dietRows.reduce(function(s,r){return s+r.diet;},0);
   var totalEx   = exRows.reduce(function(s,r){return s+r.exercise;},0);
-  st('k6dau',  avgDAU);  st('k6daum',  'avg per day');
-  st('k6diet', avgDiet); st('k6dietm', 'avg per day');
-  st('k6ex',   avgEx);   st('k6exm',   'avg per day');
+  st('k6dau',  avgDAU);  st('k6daum',  'Cumulative DAU (selected period): '+fN(totalDAU));
+  st('k6diet', avgDiet); st('k6dietm', 'Cumulative Diet Logs (selected period): '+fN(totalDiet));
+  st('k6ex',   avgEx);   st('k6exm',   'Cumulative Exercise Logs (selected period): '+fN(totalEx));
 
   // Combined trend chart — use DAU dates as x-axis labels
   var allRows = filterByDate(DS.app,'_dauDate');
@@ -1575,11 +1582,11 @@ function exportM4CSV(){
     return true;
   });
   if(!rows.length){alert('No data for current filters.');if(btn){btn.disabled=false;btn.textContent='Export CSV';}return;}
-  const headers=['Patient Name','Mobile','State','Patient City','Doctor City','Doctor State','Purchase Date','Drug Name','QR Type','Doctor Name','Documentation Status','Plan'];
+  const headers=['Patient Name','Mobile','State','City','Purchase Date','Drug Name','QR Type','Doctor Name','Documentation Status','Plan'];
   const csvRows=[headers];
   rows.forEach(r=>{
     const pd=r._date?r._date.toLocaleDateString('en-IN'):'';
-    csvRows.push([csvCell(r.name),csvCell(r.mobile),csvCell(r.state),csvCell(r.city),csvCell(r.doctorCity),csvCell(r.doctorState),csvCell(pd),csvCell(r.drug),csvCell(r.qr),csvCell(r.doctor),csvCell(r.docStatus),csvCell(r.plan)]);
+    csvRows.push([csvCell(r.name),csvCell(r.mobile),csvCell(r.state),csvCell(r.city),csvCell(pd),csvCell(r.drug),csvCell(r.qr),csvCell(r.doctor),csvCell(r.docStatus),csvCell(r.plan)]);
   });
   const blob=new Blob(['﻿'+csvRows.map(r=>r.join(',')).join('\n')],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
@@ -1637,7 +1644,7 @@ function exportDrWeekly(){
 
   // ── Build CSV ──
   var weekLabels = weeks.map(function(w){ return w[1].label; });
-  var headers = ['Doctor Name','Doctor City','Doctor State','Drug','Diet Booked','Diet Completed','Physio Booked','Physio Completed'].concat(weekLabels).concat(['Total Patients']);
+  var headers = ['Doctor Name','Drug','Diet Booked','Diet Completed','Physio Booked','Physio Completed'].concat(weekLabels).concat(['Total Patients']);
   var csvRows = [headers];
 
   allDoctors.forEach(function(dr){
@@ -1647,7 +1654,7 @@ function exportDrWeekly(){
     var dietCmp=drRows.reduce(function(s,r){return s+(r.dietCompleted||0);},0);
     var phyBkd=drRows.reduce(function(s,r){return s+(r.physioBooked||0);},0);
     var phyCmp=drRows.reduce(function(s,r){return s+(r.physioCompleted||0);},0);
-    var drRowsFirst=drRows[0]||{};var row=[csvCell(dr),csvCell(drRowsFirst.doctorCity||'—'),csvCell(drRowsFirst.doctorState||'—'),csvCell(drugs||'—'),String(dietBkd),String(dietCmp),String(phyBkd),String(phyCmp)];
+    var row=[csvCell(dr),csvCell(drugs||'—'),String(dietBkd),String(dietCmp),String(phyBkd),String(phyCmp)];
     var total=0;
     weeks.forEach(function(w){
       var cnt=pivot[dr][w[0]]||0;
@@ -1659,7 +1666,7 @@ function exportDrWeekly(){
   });
 
   // ── Add totals row at bottom ──
-  var totRow = ['TOTAL','','','','','','',''];
+  var totRow = ['TOTAL','','','','',''];
   var grandTotal = 0;
   weeks.forEach(function(w){
     var wTotal = allDoctors.reduce(function(s,dr){ return s + (pivot[dr][w[0]] || 0); }, 0);
