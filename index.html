@@ -565,7 +565,16 @@ const FB_CONFIG = {
   appId: "1:755642238347:web:be8a39c6852021c4761b8e"
 };
 firebase.initializeApp(FB_CONFIG);
-const ADMIN_UID = 'VzNDpj9MfDMDVx9Cc6RD4xdj93N2'; const MODULE_PERMS = [{key:'mod1',label:'Patient Distribution',sub:'Module 01'},{key:'mod2',label:'Logistics Tracking',sub:'Module 02'},{key:'mod3',label:'Expert Consultation',sub:'Module 03'},{key:'mod4',label:'Documentation',sub:'Module 04'},{key:'mod5',label:'Loyalty Rewards',sub:'Module 05'},{key:'mod6',label:'App Engagement',sub:'Module 06'},{key:'export',label:'Data Export',sub:'Export CSV + Dr. Weekly Report'}];
+const ADMIN_UID = 'VzNDpj9MfDMDVx9Cc6RD4xdj93N2';
+const MODULE_PERMS = [
+  {key:'mod1',label:'Patient Distribution',sub:'Module 01'},
+  {key:'mod2',label:'Logistics Tracking',sub:'Module 02'},
+  {key:'mod3',label:'Expert Consultation',sub:'Module 03'},
+  {key:'mod4',label:'Documentation',sub:'Module 04'},
+  {key:'mod5',label:'Loyalty Rewards',sub:'Module 05'},
+  {key:'mod6',label:'App Engagement',sub:'Module 06'},
+  {key:'export',label:'Data Export',sub:'Export CSV + Dr. Weekly Report'},
+];
 const fbAuth = firebase.auth();
 const fbDB   = firebase.database();
 /* ══════════════════════════════════════════════════ */
