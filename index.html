@@ -1611,8 +1611,13 @@ function exportDrWeekly(){
 
   // Apply same M1 filters (date range only — show all doctors regardless of other filters)
   const{from,to}=gR('p1f','p1t');
+  const fd=gv('p1d'),fs=gv('p1s'),fq=gv('p1q');
   const rows = DS.patient.filter(function(r){
     if(!inR(r._date, from, to)) return false;
+    if(fd&&r.drug!==fd) return false;
+    if(fs&&r.state!==fs) return false;
+    if(selDrs.size>0&&!selDrs.has(r.doctor)) return false;
+    if(fq&&r.qr!==fq) return false;
     return true;
   });
 
@@ -1639,7 +1644,7 @@ function exportDrWeekly(){
   var weeks = [...weekMap.entries()].sort(function(a,b){return a[0].localeCompare(b[0]);});
 
   // ── Get ALL doctors in the system (from full DS.patient, not filtered) ──
-  var allDoctors = [...new Set(DS.patient.map(function(r){return r.doctor;}).filter(Boolean))].sort();
+  var allDoctors = [...new Set(rows.map(function(r){return r.doctor;}).filter(Boolean))].sort();
 
   // ── Build pivot: doctor -> weekKey -> count ──
   var pivot = {};
