@@ -1658,7 +1658,7 @@ function exportDrWeekly(){
 
   // ── Build CSV ──
   var weekLabels = weeks.map(function(w){ return w[1].label; });
-  var headers = ['Doctor ID','Doctor Name','Doctor City','Doctor State','Drug','Diet Booked','Diet Completed','Physio Booked','Physio Completed'].concat(weekLabels).concat(['Total Patients']);
+  var headers = ['Doctor ID','MCR Code','Employee Name','Doctor Name','Doctor City','Doctor State','Drug','Diet Booked','Diet Completed','Physio Booked','Physio Completed'].concat(weekLabels).concat(['Total Patients']);
   var csvRows = [headers];
 
   allDoctors.forEach(function(dr){
@@ -1668,7 +1668,7 @@ function exportDrWeekly(){
     var dietCmp=drRows.reduce(function(s,r){return s+(r.dietCompleted||0);},0);
     var phyBkd=drRows.reduce(function(s,r){return s+(r.physioBooked||0);},0);
     var phyCmp=drRows.reduce(function(s,r){return s+(r.physioCompleted||0);},0);
-    var drFirst=drRows[0]||{};var row=[csvCell(drFirst.doctorId||'—'),csvCell(dr),csvCell(drFirst.doctorCity||'—'),csvCell(drFirst.doctorState||'—'),csvCell(drugs||'—'),String(dietBkd),String(dietCmp),String(phyBkd),String(phyCmp)];
+    var drFirst=drRows[0]||{};var row=[csvCell(drFirst.doctorId||'—'),csvCell(drFirst.mcrCode||'—'),csvCell(drFirst.employeeName||'—'),csvCell(dr),csvCell(drFirst.doctorCity||'—'),csvCell(drFirst.doctorState||'—'),csvCell(drugs||'—'),String(dietBkd),String(dietCmp),String(phyBkd),String(phyCmp)];
     var total=0;
     weeks.forEach(function(w){
       var cnt=pivot[dr][w[0]]||0;
@@ -1680,7 +1680,7 @@ function exportDrWeekly(){
   });
 
   // ── Add totals row at bottom ──
-  var totRow = ['TOTAL','','','','','','','',''];
+  var totRow = ['TOTAL','','','','','','','','','',''];
   var grandTotal = 0;
   weeks.forEach(function(w){
     var wTotal = allDoctors.reduce(function(s,dr){ return s + (pivot[dr][w[0]] || 0); }, 0);
