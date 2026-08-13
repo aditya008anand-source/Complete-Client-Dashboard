@@ -4,6 +4,10 @@
     {
       "source": "/api/sheet",
       "destination": "/api/sheet.js"
+    },
+    {
+      "source": "/api/weekly-report",
+      "destination": "/api/weekly-report.js"
     }
   ],
   "headers": [
@@ -20,6 +24,15 @@
   "functions": {
     "api/sheet.js": {
       "maxDuration": 10
+    },
+    "api/weekly-report.js": {
+      "maxDuration": 30
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/weekly-report",
+      "schedule": "30 0 * * 1"
+    }
+  ]
 }
