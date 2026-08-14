@@ -1,8 +1,10 @@
+const nodemailer = require('nodemailer');
+
 const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQscA-Y05gGsr6xx54awNYgJJnCLoirIf5IKsNHRmLFYyBqtUL1khVmy3cP_L3U0pG1G6vMPPOqiNNO/pub';
 const PATIENT_GID = '1310523268';
 const MANAGER_GID = '86288854';
 
-// ── CSV Parser (simple, no dependencies) ──
+// ── CSV Parser ──
 function parseCSV(text) {
   const lines = text.split('\n');
   const headers = parseCSVLine(lines[0]);
@@ -37,7 +39,7 @@ function parseCSVLine(line) {
   return result;
 }
 
-// ── Doctor name normalizer (same as dashboard) ──
+// ── Doctor name normalizer ──
 function normDoctor(name) {
   const v = (name || '').trim();
   if (!v || v === '#N/A' || v === 'N/A') return '';
@@ -48,7 +50,7 @@ function normDoctor(name) {
   }).join(' ');
 }
 
-// ── Date parser for Purchase date (MM/DD/YYYY) ──
+// ── Date parser ──
 function parsePurchaseDate(s) {
   const v = (s || '').trim();
   if (!v) return null;
@@ -69,19 +71,17 @@ function csvCell(val) {
   return s;
 }
 
-// ── Build Dr Weekly Report CSV for filtered patients ──
+// ── Build Dr Weekly Report CSV ──
 function buildDrWeeklyCSV(patients) {
-  // Get date range
   const dates = patients.map(r => r._date).filter(d => d);
   if (!dates.length) return '';
 
   const minDate = new Date(Math.min(...dates));
   const maxDate = new Date(Math.max(...dates));
 
-  // Build weeks
   const weeks = [];
   let ws = new Date(minDate);
-  ws.setDate(ws.getDate() - ws.getDay() + 1); // Monday
+  ws.setDate(ws.getDate() - ws.getDay() + 1);
   while (ws <= maxDate) {
     const we = new Date(ws);
     we.setDate(we.getDate() + 6);
@@ -95,25 +95,21 @@ function buildDrWeeklyCSV(patients) {
     return f + ' - ' + t;
   });
 
-  // Get all doctors
   const allDoctors = [...new Set(patients.map(r => r.doctor).filter(Boolean))].sort();
 
-  // Build pivot: doctor -> week -> count
   const pivot = {};
   allDoctors.forEach(dr => { pivot[dr] = {}; });
   patients.forEach(r => {
     if (!r.doctor || !r._date) return;
     for (let i = 0; i < weeks.length; i++) {
       if (r._date >= weeks[i][0] && r._date <= weeks[i][1]) {
-        const wl = weekLabels[i];
         pivot[r.doctor] = pivot[r.doctor] || {};
-        pivot[r.doctor][wl] = (pivot[r.doctor][wl] || 0) + 1;
+        pivot[r.doctor][weekLabels[i]] = (pivot[r.doctor][weekLabels[i]] || 0) + 1;
         break;
       }
     }
   });
 
-  // Headers
   const headers = ['MCR Code', 'Employee Name', 'Zone', 'Region', 'Area', 'Headquarter',
     'Doctor Name', 'Doctor City', 'Doctor State', 'Drug',
     'Diet Booked', 'Diet Completed', 'Physio Booked', 'Physio Completed']
@@ -121,7 +117,6 @@ function buildDrWeeklyCSV(patients) {
 
   const csvRows = [headers.map(csvCell).join(',')];
 
-  // Data rows
   allDoctors.forEach(dr => {
     const drRows = patients.filter(r => r.doctor === dr);
     const drFirst = drRows[0] || {};
@@ -154,11 +149,21 @@ function buildDrWeeklyCSV(patients) {
 
 // ── Main handler ──
 module.exports = async function handler(req, res) {
-  const RESEND_KEY = process.env.RESEND_API_KEY;
-  if (!RESEND_KEY) {
-    res.status(500).json({ error: 'RESEND_API_KEY not configured' });
+  const SMTP_USER = process.env.SMTP_USER;
+  const SMTP_PASS = process.env.SMTP_PASS;
+  if (!SMTP_USER || !SMTP_PASS) {
+    res.status(500).json({ error: 'SMTP credentials not configured' });
     return;
   }
+
+  // Create Outlook SMTP transporter
+  const transporter = nodemailer.createTransport({
+    host: 'smtp.office365.com',
+    port: 587,
+    secure: false,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+    tls: { ciphers: 'SSLv3' },
+  });
 
   try {
     // 1. Fetch patient data
@@ -223,15 +228,12 @@ module.exports = async function handler(req, res) {
       }
 
       // Build CSV
-      const csvContent = buildDrWeeklyCSV(filtered);
-      const csvBase64 = Buffer.from('\uFEFF' + csvContent, 'utf-8').toString('base64');
-
-      // Build filename
+      const csvContent = '\uFEFF' + buildDrWeeklyCSV(filtered);
       const filename = 'MySaathi_Dr_Weekly_' + (role === 'ZBM' ? zone : region).replace(/\s+/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.csv';
 
-      // Send email via Resend
+      // Send email
       const subject = 'MySaathi Dr. Weekly Report — ' + scopeLabel + ' (' + today + ')';
-      const bodyHtml = '<div style="font-family:Arial,sans-serif;padding:20px;">'
+      const htmlBody = '<div style="font-family:Arial,sans-serif;padding:20px;">'
         + '<h2 style="color:#0e2a33;">MySaathi Dr. Weekly Report</h2>'
         + '<p><strong>' + scopeLabel + '</strong></p>'
         + '<p>Total Patients: <strong>' + filtered.length + '</strong></p>'
@@ -241,42 +243,23 @@ module.exports = async function handler(req, res) {
         + '<br><p style="color:#888;font-size:12px;">This is an automated report from MySaathi Dashboard.</p>'
         + '</div>';
 
-      const emailResp = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + RESEND_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'MySaathi Dashboard <onboarding@resend.dev>',
-          to: [email],
+      try {
+        await transporter.sendMail({
+          from: '"MySaathi Dashboard" <' + SMTP_USER + '>',
+          to: email,
           subject: subject,
-          html: bodyHtml,
-          attachments: [{
-            filename: filename,
-            content: csvBase64,
-          }],
-        }),
-      });
-
-      const emailResult = await emailResp.json();
-      results.push({
-        email, scope: scopeLabel, role,
-        patients: filtered.length,
-        doctors: new Set(filtered.map(r => r.doctor).filter(Boolean)).size,
-        status: emailResp.ok ? 'sent' : 'failed',
-        response: emailResult,
-      });
+          html: htmlBody,
+          attachments: [{ filename: filename, content: Buffer.from(csvContent, 'utf-8') }],
+        });
+        results.push({ email, scope: scopeLabel, role, patients: filtered.length, doctors: new Set(filtered.map(r => r.doctor).filter(Boolean)).size, status: 'sent' });
+      } catch (emailErr) {
+        results.push({ email, scope: scopeLabel, status: 'failed', error: emailErr.message });
+      }
     }
 
-    res.status(200).json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      totalManagers: managerData.rows.length,
-      results,
-    });
+    res.status(200).json({ success: true, timestamp: new Date().toISOString(), totalManagers: managerData.rows.length, results });
 
   } catch (error) {
-    res.status(500).json({ error: error.message, stack: error.stack });
+    res.status(500).json({ error: error.message });
   }
 };
