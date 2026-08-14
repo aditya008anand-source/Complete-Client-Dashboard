@@ -5,19 +5,14 @@ const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQscA-Y05gGs
 const PATIENT_GID = '1310523268';
 const MANAGER_GID = '86288854';
 
-// ── Minimal SMTP client (zero dependencies) ──
+// ── Minimal SMTP client (AUTH LOGIN for Office 365) ──
 function sendEmail({ host, port, user, pass, from, to, subject, html, attachments }) {
   return new Promise((resolve, reject) => {
     const socket = net.createConnection(port, host);
     let step = 0;
-    let buffer = '';
     let tlsSocket = null;
-    const commands = [];
 
-    function send(cmd) {
-      const s = tlsSocket || socket;
-      s.write(cmd + '\r\n');
-    }
+    function send(cmd) { (tlsSocket || socket).write(cmd + '\r\n'); }
 
     function buildMessage() {
       const boundary = 'boundary_' + Date.now();
@@ -45,41 +40,29 @@ function sendEmail({ host, port, user, pass, from, to, subject, html, attachment
     function handleResponse(data) {
       const code = parseInt(data.substring(0, 3));
       switch (step) {
-        case 0: // greeting
-          send('EHLO mysaathi-dashboard.vercel.app');
-          step = 1; break;
-        case 1: // EHLO response
-          send('STARTTLS');
-          step = 2; break;
-        case 2: // STARTTLS
+        case 0: send('EHLO mysaathi-dashboard.vercel.app'); step = 1; break;
+        case 1: send('STARTTLS'); step = 2; break;
+        case 2:
           tlsSocket = tls.connect({ socket: socket, host: host, servername: host }, () => {
-            send('EHLO mysaathi-dashboard.vercel.app');
-            step = 3;
+            send('EHLO mysaathi-dashboard.vercel.app'); step = 3;
           });
           tlsSocket.on('data', d => handleResponse(d.toString()));
           tlsSocket.on('error', e => reject(e));
           break;
-        case 3: // EHLO after TLS
-          const auth = Buffer.from('\0' + user + '\0' + pass).toString('base64');
-          send('AUTH PLAIN ' + auth);
-          step = 4; break;
-        case 4: // AUTH response
+        case 3: send('AUTH LOGIN'); step = 4; break;
+        case 4:
+          if (code !== 334) { reject(new Error('AUTH LOGIN rejected: ' + data)); return; }
+          send(Buffer.from(user).toString('base64')); step = 5; break;
+        case 5:
+          if (code !== 334) { reject(new Error('Username rejected: ' + data)); return; }
+          send(Buffer.from(pass).toString('base64')); step = 6; break;
+        case 6:
           if (code !== 235) { reject(new Error('Auth failed: ' + data)); return; }
-          send('MAIL FROM:<' + user + '>');
-          step = 5; break;
-        case 5: // MAIL FROM
-          send('RCPT TO:<' + to + '>');
-          step = 6; break;
-        case 6: // RCPT TO
-          send('DATA');
-          step = 7; break;
-        case 7: // DATA
-          send(buildMessage() + '\r\n.');
-          step = 8; break;
-        case 8: // Message sent
-          send('QUIT');
-          resolve({ success: true });
-          break;
+          send('MAIL FROM:<' + user + '>'); step = 7; break;
+        case 7: send('RCPT TO:<' + to + '>'); step = 8; break;
+        case 8: send('DATA'); step = 9; break;
+        case 9: send(buildMessage() + '\r\n.'); step = 10; break;
+        case 10: send('QUIT'); resolve({ success: true }); break;
       }
     }
 
