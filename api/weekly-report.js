@@ -74,7 +74,7 @@ function sendEmail({ host, port, user, pass, from, to, subject, html, attachment
 
 // ── CSV Parser ──
 function parseCSV(text) {
-  const lines = text.split('\n');
+  const lines = text.replace(/\r/g, '').split('\n');
   const headers = parseCSVLine(lines[0]);
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
