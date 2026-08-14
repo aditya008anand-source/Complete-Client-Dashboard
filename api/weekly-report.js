@@ -1,8 +1,93 @@
-const nodemailer = require('nodemailer');
+const net = require('net');
+const tls = require('tls');
 
 const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQscA-Y05gGsr6xx54awNYgJJnCLoirIf5IKsNHRmLFYyBqtUL1khVmy3cP_L3U0pG1G6vMPPOqiNNO/pub';
 const PATIENT_GID = '1310523268';
 const MANAGER_GID = '86288854';
+
+// ── Minimal SMTP client (zero dependencies) ──
+function sendEmail({ host, port, user, pass, from, to, subject, html, attachments }) {
+  return new Promise((resolve, reject) => {
+    const socket = net.createConnection(port, host);
+    let step = 0;
+    let buffer = '';
+    let tlsSocket = null;
+    const commands = [];
+
+    function send(cmd) {
+      const s = tlsSocket || socket;
+      s.write(cmd + '\r\n');
+    }
+
+    function buildMessage() {
+      const boundary = 'boundary_' + Date.now();
+      let msg = 'From: ' + from + '\r\n';
+      msg += 'To: ' + to + '\r\n';
+      msg += 'Subject: ' + subject + '\r\n';
+      msg += 'MIME-Version: 1.0\r\n';
+      msg += 'Content-Type: multipart/mixed; boundary="' + boundary + '"\r\n\r\n';
+      msg += '--' + boundary + '\r\n';
+      msg += 'Content-Type: text/html; charset=UTF-8\r\n\r\n';
+      msg += html + '\r\n';
+      if (attachments && attachments.length) {
+        attachments.forEach(att => {
+          msg += '--' + boundary + '\r\n';
+          msg += 'Content-Type: text/csv; name="' + att.filename + '"\r\n';
+          msg += 'Content-Disposition: attachment; filename="' + att.filename + '"\r\n';
+          msg += 'Content-Transfer-Encoding: base64\r\n\r\n';
+          msg += att.content.toString('base64') + '\r\n';
+        });
+      }
+      msg += '--' + boundary + '--\r\n';
+      return msg;
+    }
+
+    function handleResponse(data) {
+      const code = parseInt(data.substring(0, 3));
+      switch (step) {
+        case 0: // greeting
+          send('EHLO mysaathi-dashboard.vercel.app');
+          step = 1; break;
+        case 1: // EHLO response
+          send('STARTTLS');
+          step = 2; break;
+        case 2: // STARTTLS
+          tlsSocket = tls.connect({ socket: socket, host: host, servername: host }, () => {
+            send('EHLO mysaathi-dashboard.vercel.app');
+            step = 3;
+          });
+          tlsSocket.on('data', d => handleResponse(d.toString()));
+          tlsSocket.on('error', e => reject(e));
+          break;
+        case 3: // EHLO after TLS
+          const auth = Buffer.from('\0' + user + '\0' + pass).toString('base64');
+          send('AUTH PLAIN ' + auth);
+          step = 4; break;
+        case 4: // AUTH response
+          if (code !== 235) { reject(new Error('Auth failed: ' + data)); return; }
+          send('MAIL FROM:<' + user + '>');
+          step = 5; break;
+        case 5: // MAIL FROM
+          send('RCPT TO:<' + to + '>');
+          step = 6; break;
+        case 6: // RCPT TO
+          send('DATA');
+          step = 7; break;
+        case 7: // DATA
+          send(buildMessage() + '\r\n.');
+          step = 8; break;
+        case 8: // Message sent
+          send('QUIT');
+          resolve({ success: true });
+          break;
+      }
+    }
+
+    socket.on('data', d => handleResponse(d.toString()));
+    socket.on('error', e => reject(e));
+    socket.setTimeout(15000, () => { socket.destroy(); reject(new Error('SMTP timeout')); });
+  });
+}
 
 // ── CSV Parser ──
 function parseCSV(text) {
@@ -39,7 +124,6 @@ function parseCSVLine(line) {
   return result;
 }
 
-// ── Doctor name normalizer ──
 function normDoctor(name) {
   const v = (name || '').trim();
   if (!v || v === '#N/A' || v === 'N/A') return '';
@@ -50,53 +134,38 @@ function normDoctor(name) {
   }).join(' ');
 }
 
-// ── Date parser ──
 function parsePurchaseDate(s) {
   const v = (s || '').trim();
   if (!v) return null;
   const parts = v.split('/');
-  if (parts.length === 3) {
-    return new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
-  }
+  if (parts.length === 3) return new Date(parseInt(parts[2]), parseInt(parts[0]) - 1, parseInt(parts[1]));
   const d = new Date(v);
   return isNaN(d) ? null : d;
 }
 
-// ── CSV cell escaper ──
 function csvCell(val) {
   const s = String(val == null ? '' : val);
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-    return '"' + s.replace(/"/g, '""') + '"';
-  }
+  if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }
 
-// ── Build Dr Weekly Report CSV ──
 function buildDrWeeklyCSV(patients) {
   const dates = patients.map(r => r._date).filter(d => d);
   if (!dates.length) return '';
-
   const minDate = new Date(Math.min(...dates));
   const maxDate = new Date(Math.max(...dates));
-
   const weeks = [];
   let ws = new Date(minDate);
   ws.setDate(ws.getDate() - ws.getDay() + 1);
   while (ws <= maxDate) {
-    const we = new Date(ws);
-    we.setDate(we.getDate() + 6);
+    const we = new Date(ws); we.setDate(we.getDate() + 6);
     weeks.push([new Date(ws), new Date(we)]);
     ws.setDate(ws.getDate() + 7);
   }
-
   const weekLabels = weeks.map(w => {
-    const f = w[0].toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-    const t = w[1].toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-    return f + ' - ' + t;
+    return w[0].toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ' - ' + w[1].toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
   });
-
   const allDoctors = [...new Set(patients.map(r => r.doctor).filter(Boolean))].sort();
-
   const pivot = {};
   allDoctors.forEach(dr => { pivot[dr] = {}; });
   patients.forEach(r => {
@@ -109,14 +178,11 @@ function buildDrWeeklyCSV(patients) {
       }
     }
   });
-
   const headers = ['MCR Code', 'Employee Name', 'Zone', 'Region', 'Area', 'Headquarter',
     'Doctor Name', 'Doctor City', 'Doctor State', 'Drug',
     'Diet Booked', 'Diet Completed', 'Physio Booked', 'Physio Completed']
     .concat(weekLabels).concat(['Total Patients']);
-
   const csvRows = [headers.map(csvCell).join(',')];
-
   allDoctors.forEach(dr => {
     const drRows = patients.filter(r => r.doctor === dr);
     const drFirst = drRows[0] || {};
@@ -125,81 +191,45 @@ function buildDrWeeklyCSV(patients) {
     const dietCmp = drRows.reduce((s, r) => s + (r.dietCompleted || 0), 0);
     const phyBkd = drRows.reduce((s, r) => s + (r.physioBooked || 0), 0);
     const phyCmp = drRows.reduce((s, r) => s + (r.physioCompleted || 0), 0);
-
-    const row = [
-      csvCell(drFirst.mcrCode || ''), csvCell(drFirst.employeeName || ''),
+    const row = [csvCell(drFirst.mcrCode || ''), csvCell(drFirst.employeeName || ''),
       csvCell(drFirst.zone || ''), csvCell(drFirst.region || ''),
       csvCell(drFirst.area || ''), csvCell(drFirst.hq || ''),
       csvCell(dr), csvCell(drFirst.doctorCity || ''), csvCell(drFirst.doctorState || ''),
-      csvCell(drugs || ''), String(dietBkd), String(dietCmp), String(phyBkd), String(phyCmp)
-    ];
-
+      csvCell(drugs || ''), String(dietBkd), String(dietCmp), String(phyBkd), String(phyCmp)];
     let total = 0;
-    weekLabels.forEach(wl => {
-      const cnt = (pivot[dr] && pivot[dr][wl]) || 0;
-      total += cnt;
-      row.push(String(cnt));
-    });
+    weekLabels.forEach(wl => { const cnt = (pivot[dr] && pivot[dr][wl]) || 0; total += cnt; row.push(String(cnt)); });
     row.push(String(total));
     csvRows.push(row.join(','));
   });
-
   return csvRows.join('\n');
 }
 
-// ── Main handler ──
 module.exports = async function handler(req, res) {
   const SMTP_USER = process.env.SMTP_USER;
   const SMTP_PASS = process.env.SMTP_PASS;
-  if (!SMTP_USER || !SMTP_PASS) {
-    res.status(500).json({ error: 'SMTP credentials not configured' });
-    return;
-  }
-
-  // Create Outlook SMTP transporter
-  const transporter = nodemailer.createTransport({
-    host: 'smtp.office365.com',
-    port: 587,
-    secure: false,
-    auth: { user: SMTP_USER, pass: SMTP_PASS },
-    tls: { ciphers: 'SSLv3' },
-  });
+  if (!SMTP_USER || !SMTP_PASS) { res.status(500).json({ error: 'SMTP credentials not configured' }); return; }
 
   try {
-    // 1. Fetch patient data
     const patientResp = await fetch(SHEET_BASE + '?gid=' + PATIENT_GID + '&single=true&output=csv');
-    const patientCSV = await patientResp.text();
-    const patientData = parseCSV(patientCSV);
-
-    // 2. Fetch manager mapping
+    const patientData = parseCSV(await patientResp.text());
     const managerResp = await fetch(SHEET_BASE + '?gid=' + MANAGER_GID + '&single=true&output=csv');
-    const managerCSV = await managerResp.text();
-    const managerData = parseCSV(managerCSV);
+    const managerData = parseCSV(await managerResp.text());
 
-    // 3. Transform patient data
     const patients = patientData.rows.filter(r => r['Mobile no']).map(r => ({
-      mobile: (r['Mobile no'] || '').trim(),
-      name: (r['Name'] || '').trim(),
-      state: (r['State'] || '').trim(),
-      city: (r['Patient City'] || r['City'] || '').trim(),
-      _date: parsePurchaseDate(r['Purchase date']),
-      drug: (r['Drug Name'] || '').trim(),
+      mobile: (r['Mobile no'] || '').trim(), name: (r['Name'] || '').trim(),
+      state: (r['State'] || '').trim(), city: (r['Patient City'] || r['City'] || '').trim(),
+      _date: parsePurchaseDate(r['Purchase date']), drug: (r['Drug Name'] || '').trim(),
       doctor: normDoctor(r['Doctor name']),
-      doctorCity: (r['Doctor City'] || '').trim(),
-      doctorState: (r['Doctor State'] || '').trim(),
-      mcrCode: (r['MCR Code'] || '').trim(),
-      employeeName: (r['Employee Name'] || '').trim(),
-      zone: (r['Zone'] || '').trim(),
-      region: (r['Region'] || '').trim(),
-      area: (r['Area'] || '').trim(),
-      hq: (r['Headquarter'] || '').trim(),
+      doctorCity: (r['Doctor City'] || '').trim(), doctorState: (r['Doctor State'] || '').trim(),
+      mcrCode: (r['MCR Code'] || '').trim(), employeeName: (r['Employee Name'] || '').trim(),
+      zone: (r['Zone'] || '').trim(), region: (r['Region'] || '').trim(),
+      area: (r['Area'] || '').trim(), hq: (r['Headquarter'] || '').trim(),
       dietBooked: parseInt(r['Diet booking count'] || '0') || 0,
       dietCompleted: parseInt(r['Diet completion count'] || '0') || 0,
       physioBooked: parseInt(r['Physio Booking count'] || '0') || 0,
       physioCompleted: parseInt(r['Physio completion count'] || '0') || 0,
     }));
 
-    // 4. Process each manager
     const results = [];
     const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
@@ -208,12 +238,9 @@ module.exports = async function handler(req, res) {
       const region = (mgr['Region'] || '').trim();
       const email = (mgr['Email ID'] || '').trim();
       const role = (mgr['Role'] || '').trim().toUpperCase();
-
       if (!email) continue;
 
-      // Filter patients by zone (ZBM) or region (RBM)
-      let filtered;
-      let scopeLabel;
+      let filtered, scopeLabel;
       if (role === 'ZBM') {
         filtered = patients.filter(r => r.zone.toUpperCase() === zone.toUpperCase());
         scopeLabel = 'Zone: ' + zone;
@@ -222,17 +249,11 @@ module.exports = async function handler(req, res) {
         scopeLabel = 'Region: ' + region;
       }
 
-      if (!filtered.length) {
-        results.push({ email, scope: scopeLabel, status: 'skipped', reason: 'No patients found' });
-        continue;
-      }
+      if (!filtered.length) { results.push({ email, scope: scopeLabel, status: 'skipped', reason: 'No patients found' }); continue; }
 
-      // Build CSV
       const csvContent = '\uFEFF' + buildDrWeeklyCSV(filtered);
       const filename = 'MySaathi_Dr_Weekly_' + (role === 'ZBM' ? zone : region).replace(/\s+/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.csv';
-
-      // Send email
-      const subject = 'MySaathi Dr. Weekly Report — ' + scopeLabel + ' (' + today + ')';
+      const subject = 'MySaathi Dr. Weekly Report \u2014 ' + scopeLabel + ' (' + today + ')';
       const htmlBody = '<div style="font-family:Arial,sans-serif;padding:20px;">'
         + '<h2 style="color:#0e2a33;">MySaathi Dr. Weekly Report</h2>'
         + '<p><strong>' + scopeLabel + '</strong></p>'
@@ -244,21 +265,20 @@ module.exports = async function handler(req, res) {
         + '</div>';
 
       try {
-        await transporter.sendMail({
+        await sendEmail({
+          host: 'smtp.office365.com', port: 587,
+          user: SMTP_USER, pass: SMTP_PASS,
           from: '"MySaathi Dashboard" <' + SMTP_USER + '>',
-          to: email,
-          subject: subject,
-          html: htmlBody,
-          attachments: [{ filename: filename, content: Buffer.from(csvContent, 'utf-8') }],
+          to: email, subject, html: htmlBody,
+          attachments: [{ filename, content: Buffer.from(csvContent, 'utf-8') }],
         });
-        results.push({ email, scope: scopeLabel, role, patients: filtered.length, doctors: new Set(filtered.map(r => r.doctor).filter(Boolean)).size, status: 'sent' });
+        results.push({ email, scope: scopeLabel, role, patients: filtered.length, status: 'sent' });
       } catch (emailErr) {
         results.push({ email, scope: scopeLabel, status: 'failed', error: emailErr.message });
       }
     }
 
     res.status(200).json({ success: true, timestamp: new Date().toISOString(), totalManagers: managerData.rows.length, results });
-
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
