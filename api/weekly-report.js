@@ -202,7 +202,7 @@ module.exports = async function handler(req, res) {
       mobile: (r['Mobile no'] || '').trim(), name: (r['Name'] || '').trim(),
       state: (r['State'] || '').trim(), city: (r['Patient City'] || r['City'] || '').trim(),
       _date: parsePurchaseDate(r['Purchase date']), drug: (r['Drug Name'] || '').trim(),
-      doctor: normDoctor(r['Doctor name']),
+      doctor: (r['Doctor name'] || '').trim(),
       doctorCity: (r['Doctor City'] || '').trim(), doctorState: (r['Doctor State'] || '').trim(),
       mcrCode: (r['MCR Code'] || '').trim(), employeeName: (r['Employee Name'] || '').trim(),
       zone: (r['Zone'] || '').trim(), region: (r['Region'] || '').trim(),
