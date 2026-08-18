@@ -219,12 +219,14 @@ module.exports = async function handler(req, res) {
     const results = [];
     const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
+    const typeFilter = (req.query && req.query.type) ? req.query.type.toUpperCase() : '';
     for (const mgr of managerData.rows) {
       const zone = (mgr['Zone'] || '').trim();
       const region = (mgr['Region'] || '').trim();
       const email = (mgr['Email ID'] || '').trim();
       const role = (mgr['Role'] || '').trim().toUpperCase();
       if (!email) continue;
+      if (typeFilter && role !== typeFilter) continue;
 
       let filtered, scopeLabel;
       if (role === 'ZBM') {
@@ -259,7 +261,7 @@ module.exports = async function handler(req, res) {
           attachments: [{ filename, content: Buffer.from(csvContent, 'utf-8') }],
         });
         results.push({ email, scope: scopeLabel, role, patients: filtered.length, status: 'sent' });
-        await delay(2000);
+        await delay(1000);
       } catch (emailErr) {
         results.push({ email, scope: scopeLabel, status: 'failed', error: emailErr.message });
         await delay(1000);
