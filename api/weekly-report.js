@@ -72,6 +72,9 @@ function sendEmail({ host, port, user, pass, from, to, subject, html, attachment
   });
 }
 
+
+// ── Delay between emails to prevent duplicates ──
+function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 // ── CSV Parser ──
 function parseCSV(text) {
   const lines = text.replace(/\r/g, '').split('\n');
@@ -202,7 +205,7 @@ module.exports = async function handler(req, res) {
       mobile: (r['Mobile no'] || '').trim(), name: (r['Name'] || '').trim(),
       state: (r['State'] || '').trim(), city: (r['Patient City'] || r['City'] || '').trim(),
       _date: parsePurchaseDate(r['Purchase date']), drug: (r['Drug Name'] || '').trim(),
-      doctor: (r['Doctor name'] || '').trim(),
+      doctor: normDoctor(r['Doctor name']),
       doctorCity: (r['Doctor City'] || '').trim(), doctorState: (r['Doctor State'] || '').trim(),
       mcrCode: (r['MCR Code'] || '').trim(), employeeName: (r['Employee Name'] || '').trim(),
       zone: (r['Zone'] || '').trim(), region: (r['Region'] || '').trim(),
@@ -256,8 +259,10 @@ module.exports = async function handler(req, res) {
           attachments: [{ filename, content: Buffer.from(csvContent, 'utf-8') }],
         });
         results.push({ email, scope: scopeLabel, role, patients: filtered.length, status: 'sent' });
+        await delay(2000);
       } catch (emailErr) {
         results.push({ email, scope: scopeLabel, status: 'failed', error: emailErr.message });
+        await delay(1000);
       }
     }
 
