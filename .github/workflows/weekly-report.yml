@@ -2,19 +2,24 @@ name: Weekly Dr Report Email
 
 on:
   schedule:
-    - cron: '30 0 * * 1'  # Monday 6:00 AM IST (00:30 UTC)
-  workflow_dispatch:  # Manual trigger button bhi rahega
+    - cron: '30 0 * * 1'
+  workflow_dispatch:
 
 jobs:
   send-report:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Weekly Report
+      - name: Send ZBM (Zone) Reports
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" "https://mysaathi-dashboard.vercel.app/api/weekly-report")
-          echo "Response code: $response"
-          if [ "$response" != "200" ]; then
-            echo "Failed with status $response"
-            exit 1
-          fi
-          echo "Weekly report triggered successfully"
+          echo "Sending Zone reports..."
+          curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=ZBM"
+          echo ""
+          echo "ZBM done. Waiting 10 seconds..."
+          sleep 10
+
+      - name: Send RBM (Region) Reports
+        run: |
+          echo "Sending Region reports..."
+          curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM"
+          echo ""
+          echo "RBM done."
