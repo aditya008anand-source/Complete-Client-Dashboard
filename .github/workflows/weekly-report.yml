@@ -12,36 +12,33 @@ jobs:
       - name: Send ZBM (Zone) Reports
         run: |
           echo "Sending Zone reports..."
-          curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=ZBM"
+          curl -s --max-time 120 "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=ZBM"
           echo ""
-          echo "ZBM done."
 
-      - name: Wait 15 seconds
-        run: sleep 15
+      - name: Wait 30 seconds
+        run: sleep 30
 
-      - name: Send RBM (Region) Reports - Batch 1
+      - name: Send RBM Batch 1
         run: |
-          echo "Sending Region reports batch 1..."
-          curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM&page=1"
+          echo "Sending Region batch 1..."
+          curl -s --max-time 120 "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM&page=1"
           echo ""
-          echo "RBM batch 1 done."
 
-      - name: Wait 15 seconds
-        run: sleep 15
+      - name: Wait 30 seconds
+        run: sleep 30
 
-      - name: Send RBM (Region) Reports - Batch 2
+      - name: Send RBM Batch 2
         run: |
-          echo "Sending Region reports batch 2..."
-          curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM&page=2"
+          echo "Sending Region batch 2..."
+          curl -s --max-time 120 "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM&page=2"
           echo ""
-          echo "RBM batch 2 done."
 
-      - name: Wait 15 seconds
-        run: sleep 15
+      - name: Wait 30 seconds
+        run: sleep 30
 
-      - name: Send RBM (Region) Reports - Batch 3
+      - name: Send RBM Batch 3
         run: |
-          echo "Sending Region reports batch 3..."
-          curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM&page=3"
+          echo "Sending Region batch 3..."
+          curl -s --max-time 120 "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM&page=3"
           echo ""
           echo "All done."
