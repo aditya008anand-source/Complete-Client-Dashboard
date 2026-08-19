@@ -221,7 +221,7 @@ module.exports = async function handler(req, res) {
 
     const typeFilter = (req.query && req.query.type) ? req.query.type.toUpperCase() : '';
     const page = (req.query && req.query.page) ? parseInt(req.query.page) : 0;
-    const pageSize = 10;
+    const pageSize = 8;
     let filteredIndex = 0;
     for (const mgr of managerData.rows) {
       const zone = (mgr['Zone'] || '').trim();
