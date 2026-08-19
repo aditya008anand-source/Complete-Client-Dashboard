@@ -220,6 +220,9 @@ module.exports = async function handler(req, res) {
     const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
     const typeFilter = (req.query && req.query.type) ? req.query.type.toUpperCase() : '';
+    const page = (req.query && req.query.page) ? parseInt(req.query.page) : 0;
+    const pageSize = 10;
+    let filteredIndex = 0;
     for (const mgr of managerData.rows) {
       const zone = (mgr['Zone'] || '').trim();
       const region = (mgr['Region'] || '').trim();
@@ -227,6 +230,8 @@ module.exports = async function handler(req, res) {
       const role = (mgr['Role'] || '').trim().toUpperCase();
       if (!email) continue;
       if (typeFilter && role !== typeFilter) continue;
+      filteredIndex++;
+      if (page > 0 && (filteredIndex < (page-1)*pageSize+1 || filteredIndex > page*pageSize)) continue;
 
       let filtered, scopeLabel;
       if (role === 'ZBM') {
