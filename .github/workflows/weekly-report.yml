@@ -14,12 +14,34 @@ jobs:
           echo "Sending Zone reports..."
           curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=ZBM"
           echo ""
-          echo "ZBM done. Waiting 10 seconds..."
-          sleep 10
+          echo "ZBM done."
 
-      - name: Send RBM (Region) Reports
+      - name: Wait 15 seconds
+        run: sleep 15
+
+      - name: Send RBM (Region) Reports - Batch 1
         run: |
-          echo "Sending Region reports..."
-          curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM"
+          echo "Sending Region reports batch 1..."
+          curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM&page=1"
           echo ""
-          echo "RBM done."
+          echo "RBM batch 1 done."
+
+      - name: Wait 15 seconds
+        run: sleep 15
+
+      - name: Send RBM (Region) Reports - Batch 2
+        run: |
+          echo "Sending Region reports batch 2..."
+          curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM&page=2"
+          echo ""
+          echo "RBM batch 2 done."
+
+      - name: Wait 15 seconds
+        run: sleep 15
+
+      - name: Send RBM (Region) Reports - Batch 3
+        run: |
+          echo "Sending Region reports batch 3..."
+          curl -s "https://mysaathi-dashboard.vercel.app/api/weekly-report?type=RBM&page=3"
+          echo ""
+          echo "All done."
