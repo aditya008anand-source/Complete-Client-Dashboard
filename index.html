@@ -255,6 +255,11 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 .vtab{padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:inherit;transition:all .15s}
 .vtab.active{background:var(--teal);color:#fff;box-shadow:0 1px 3px rgba(15,118,110,.2)}
 .vtab:hover:not(.active){color:var(--ink)}
+
+.coming-soon{display:none;flex-direction:column;align-items:center;justify-content:center;padding:120px 20px;text-align:center}
+.coming-soon .cs-icon{font-size:64px;margin-bottom:20px}
+.coming-soon .cs-title{font-family:'Fraunces',serif;font-size:28px;color:var(--ink);margin-bottom:8px}
+.coming-soon .cs-sub{font-size:14px;color:var(--muted);max-width:400px}
 </style>
 </head>
 <body>
@@ -394,10 +399,15 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     <div class="card"><div class="ct">Top 5 Doctors by Referrals</div><div id="lDr"></div></div>
   </div>
 </section>
-<hr class="dv"/>
+<div class="coming-soon" id="comingSoon5mg">
+  <div class="cs-icon">🚀</div>
+  <div class="cs-title">5mg — Modules Coming Soon</div>
+  <div class="cs-sub">Logistics, Consultation, Documentation, Loyalty & App Engagement for 5mg are in progress.</div>
+</div>
+<hr class="dv dv-hide-5mg"/>
 
 <!-- MODULE 2 -->
-<section class="module">
+<section class="module mod-hide-5mg">
   <div class="mh"><span class="mn">02</span><h2>Welcome Kit · Logistics Tracking</h2></div>
   <div class="mf">
     <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p2f" onchange="oF2()"><span>→</span><input type="date" id="p2t" onchange="oF2()"></div></div>
@@ -459,7 +469,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 <hr class="dv"/>
 
 <!-- MODULE 3 -->
-<section class="module">
+<section class="module mod-hide-5mg">
   <div class="mh"><span class="mn">03</span><h2>Expert Consultation & BCA Sync</h2></div>
   <div class="mf">
     <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p3df" onchange="oF3()"><span>→</span><input type="date" id="p3dt" onchange="oF3()"></div></div>
@@ -483,10 +493,10 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     <div class="card"><div class="ct">Weekly BCA Sync Trend</div><div class="cw sh"><canvas id="c3bca"></canvas></div></div>
   </div>
 </section>
-<hr class="dv"/>
+<hr class="dv dv-hide-5mg"/>
 
 <!-- MODULE 4 -->
-<section class="module">
+<section class="module mod-hide-5mg">
   <div class="mh"><span class="mn">04</span><h2>Documentation</h2></div>
   <div class="mf">
     <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p4f" onchange="oF4()"><span>→</span><input type="date" id="p4t" onchange="oF4()"></div></div>
@@ -513,10 +523,10 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   </div>
   <div class="card" style="margin-top:14px"><div class="ct">Detailed Status Breakdown</div><div class="sgrd" id="lDS"></div></div>
 </section>
-<hr class="dv"/>
+<hr class="dv dv-hide-5mg"/>
 
 
-<section class="module">
+<section class="module mod-hide-5mg">
     <div class="mh"><span class="mn">05</span><h2>Loyalty Rewards</h2></div>
     <div class="mf">
       <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p5f" onchange="oF5()"><span>→</span><input type="date" id="p5t" onchange="oF5()"></div></div>
@@ -533,9 +543,9 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     </div>
     <div class="card" style="margin-top:14px"><div class="ct">Daily Points Earned Trend</div><div class="cw"><canvas id="c5trend"></canvas></div></div>
   </section>
-  <hr class="dv"/>
+  <hr class="dv dv-hide-5mg"/>
 
-  <section class="module" style="margin-top:24px">
+  <section class="module mod-hide-5mg" style="margin-top:24px">
   <div class="mh"><span class="mn">06</span><h2>App Engagement</h2></div>
   <!-- Module 6 Filters -->
   <div class="mf">
@@ -611,7 +621,19 @@ let activeVariant = 'all';
 function setVariant(v){
   activeVariant = v;
   document.querySelectorAll('.vtab').forEach(function(b){b.classList.toggle('active',b.dataset.v===v);});
-  r1(); // re-render Module 1 with variant filter
+  var cs = document.getElementById('comingSoon5mg');
+  var mods = document.querySelectorAll('.mod-hide-5mg');
+  var dividers = document.querySelectorAll('.dv-hide-5mg');
+  if(v==='5mg'){
+    if(cs) cs.style.display='flex';
+    mods.forEach(function(m){m.style.display='none';});
+    dividers.forEach(function(d){d.style.display='none';});
+  } else {
+    if(cs) cs.style.display='none';
+    mods.forEach(function(m){m.style.display='';});
+    dividers.forEach(function(d){d.style.display='';});
+  }
+  r1();
 }
 const ZLOGO='https://www.zyduslife.com/public/images/zydus-logo.png';
 const C={teal:'#0f766e',teal2:'#14b8a6',blueLt:'#7ba8c9',blue:'#1e6091',amber:'#b7791f',red:'#b54747',slate:'#64748b',mint:'#6fbfab'};
@@ -673,53 +695,30 @@ async function loadAll(){
   try{
     const[p,l,c,ly,ap]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty),fcsv(SHEETS.app)]);
     DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),city:n(r['Patient City']||r['City']||r['city']||''),doctorCity:n(r['Doctor City']||''),doctorState:n(r['Doctor State']||''),mcrCode:n(r['MCR Code']||''),employeeName:n(r['Employee Name']||''),zone:n(r['Zone']||''),region:n(r['Region']||''),area:n(r['Area']||''),hq:n(r['Headquarter']||''),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool']),dietBooked:parseInt(r['Diet booking count']||'0')||0,dietCompleted:parseInt(r['Diet completion count']||'0')||0,physioBooked:parseInt(r['Physio Booking count']||'0')||0,physioCompleted:parseInt(r['Physio completion count']||'0')||0}));
-    // 5mg patients from same sheet (columns AN onwards - PapaParse reads duplicate headers with _1 suffix)
-    var p5 = p.filter(function(r){
-      // 5mg Mobile is in 'Mobile No' (capital N) column - PapaParse may rename duplicates
-      var mob = n(r['Mobile No']) || n(r['Mobile No_1']) || '';
-      return mob.length > 0;
-    }).map(function(r){
-      var mob = n(r['Mobile No']) || n(r['Mobile No_1']) || '';
-      var name5 = '', drug5 = '', doctor5 = '', city5 = '', docCity5 = '', docState5 = '';
-      var mcr5 = '', emp5 = '', zone5 = '', region5 = '', area5 = '', hq5 = '';
-      var date5 = null, qr5 = '', status5 = '', plan5 = '';
-      var dBkd5=0, dCmp5=0, pBkd5=0, pCmp5=0;
-      // PapaParse handles duplicate headers by appending _1, _2 etc.
-      // 5mg columns start at AN (index 39) - their headers duplicate 15mg headers
-      var keys = Object.keys(r);
-      keys.forEach(function(k){
-        // Match _1 suffix versions (5mg duplicates)
-        if(k==='Name_1') name5 = n(r[k]);
-        if(k==='Drug Name_1') drug5 = cDr(r[k]);
-        if(k==='Doctor name_1') doctor5 = n(r[k]);
-        if(k==='Patient City_1') city5 = n(r[k]);
-        if(k==='Doctor City_1') docCity5 = n(r[k]);
-        if(k==='Doctor State_1') docState5 = n(r[k]);
-        if(k==='MCR Code_1') mcr5 = n(r[k]);
-        if(k==='Employee Name_1') emp5 = n(r[k]);
-        if(k==='Zone_1') zone5 = n(r[k]);
-        if(k==='Region_1') region5 = n(r[k]);
-        if(k==='Area_1') area5 = n(r[k]);
-        if(k==='Headquarter_1') hq5 = n(r[k]);
-        if(k==='Purchase date_1') date5 = pMDY(r[k]);
-        if(k==='QR Type_1') qr5 = cQR(r[k]);
-        if(k==='Current Status_1') status5 = cSts(r[k]);
-        if(k==='Plan expiry date as per retool_1') plan5 = n(r[k]);
-        if(k==='Diet booking count_1') dBkd5 = parseInt(r[k]||'0')||0;
-        if(k==='Diet completion count_1') dCmp5 = parseInt(r[k]||'0')||0;
-        if(k==='Physio Booking count_1') pBkd5 = parseInt(r[k]||'0')||0;
-        if(k==='Physio completion count_1') pCmp5 = parseInt(r[k]||'0')||0;
+    // 5mg patients from columns AN onwards (PapaParse duplicate headers get _1 suffix)
+    var fivemgKeys = Object.keys(p[0]||{}).filter(function(k){return k.endsWith('_1')||k==='Mobile No';});
+    var p5 = [];
+    p.forEach(function(r){
+      var mob = n(r['Mobile No'])||'';
+      if(!mob) return;
+      p5.push({
+        mobile:mob, name:n(r['Name_1']||''), state:'',
+        city:n(r['Patient City_1']||''),
+        doctorCity:n(r['Doctor City_1']||''), doctorState:n(r['Doctor State_1']||''),
+        mcrCode:n(r['MCR Code_1']||''), employeeName:n(r['Employee Name_1']||''),
+        zone:n(r['Zone_1']||''), region:n(r['Region_1']||''),
+        area:n(r['Area_1']||''), hq:n(r['Headquarter_1']||''),
+        _date:pMDY(r['Purchase date_1']||''), drug:cDr(r['Drug Name_1']||''),
+        qr:cQR(r['QR Type_1']||''), doctor:n(r['Doctor name_1']||''),
+        docStatus:cSts(r['Current Status_1']||''), plan:n(r['Plan expiry date as per retool_1']||''),
+        dietBooked:parseInt(r['Diet booking count_1']||'0')||0,
+        dietCompleted:parseInt(r['Diet completion count_1']||'0')||0,
+        physioBooked:parseInt(r['Physio Booking count_1']||'0')||0,
+        physioCompleted:parseInt(r['Physio completion count_1']||'0')||0,
+        _variant:'5mg'
       });
-      if(!name5 && !mob) return null;
-      return {mobile:mob,name:name5,state:'',city:city5,doctorCity:docCity5,doctorState:docState5,
-        mcrCode:mcr5,employeeName:emp5,zone:zone5,region:region5,area:area5,hq:hq5,
-        _date:date5,drug:drug5,qr:qr5,doctor:doctor5,docStatus:status5,plan:plan5,
-        dietBooked:dBkd5,dietCompleted:dCmp5,physioBooked:pBkd5,physioCompleted:pCmp5,
-        _variant:'5mg'};
-    }).filter(function(r){return r!==null;});
-    // Tag 15mg patients
+    });
     DS.patient.forEach(function(r){r._variant='15mg';});
-    // Store separately and merge
     DS.patient5mg = p5;
     DS.patientAll = DS.patient.concat(p5);
     DS.logistics=l.map(r=>({name:n(r['Customer Name']),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
