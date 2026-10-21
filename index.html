@@ -404,10 +404,10 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
   <div class="cs-title">5mg — Modules Coming Soon</div>
   <div class="cs-sub">Logistics, Consultation, Documentation, Loyalty & App Engagement for 5mg are in progress.</div>
 </div>
-<hr class="dv dv-hide-5mg"/>
+<hr class="dv "/>
 
 <!-- MODULE 2 -->
-<section class="module mod-hide-5mg">
+<section class="module">
   <div class="mh"><span class="mn">02</span><h2>Welcome Kit · Logistics Tracking</h2></div>
   <div class="mf">
     <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p2f" onchange="oF2()"><span>→</span><input type="date" id="p2t" onchange="oF2()"></div></div>
@@ -496,7 +496,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 <hr class="dv dv-hide-5mg"/>
 
 <!-- MODULE 4 -->
-<section class="module mod-hide-5mg">
+<section class="module ">
   <div class="mh"><span class="mn">04</span><h2>Documentation</h2></div>
   <div class="mf">
     <div class="fg"><label>Date Range</label><div class="dp"><input type="date" id="p4f" onchange="oF4()"><span>→</span><input type="date" id="p4t" onchange="oF4()"></div></div>
@@ -633,7 +633,7 @@ function setVariant(v){
     mods.forEach(function(m){m.style.display='';});
     dividers.forEach(function(d){d.style.display='';});
   }
-  r1();
+  r1();r2();r4();
 }
 const ZLOGO='https://www.zyduslife.com/public/images/zydus-logo.png';
 const C={teal:'#0f766e',teal2:'#14b8a6',blueLt:'#7ba8c9',blue:'#1e6091',amber:'#b7791f',red:'#b54747',slate:'#64748b',mint:'#6fbfab'};
@@ -721,7 +721,7 @@ async function loadAll(){
     DS.patient.forEach(function(r){r._variant='15mg';});
     DS.patient5mg = p5;
     DS.patientAll = DS.patient.concat(p5);
-    DS.logistics=l.map(r=>({name:n(r['Customer Name']),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
+    DS.logistics=l.map(r=>({name:n(r['Customer Name']),productName:n(r['Product Name']||''),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
     DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status']),_date:parseConsultDate(n(r['consultation_booked_date']||''))}));
     // BCA sync data from same sheet (Col K onwards)
     DS.bca=c.filter(function(r){return n(r['created_at']);}).map(function(r){return{name:n(r['name']),_date:parseConsultDate(n(r['created_at']||'')),weight:parseFloat(n(r['weight']))||0,bmi:parseFloat(n(r['bmi']))||0};});
@@ -799,7 +799,10 @@ function r1(){
 function r2(){
   const{from,to}=gR('p2f','p2t');const fst=gv('p2st'),fs=gv('p2s');
   const pq=(document.getElementById('pSearch')||{value:''}).value.trim().toLowerCase();
-  const rows=DS.logistics.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;if(fs&&r.state!==fs)return false;if(pq&&!((r.name||'').toLowerCase().includes(pq)))return false;return true;});
+  var logSrc=DS.logistics;
+  if(activeVariant==='5mg') logSrc=DS.logistics.filter(function(r){return r.productName.toLowerCase().includes('5mg');});
+  else if(activeVariant==='15mg') logSrc=DS.logistics.filter(function(r){return r.productName&&!r.productName.toLowerCase().includes('5mg');});
+  const rows=logSrc.filter(r=>{if(!inR(r._date,from,to))return false;if(fst&&r.bucket!==fst)return false;if(fs&&r.state!==fs)return false;if(pq&&!((r.name||'').toLowerCase().includes(pq)))return false;return true;});
   const tot=rows.length;const bk={Delivered:0,'In Transit':0,RTO:0,Others:0};
   rows.forEach(r=>{bk[r.bucket]=(bk[r.bucket]||0)+1;});
   st('k2t',fN(tot));st('k2r',tot?((bk.Delivered/tot)*100).toFixed(1)+'%':'—');st('k2rm',fN(bk.Delivered)+' delivered');
