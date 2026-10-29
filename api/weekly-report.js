@@ -3,6 +3,7 @@ const tls = require('tls');
 
 const SHEET_BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQscA-Y05gGsr6xx54awNYgJJnCLoirIf5IKsNHRmLFYyBqtUL1khVmy3cP_L3U0pG1G6vMPPOqiNNO/pub';
 const PATIENT_GID = '1310523268';
+const PATIENT_5MG_GID = '98265454';
 const MANAGER_GID = '86288854';
 
 // ── Minimal SMTP client (AUTH LOGIN for Office 365) ──
@@ -164,7 +165,7 @@ function buildDrWeeklyCSV(patients) {
       }
     }
   });
-  const headers = ['MCR Code', 'Employee Name', 'Zone', 'Region', 'Area', 'Headquarter',
+  const headers = ['Variant', 'MCR Code', 'Employee Name', 'Zone', 'Region', 'Area', 'Headquarter',
     'Doctor Name', 'Doctor City', 'Doctor State', 'Drug',
     'Diet Booked', 'Diet Completed', 'Physio Booked', 'Physio Completed']
     .concat(weekLabels).concat(['Total Patients']);
@@ -198,6 +199,8 @@ module.exports = async function handler(req, res) {
   try {
     const patientResp = await fetch(SHEET_BASE + '?gid=' + PATIENT_GID + '&single=true&output=csv');
     const patientData = parseCSV(await patientResp.text());
+    const patient5mgResp = await fetch(SHEET_BASE + '?gid=' + PATIENT_5MG_GID + '&single=true&output=csv');
+    const patient5mgData = parseCSV(await patient5mgResp.text());
     const managerResp = await fetch(SHEET_BASE + '?gid=' + MANAGER_GID + '&single=true&output=csv');
     const managerData = parseCSV(await managerResp.text());
 
@@ -215,6 +218,25 @@ module.exports = async function handler(req, res) {
       physioBooked: parseInt(r['Physio Booking count'] || '0') || 0,
       physioCompleted: parseInt(r['Physio completion count'] || '0') || 0,
     }));
+
+    // 5mg patients from separate sheet
+    const patients5mg = patient5mgData.rows.filter(r => r['Mobile no']).map(r => ({
+      mobile: (r['Mobile no'] || '').trim(), name: (r['Name'] || '').trim(),
+      state: (r['State'] || '').trim(), city: (r['Patient City'] || '').trim(),
+      _date: parsePurchaseDate(r['Purchase date']), drug: (r['Drug Name'] || '').trim(),
+      doctor: normDoctor(r['Doctor name']),
+      doctorCity: (r['Doctor City'] || '').trim(), doctorState: (r['Doctor State'] || '').trim(),
+      mcrCode: (r['MCR Code'] || '').trim(), employeeName: (r['Employee Name'] || '').trim(),
+      zone: (r['Zone'] || '').trim(), region: (r['Region'] || '').trim(),
+      area: (r['Area'] || '').trim(), hq: (r['Headquarter'] || '').trim(),
+      dietBooked: parseInt(r['Diet booking count'] || '0') || 0,
+      dietCompleted: parseInt(r['Diet completion count'] || '0') || 0,
+      physioBooked: parseInt(r['Physio Booking count'] || '0') || 0,
+      physioCompleted: parseInt(r['Physio completion count'] || '0') || 0,
+      _variant: '5mg',
+    }));
+    patients.forEach(r => { r._variant = '15mg'; });
+    const allPatients = patients.concat(patients5mg);
 
     const results = [];
     const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -235,10 +257,10 @@ module.exports = async function handler(req, res) {
 
       let filtered, scopeLabel;
       if (role === 'ZBM') {
-        filtered = patients.filter(r => r.zone.toUpperCase() === zone.toUpperCase());
+        filtered = allPatients.filter(r => r.zone.toUpperCase() === zone.toUpperCase());
         scopeLabel = 'Zone: ' + zone;
       } else {
-        filtered = patients.filter(r => r.region.toUpperCase() === region.toUpperCase());
+        filtered = allPatients.filter(r => r.region.toUpperCase() === region.toUpperCase());
         scopeLabel = 'Region: ' + region;
       }
 
