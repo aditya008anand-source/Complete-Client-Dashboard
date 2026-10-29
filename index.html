@@ -613,6 +613,7 @@ let selectedUid  = null;
 
 const SHEETS={
   patient:'/api/sheet?gid=1310523268',
+  patient5mg:'/api/sheet?gid=98265454',
   logistics:'/api/sheet?gid=1879543153',
   consult:'/api/sheet?gid=419247046',
   loyalty:'/api/sheet?gid=975503331',
@@ -694,34 +695,29 @@ async function fcsv(url){return new Promise((r,j)=>{Papa.parse(url,{download:tru
 async function loadAll(){
   document.getElementById('loader').classList.remove('hide');
   try{
-    const[p,l,c,ly,ap]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty),fcsv(SHEETS.app)]);
+    const[p,l,c,ly,ap,p5raw]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty),fcsv(SHEETS.app),fcsv(SHEETS.patient5mg)]);
     DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),city:n(r['Patient City']||r['City']||r['city']||''),doctorCity:n(r['Doctor City']||''),doctorState:n(r['Doctor State']||''),mcrCode:n(r['MCR Code']||''),employeeName:n(r['Employee Name']||''),zone:n(r['Zone']||''),region:n(r['Region']||''),area:n(r['Area']||''),hq:n(r['Headquarter']||''),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool']),dietBooked:parseInt(r['Diet booking count']||'0')||0,dietCompleted:parseInt(r['Diet completion count']||'0')||0,physioBooked:parseInt(r['Physio Booking count']||'0')||0,physioCompleted:parseInt(r['Physio completion count']||'0')||0}));
-    // 5mg patients from columns AN onwards (PapaParse duplicate headers get _1 suffix)
-    var fivemgKeys = Object.keys(p[0]||{}).filter(function(k){return k.endsWith('_1')||k==='Mobile No';});
-    var p5 = [];
-    p.forEach(function(r){
-      var mob = n(r['Mobile No'])||'';
-      if(!mob) return;
-      p5.push({
-        mobile:mob, name:n(r['Name_1']||''), state:'',
-        city:n(r['Patient City_1']||''),
-        doctorCity:n(r['Doctor City_1']||''), doctorState:n(r['Doctor State_1']||''),
-        mcrCode:n(r['MCR Code_1']||''), employeeName:n(r['Employee Name_1']||''),
-        zone:n(r['Zone_1']||''), region:n(r['Region_1']||''),
-        area:n(r['Area_1']||''), hq:n(r['Headquarter_1']||''),
-        _date:pMDY(r['Purchase date_1']||''), drug:cDr(r['Drug Name_1']||''),
-        qr:cQR(r['QR Type_1']||''), doctor:n(r['Doctor name_1']||''),
-        docStatus:cSts(r['Current Status_1']||''), plan:n(r['Plan expiry date as per retool_1']||''),
-        dietBooked:parseInt(r['Diet booking count_1']||'0')||0,
-        dietCompleted:parseInt(r['Diet completion count_1']||'0')||0,
-        physioBooked:parseInt(r['Physio Booking count_1']||'0')||0,
-        physioCompleted:parseInt(r['Physio completion count_1']||'0')||0,
+    // 5mg patients from separate sheet (GID 98265454)
+    DS.patient5mg = p5raw.filter(function(r){return n(r['Mobile no']);}).map(function(r){
+      return {
+        mobile:n(r['Mobile no']),name:n(r['Name']||''),state:cSt(r['State']||''),
+        city:n(r['Patient City']||''),
+        doctorCity:n(r['Doctor City']||''),doctorState:n(r['Doctor State']||''),
+        mcrCode:n(r['MCR Code']||''),employeeName:n(r['Employee Name']||''),
+        zone:n(r['Zone']||''),region:n(r['Region']||''),
+        area:n(r['Area']||''),hq:n(r['Headquarter']||''),
+        _date:pMDY(r['Purchase date']||''),drug:cDr(r['Drug Name']||''),
+        qr:cQR(r['QR Type']||''),doctor:n(r['Doctor name']||''),
+        docStatus:cSts(r['Current Status']||''),plan:n(r['Plan expiry date as per retool']||''),
+        dietBooked:parseInt(r['Diet booking count']||'0')||0,
+        dietCompleted:parseInt(r['Diet completion count']||'0')||0,
+        physioBooked:parseInt(r['Physio Booking count']||'0')||0,
+        physioCompleted:parseInt(r['Physio completion count']||'0')||0,
         _variant:'5mg'
-      });
+      };
     });
     DS.patient.forEach(function(r){r._variant='15mg';});
-    DS.patient5mg = p5;
-    DS.patientAll = DS.patient.concat(p5);
+    DS.patientAll = DS.patient.concat(DS.patient5mg);
     DS.logistics=l.map(r=>({name:n(r['Customer Name']),productName:n(r['Product Name']||''),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
     DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status']),_date:parseConsultDate(n(r['consultation_booked_date']||''))}));
     // BCA sync data from same sheet (Col K onwards)
