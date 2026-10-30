@@ -1188,6 +1188,8 @@ function applyAccessControl(){
     if(expBtn) expBtn.style.display='';
     const drRptBtn=document.getElementById('drReportBtn');
     if(drRptBtn) drRptBtn.style.display='';
+      var docRptBtn=document.getElementById('docReportBtn');
+      if(docRptBtn) docRptBtn.style.display='';
     return;
   }
   // General user — apply permissions
@@ -1214,6 +1216,8 @@ function applyAccessControl(){
   if(expBtn) expBtn.style.display = currentPerms.export===true ? '' : 'none';
   const drRptBtn=document.getElementById('drReportBtn');
   if(drRptBtn) drRptBtn.style.display = currentPerms.export===true ? '' : 'none';
+    var docRptBtn=document.getElementById('docReportBtn');
+    if(docRptBtn) docRptBtn.style.display = currentPerms.export===true ? '' : 'none';
 }
 
 /* ── Admin Panel ── */
