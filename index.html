@@ -260,7 +260,55 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 .coming-soon .cs-icon{font-size:64px;margin-bottom:20px}
 .coming-soon .cs-title{font-family:'Fraunces',serif;font-size:28px;color:var(--ink);margin-bottom:8px}
 .coming-soon .cs-sub{font-size:14px;color:var(--muted);max-width:400px}
+
+/* ══ DOCTOR REPORT MODAL ══ */
+.dr-modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9999;justify-content:center;align-items:flex-start;padding:20px;overflow-y:auto}
+.dr-modal-overlay.show{display:flex}
+.dr-modal{background:#fff;border-radius:12px;max-width:700px;width:100%;padding:0;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.dr-modal-hdr{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid #eee}
+.dr-modal-hdr h3{margin:0;font-size:16px;color:#0e2a33}
+.dr-modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:#999}
+.dr-modal-body{padding:20px 24px}
+.dr-search{width:100%;padding:10px 14px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px;font-family:inherit}
+.dr-list{max-height:300px;overflow-y:auto;border:1px solid #eee;border-radius:8px}
+.dr-list-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid #f5f5f5;font-size:13px;display:flex;justify-content:space-between}
+.dr-list-item:hover{background:#e8f4f4}
+.dr-list-item .dr-cnt{color:#888;font-size:12px}
+/* Report page */
+.rpt-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:10000;justify-content:center;align-items:flex-start;padding:20px;overflow-y:auto}
+.rpt-overlay.show{display:flex}
+.rpt-page{background:#fff;max-width:680px;width:100%;border-radius:12px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.rpt-hdr-bar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:#f8f8f8;border-bottom:1px solid #eee}
+.rpt-hdr-bar button{padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit}
+.rpt-dl-btn{background:#0e2a33;color:#fff}
+.rpt-close-btn{background:#eee;color:#333}
+.rpt-body{padding:32px 36px}
+.rpt-title{font-family:'Fraunces',serif;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#0e9a83;margin:0}
+.rpt-subtitle{font-family:'Fraunces',serif;font-size:28px;color:#0e2a33;margin:4px 0 4px}
+.rpt-drname{font-size:20px;color:#0e2a33;font-weight:700;margin:0 0 4px}
+.rpt-tagline{font-size:12px;color:#888;margin:0 0 24px}
+.rpt-krow{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.rpt-kcard{background:#f7fafa;border-radius:10px;padding:16px;text-align:center}
+.rpt-kcard .rk-val{font-size:28px;font-weight:700;color:#0e2a33}
+.rpt-kcard .rk-lab{font-size:11px;color:#888;margin-top:2px}
+.rpt-kcard .rk-sub{font-size:11px;color:#0e9a83;margin-top:4px}
+.rpt-kcard.highlight{background:#0e2a33;color:#fff}
+.rpt-kcard.highlight .rk-val{color:#fff}
+.rpt-kcard.highlight .rk-lab{color:rgba(255,255,255,.7)}
+.rpt-kcard.highlight .rk-sub{color:#5de8c8}
+.rpt-section{margin-bottom:24px}
+.rpt-sh{font-size:13px;font-weight:700;color:#0e2a33;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px}
+.rpt-mom{display:flex;gap:10px;flex-wrap:wrap}
+.rpt-mom-card{flex:1;min-width:80px;background:#f7fafa;border-radius:8px;padding:12px 8px;text-align:center}
+.rpt-mom-card .mm-label{font-size:10px;color:#888;text-transform:uppercase}
+.rpt-mom-card .mm-val{font-size:18px;font-weight:700;color:#0e2a33;margin-top:4px}
+.rpt-feat{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rpt-feat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#f7fafa;border-radius:6px;font-size:12px}
+.rpt-feat-row .ff-bar{height:4px;background:#e0e0e0;border-radius:2px;flex:1;margin:0 10px}
+.rpt-feat-row .ff-fill{height:100%;background:#0e9a83;border-radius:2px}
+.rpt-footer{text-align:center;padding:16px;border-top:1px solid #eee;font-size:10px;color:#aaa}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
 <div class="ldr" id="loader"><div class="ldd"></div><div class="ldt">Fetching live data…</div><div class="lds">Connecting to Google Sheets</div></div>
@@ -377,6 +425,10 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
     <div class="fg"><label>QR Type</label><select id="p1q" onchange="oF1()"><option value="">All QR Types</option></select></div>
     <div class="fgrst" style="display:flex;gap:8px">
       <button class="brst" onclick="rst1()">Reset</button>
+      <button class="btn-export" id="docReportBtn" onclick="openDoctorReport()" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Doctor Report
+      </button>
       <button class="btn-export" id="drReportBtn" onclick="exportDrWeekly()" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Dr. Weekly Report
@@ -613,7 +665,6 @@ let selectedUid  = null;
 
 const SHEETS={
   patient:'/api/sheet?gid=1310523268',
-  patient5mg:'/api/sheet?gid=98265454',
   logistics:'/api/sheet?gid=1879543153',
   consult:'/api/sheet?gid=419247046',
   loyalty:'/api/sheet?gid=975503331',
@@ -695,33 +746,39 @@ async function fcsv(url){return new Promise((r,j)=>{Papa.parse(url,{download:tru
 async function loadAll(){
   document.getElementById('loader').classList.remove('hide');
   try{
-    const[p,l,c,ly,ap,p5raw]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty),fcsv(SHEETS.app),fcsv(SHEETS.patient5mg)]);
+    const[p,l,c,ly,ap]=await Promise.all([fcsv(SHEETS.patient),fcsv(SHEETS.logistics),fcsv(SHEETS.consult),fcsv(SHEETS.loyalty),fcsv(SHEETS.app)]);
     DS.patient=p.filter(r=>n(r['Mobile no'])).map(r=>({mobile:n(r['Mobile no']),name:n(r['Name']),state:cSt(r['State']),city:n(r['Patient City']||r['City']||r['city']||''),doctorCity:n(r['Doctor City']||''),doctorState:n(r['Doctor State']||''),mcrCode:n(r['MCR Code']||''),employeeName:n(r['Employee Name']||''),zone:n(r['Zone']||''),region:n(r['Region']||''),area:n(r['Area']||''),hq:n(r['Headquarter']||''),_date:pMDY(r['Purchase date']),drug:cDr(r['Drug Name']),qr:cQR(r['QR Type']),doctor:cDoc(r['Doctor name']),docStatus:cSts(r['Current Status']),plan:n(r['Plan expiry date as per retool']),dietBooked:parseInt(r['Diet booking count']||'0')||0,dietCompleted:parseInt(r['Diet completion count']||'0')||0,physioBooked:parseInt(r['Physio Booking count']||'0')||0,physioCompleted:parseInt(r['Physio completion count']||'0')||0}));
-    // 5mg patients from separate sheet (GID 98265454)
-    DS.patient5mg = p5raw.filter(function(r){return n(r['Mobile no']);}).map(function(r){
-      return {
-        mobile:n(r['Mobile no']),name:n(r['Name']||''),state:cSt(r['State']||''),
-        city:n(r['Patient City']||''),
-        doctorCity:n(r['Doctor City']||''),doctorState:n(r['Doctor State']||''),
-        mcrCode:n(r['MCR Code']||''),employeeName:n(r['Employee Name']||''),
-        zone:n(r['Zone']||''),region:n(r['Region']||''),
-        area:n(r['Area']||''),hq:n(r['Headquarter']||''),
-        _date:pMDY(r['Purchase date']||''),drug:cDr(r['Drug Name']||''),
-        qr:cQR(r['QR Type']||''),doctor:n(r['Doctor name']||''),
-        docStatus:cSts(r['Current Status']||''),plan:n(r['Plan expiry date as per retool']||''),
-        dietBooked:parseInt(r['Diet booking count']||'0')||0,
-        dietCompleted:parseInt(r['Diet completion count']||'0')||0,
-        physioBooked:parseInt(r['Physio Booking count']||'0')||0,
-        physioCompleted:parseInt(r['Physio completion count']||'0')||0,
+    // 5mg patients from columns AN onwards (PapaParse duplicate headers get _1 suffix)
+    var fivemgKeys = Object.keys(p[0]||{}).filter(function(k){return k.endsWith('_1')||k==='Mobile No';});
+    var p5 = [];
+    p.forEach(function(r){
+      var mob = n(r['Mobile No'])||'';
+      if(!mob) return;
+      p5.push({
+        mobile:mob, name:n(r['Name_1']||''), state:'',
+        city:n(r['Patient City_1']||''),
+        doctorCity:n(r['Doctor City_1']||''), doctorState:n(r['Doctor State_1']||''),
+        mcrCode:n(r['MCR Code_1']||''), employeeName:n(r['Employee Name_1']||''),
+        zone:n(r['Zone_1']||''), region:n(r['Region_1']||''),
+        area:n(r['Area_1']||''), hq:n(r['Headquarter_1']||''),
+        _date:pMDY(r['Purchase date_1']||''), drug:cDr(r['Drug Name_1']||''),
+        qr:cQR(r['QR Type_1']||''), doctor:n(r['Doctor name_1']||''),
+        docStatus:cSts(r['Current Status_1']||''), plan:n(r['Plan expiry date as per retool_1']||''),
+        dietBooked:parseInt(r['Diet booking count_1']||'0')||0,
+        dietCompleted:parseInt(r['Diet completion count_1']||'0')||0,
+        physioBooked:parseInt(r['Physio Booking count_1']||'0')||0,
+        physioCompleted:parseInt(r['Physio completion count_1']||'0')||0,
         _variant:'5mg'
-      };
+      });
     });
     DS.patient.forEach(function(r){r._variant='15mg';});
-    DS.patientAll = DS.patient.concat(DS.patient5mg);
+    DS.patient5mg = p5;
+    DS.patientAll = DS.patient.concat(p5);
     DS.logistics=l.map(r=>({name:n(r['Customer Name']),productName:n(r['Product Name']||''),_date:pDMY(r['Shiprocket Created At']),_deliveredDate:pDMY(r['Order Delivered Date']||''),rawStatus:n(r['Status']),bucket:bkL(r['Status']),city:n(r['Address City']),state:ctySt(n(r['Address City'])),tat:pTAT(r['Delivery TAT']||r['delivery_tat']||r['TAT']||r['tat']||'')}));
     DS.consult=c.map(r=>({name:n(r['name']),drug:cDr(r['support_program_type']),coachType:cCch(r['consultation_type']),status:cCon(r['appointment_status']),_date:parseConsultDate(n(r['consultation_booked_date']||''))}));
     // BCA sync data from same sheet (Col K onwards)
     DS.bca=c.filter(function(r){return n(r['created_at']);}).map(function(r){return{name:n(r['name']),_date:parseConsultDate(n(r['created_at']||'')),weight:parseFloat(n(r['weight']))||0,bmi:parseFloat(n(r['bmi']))||0};});
+    DS.bcaRaw=c.filter(function(r){return n(r['created_at']);}).map(function(r){return{mobile:n(r['contact_no']||''),name:n(r['name']||''),_date:parseConsultDate(n(r['created_at']||'')),weight:parseFloat(n(r['weight']))||0,bmi:parseFloat(n(r['bmi']))||0,body_fat:parseFloat(n(r['body_fat_percentage']))||0,fat_mass:parseFloat(n(r['fat_mass']))||0,muscle_mass:parseFloat(n(r['muscle_mass']))||0};});
     // App engagement: date format DD-Mon-YY e.g. 15-Mar-26
     // App transform -- index-based for KPIs, dynamic headers for features
     var apFields=ap.length?Object.keys(ap[0]):[];
@@ -1821,9 +1878,162 @@ function exportDrWeekly(){
 Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';Chart.defaults.plugins.tooltip.backgroundColor='#0e2a33';Chart.defaults.plugins.tooltip.padding=10;Chart.defaults.plugins.tooltip.titleFont={weight:600,size:12};Chart.defaults.plugins.tooltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
 // loadAll() is called by Firebase auth state listener
 
+ltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
 // loadAll() is called by Firebase auth state listener
 
 </script>
+
+// ══ DOCTOR REPORT FUNCTIONS ══
+function openDoctorReport(){
+  var src=activeVariant==='all'?(DS.patientAll||DS.patient):activeVariant==='5mg'?(DS.patient5mg||[]):DS.patient;
+  var docs={};
+  src.forEach(function(r){if(r.doctor){if(!docs[r.doctor])docs[r.doctor]=0;docs[r.doctor]++;}});
+  var sorted=Object.entries(docs).sort(function(a,b){return b[1]-a[1];});
+  var list=document.getElementById('drReportList');
+  list.innerHTML='';
+  sorted.forEach(function(d){
+    var item=document.createElement('div');
+    item.className='dr-list-item';
+    item.innerHTML=d[0]+'<span class="dr-cnt">'+d[1]+' patients</span>';
+    item.onclick=function(){closeDrReport();generateDrReport(d[0],src);};
+    list.appendChild(item);
+  });
+  document.getElementById('drReportSearch').value='';
+  document.getElementById('drReportModal').classList.add('show');
+}
+function closeDrReport(){document.getElementById('drReportModal').classList.remove('show');}
+function filterDrReportList(){
+  var q=document.getElementById('drReportSearch').value.toLowerCase();
+  var items=document.getElementById('drReportList').children;
+  for(var i=0;i<items.length;i++){items[i].style.display=items[i].textContent.toLowerCase().includes(q)?'':'none';}
+}
+function generateDrReport(doctor,src){
+  var patients=src.filter(function(r){return r.doctor===doctor;});
+  var totalPatients=patients.length;
+  var totalSessions=patients.reduce(function(s,r){return s+(r.dietBooked||0)+(r.physioBooked||0);},0);
+  // BCA outcomes with IQR filter
+  var bca=DS.bca||[];
+  var mobileSet={};patients.forEach(function(r){mobileSet[r.mobile]=true;});
+  // Group BCA by patient mobile (match with consult sheet contact_no)
+  var patientBCA={};
+  bca.forEach(function(r){
+    if(!r._date||!r.weight||r.weight<=0)return;
+    // Match by name (BCA has name, not mobile directly accessible here)
+    // We need to match via DS.bca which has name field
+  });
+  // Actually BCA data has contact_no in consult sheet - let me use raw consult data
+  // BCA readings grouped by mobile from DS.bca
+  var bcaByMobile={};
+  (DS.bcaRaw||[]).forEach(function(r){
+    var mob=(r.mobile||'').trim();
+    if(!mob||!mobileSet[mob])return;
+    if(!r.weight||r.weight<=0)return;
+    if(!bcaByMobile[mob])bcaByMobile[mob]=[];
+    bcaByMobile[mob].push(r);
+  });
+  // IQR noise filter + outcomes
+  var eligible=0,weightLosers=0,totalWC=0,totalBMIC=0,bmiCount=0;
+  var momData={};
+  Object.keys(bcaByMobile).forEach(function(mob){
+    var readings=bcaByMobile[mob].filter(function(r){return r.weight>0;});
+    if(readings.length<2)return;
+    // IQR filter
+    var weights=readings.map(function(r){return r.weight;}).sort(function(a,b){return a-b;});
+    var q1=weights[Math.floor(weights.length*0.25)];
+    var q3=weights[Math.floor(weights.length*0.75)];
+    var iqr=q3-q1;
+    var lower=q1-1.5*iqr;
+    var upper=q3+1.5*iqr;
+    var clean=readings.filter(function(r){return r.weight>=lower&&r.weight<=upper;});
+    clean.sort(function(a,b){return a._date-b._date;});
+    if(clean.length<2)return;
+    var span=(clean[clean.length-1]._date-clean[0]._date)/(1000*60*60*24);
+    if(span<14)return;
+    eligible++;
+    var wc=clean[clean.length-1].weight-clean[0].weight;
+    if(wc<-0.1)weightLosers++;
+    totalWC+=wc;
+    if(clean[0].bmi&&clean[clean.length-1].bmi){
+      totalBMIC+=(clean[clean.length-1].bmi-clean[0].bmi);
+      bmiCount++;
+    }
+    // MoM data
+    var firstDate=clean[0]._date;
+    clean.forEach(function(r){
+      var diffMonths=Math.floor((r._date-firstDate)/(1000*60*60*24*30));
+      if(!momData[diffMonths])momData[diffMonths]={total:0,count:0};
+      momData[diffMonths].total+=(r.weight-clean[0].weight);
+      momData[diffMonths].count++;
+    });
+  });
+  var avgWC=eligible>0?(totalWC/eligible).toFixed(2):'—';
+  var avgBMIC=bmiCount>0?(totalBMIC/bmiCount).toFixed(2):'—';
+  var pctLost=eligible>0?Math.round(weightLosers/eligible*100):'—';
+  var pctBMI=bmiCount>0?Math.round((bmiCount>0?bmiCount:0)/eligible*100)+'%':'—';
+  // Feature exploration (overall)
+  var featCols=DS.appFeatCols||[];
+  var featData=DS.app||[];
+  var totalDAU=featData.reduce(function(s,r){return s+r.dau;},0)||1;
+  var featPcts={};
+  featCols.forEach(function(h){
+    var total=featData.reduce(function(s,r){return s+(r[h]||0);},0);
+    featPcts[h]=Math.round(total/totalDAU*100);
+  });
+  // Sort features by %
+  var featSorted=Object.entries(featPcts).sort(function(a,b){return b[1]-a[1];});
+  // MoM sorted
+  var momKeys=Object.keys(momData).map(Number).sort(function(a,b){return a-b;}).filter(function(k){return k>0;});
+  // Render report
+  var h='';
+  h+='<div class="rpt-title">HEALTH OUTCOMES</div>';
+  h+='<div class="rpt-subtitle">Program Report</div>';
+  h+='<hr style="border:none;border-top:2px solid #0e9a83;margin:12px 0 20px">';
+  h+='<div class="rpt-drname">'+doctor+'</div>';
+  h+='<div class="rpt-tagline">Patient health outcomes and engagement achieved through the MySaathi care program.</div>';
+  // KPI cards
+  h+='<div class="rpt-krow">';
+  h+='<div class="rpt-kcard highlight"><div class="rk-val">'+avgWC+' kg</div><div class="rk-lab">AVG WEIGHT CHANGE</div><div class="rk-sub">Across tracked patients</div></div>';
+  h+='<div class="rpt-kcard"><div class="rk-val">'+pctLost+'%</div><div class="rk-lab">PATIENTS WHO LOST WEIGHT</div><div class="rk-sub">'+weightLosers+' of '+eligible+' patients</div></div>';
+  h+='</div>';
+  h+='<div class="rpt-krow">';
+  h+='<div class="rpt-kcard"><div class="rk-val">'+avgBMIC+' pts</div><div class="rk-lab">AVG BMI CHANGE</div></div>';
+  h+='<div class="rpt-kcard"><div class="rk-val">'+totalPatients+'</div><div class="rk-lab">TOTAL PATIENTS</div></div>';
+  h+='</div>';
+  h+='<div class="rpt-krow">';
+  h+='<div class="rpt-kcard"><div class="rk-val">'+totalSessions+'</div><div class="rk-lab">TOTAL SESSIONS BOOKED</div></div>';
+  h+='<div class="rpt-kcard"><div class="rk-val">'+Object.keys(bcaByMobile).length+'</div><div class="rk-lab">BCA SYNCED PATIENTS</div></div>';
+  h+='</div>';
+  // MoM section
+  if(momKeys.length>0){
+    h+='<div class="rpt-section"><div class="rpt-sh">Month on Month Average Weight Loss</div>';
+    h+='<div class="rpt-mom">';
+    momKeys.forEach(function(k){
+      var avg=(momData[k].total/momData[k].count).toFixed(2);
+      h+='<div class="rpt-mom-card"><div class="mm-label">MONTH '+k+'</div><div class="mm-val">'+avg+' kg</div></div>';
+    });
+    h+='</div></div>';
+  }
+  // Feature exploration
+  if(featSorted.length>0){
+    h+='<div class="rpt-section"><div class="rpt-sh">Feature Exploration</div>';
+    h+='<div style="font-size:11px;color:#888;margin-bottom:10px">% of patients exploring each feature</div>';
+    h+='<div class="rpt-feat">';
+    featSorted.forEach(function(f){
+      h+='<div class="rpt-feat-row"><span>'+f[0]+'</span><div class="ff-bar"><div class="ff-fill" style="width:'+Math.min(f[1],100)+'%"></div></div><span>'+f[1]+'%</span></div>';
+    });
+    h+='</div></div>';
+  }
+  h+='<div style="text-align:center;margin-top:20px;font-size:10px;color:#aaa">Confidential · For '+doctor+'</div>';
+  document.getElementById('rptBody').innerHTML=h;
+  document.getElementById('rptOverlay').classList.add('show');
+}
+function closeRptView(){document.getElementById('rptOverlay').classList.remove('show');}
+function downloadRptPDF(){
+  var el=document.getElementById('rptPage');
+  var opt={margin:0,filename:'Doctor_Report.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
+  if(typeof html2pdf!=='undefined'){html2pdf().set(opt).from(el).save();}
+  else{window.print();}
+}
 </script>
 <!-- ══ CHANGE PASSWORD MODAL ══ -->
 <div class="chpwd-modal" id="chpwdModal">
@@ -1862,6 +2072,28 @@ Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';C
   </div>
 </div>
 
+
+<!-- DOCTOR REPORT MODAL -->
+<div class="dr-modal-overlay" id="drReportModal">
+  <div class="dr-modal">
+    <div class="dr-modal-hdr"><h3>Select Doctor for Report</h3><button class="dr-modal-close" onclick="closeDrReport()">&times;</button></div>
+    <div class="dr-modal-body">
+      <input type="text" class="dr-search" id="drReportSearch" placeholder="Search doctor name..." oninput="filterDrReportList()">
+      <div class="dr-list" id="drReportList"></div>
+    </div>
+  </div>
+</div>
+<!-- DOCTOR REPORT VIEW -->
+<div class="rpt-overlay" id="rptOverlay">
+  <div class="rpt-page" id="rptPage">
+    <div class="rpt-hdr-bar">
+      <button class="rpt-close-btn" onclick="closeRptView()">← Back</button>
+      <button class="rpt-dl-btn" onclick="downloadRptPDF()">Download PDF</button>
+    </div>
+    <div class="rpt-body" id="rptBody"></div>
+    <div class="rpt-footer">Generated by MySaathi · Your Partner in Guided Care</div>
+  </div>
+</div>
 <footer class="pf"><div>MySaathi Dashboard · Zydus Lifesciences · Live Google Sheets</div><div id="fSt">—</div></footer>
 </body>
 </html>
