@@ -1885,7 +1885,6 @@ Chart.defaults.font.family="'Inter',sans-serif";Chart.defaults.color='#476069';C
 ltip.bodyFont={size:12};Chart.defaults.plugins.tooltip.cornerRadius=6;Chart.defaults.plugins.tooltip.displayColors=false;
 // loadAll() is called by Firebase auth state listener
 
-</script>
 
 // ══ DOCTOR REPORT FUNCTIONS ══
 function openDoctorReport(){
@@ -2036,6 +2035,11 @@ function downloadRptPDF(){
   var el=document.getElementById('rptPage');
   var opt={margin:0,filename:'Doctor_Report.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
   if(typeof html2pdf!=='undefined'){html2pdf().set(opt).from(el).save();}
+  else{window.print();}
+}
+
+</script>
+
   else{window.print();}
 }
 </script>
