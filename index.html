@@ -2038,7 +2038,7 @@ function generateDrReport(doctor,src){
   document.getElementById('rptBody').innerHTML=h;
   document.getElementById('rptOverlay').classList.add('show');
 }
-function closeRptView(){document.getElementById('rptOverlay').classList.remove('show');}
+function closeRptView(){document.getElementById('rptOverlay').classList.remove('show');document.getElementById('drReportModal').classList.add('show');}
 function downloadRptPDF(){
   var el=document.getElementById('rptPage');
   var opt={margin:0,filename:'Doctor_Report.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
