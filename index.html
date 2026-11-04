@@ -232,7 +232,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 /* Add user form */
 .add-user-form{padding:20px 28px;border-top:1px solid #e4ebee;background:#f5f8f8;display:none}
 .add-user-form.show{display:block}
-.auf-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.auf-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .auf-field{display:flex;flex-direction:column;gap:5px}
 .auf-field label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#7a8c93;font-weight:600}
 .auf-field input,.auf-field select{border:1px solid #e4ebee;border-radius:7px;padding:8px 10px;font-size:12px;font-family:'Inter',sans-serif;outline:none;background:#fff}
@@ -282,7 +282,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 .rpt-hdr-bar button{padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit}
 .rpt-dl-btn{background:#0e2a33;color:#fff}
 .rpt-close-btn{background:#eee;color:#333}
-.rpt-body{padding:32px 36px 40px}
+.rpt-body{padding:20px 36px 16px}
 .rpt-title{font-family:'Fraunces',serif;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#0e9a83;margin:0}
 .rpt-subtitle{font-family:'Fraunces',serif;font-size:28px;color:#0e2a33;margin:4px 0 4px}
 .rpt-drname{font-size:20px;color:#0e2a33;font-weight:700;margin:0 0 4px}
@@ -306,7 +306,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 .rpt-feat-row{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:#f7fafa;border-radius:6px;font-size:12px}
 .rpt-feat-row .ff-bar{height:4px;background:#e0e0e0;border-radius:2px;flex:1;margin:0 10px}
 .rpt-feat-row .ff-fill{height:100%;background:#0e9a83;border-radius:2px}
-.rpt-footer{text-align:center;padding:16px;border-top:1px solid #eee;font-size:10px;color:#aaa}
+.rpt-footer{padding:10px 36px;border-top:1px solid #eee;font-size:10px;color:#aaa}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -1973,16 +1973,16 @@ function generateDrReport(doctor,src){
   // Render report
   var h='';
   h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">';
-  h+='<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAu8AAALKCAYAAACC4r/UAAEAAE" alt="MySaathi" style="height:160px;object-fit:contain">';
+  h+='<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAu8AAALKCAYAAACC4r/UAAEAAE" alt="MySaathi" style="height:60px;object-fit:contain">';
   // Split logo b64 to avoid string too long issues - we'll do it differently
   h+='<div style="text-align:right"><div style="font-size:10px;letter-spacing:2.5px;color:#888;text-transform:uppercase">HEALTH OUTCOMES</div><div style="font-size:14px;font-weight:600;color:#1a3a40">Program Report</div></div>';
   h+='</div>';
-  h+='<div style="font-size:11px;letter-spacing:2.5px;color:#0f766e;text-transform:uppercase;font-weight:600;margin-bottom:6px">HEALTH OUTCOMES REPORT</div>';
+  h+='<div style="font-size:11px;letter-spacing:2.5px;color:#0f766e;text-transform:uppercase;font-weight:600;margin-bottom:4px">HEALTH OUTCOMES REPORT</div>';
   h+='<div style="font-family:Fraunces,serif;font-size:32px;color:#1a3a40;font-weight:700;margin-bottom:6px">'+doctor+'</div>';
-  h+='<div style="font-size:13px;color:#888;margin-bottom:20px">Patient health outcomes and engagement achieved through the MySaathi care program.</div>';
-  h+='<div style="height:2px;background:#0f766e;margin-bottom:24px"></div>';
+  h+='<div style="font-size:13px;color:#888;margin-bottom:10px">Patient health outcomes and engagement achieved through the MySaathi care program.</div>';
+  h+='<div style="height:2px;background:#0f766e;margin-bottom:14px"></div>';
   // Hero KPIs
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;margin-bottom:20px">';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;margin-bottom:14px">';
   h+='<div style="background:#1a3a40;color:#fff;padding:28px 24px;position:relative;overflow:hidden">';
   h+='<div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06)"></div>';
   h+='<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:8px">PATIENTS WHO LOST WEIGHT</div>';
@@ -1993,20 +1993,20 @@ function generateDrReport(doctor,src){
   h+='<div style="padding:16px 24px;flex:1"><div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888">AVG BMI CHANGE</div><div style="font-size:11px;color:#aaa">Downward shift in BMI</div><div style="font-size:26px;font-weight:700;color:#0f766e;margin-top:4px">'+avgBMIC+' pts</div></div>';
   h+='</div></div>';
   // Total Patients - full width
-  h+='<div style="border:1px solid #e8e8e8;border-radius:12px;padding:18px 24px;display:flex;align-items:center;gap:14px;margin-bottom:24px">';
+  h+='<div style="border:1px solid #e8e8e8;border-radius:12px;padding:18px 24px;display:flex;align-items:center;gap:14px;margin-bottom:14px">';
   h+='<div style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;background:#f0fdf9;color:#0f766e">◍</div>';
   h+='<div><div style="font-size:28px;font-weight:700;color:#1a3a40">'+totalPatients+'</div><div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888">TOTAL PATIENTS</div></div>';
   h+='</div>';
   // Baseline + Current weight
   if(avgBaseline!=='—'){
-    h+='<div style="display:flex;gap:12px;margin-bottom:12px">';
+    h+='<div style="display:flex;gap:10px;margin-bottom:10px">';
     h+='<div style="flex:1;background:#f0fdf9;border:1px solid #d1ede8;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888">BASELINE WEIGHT</div><div style="font-size:11px;color:#aaa;margin-top:2px">Month 1 average</div></div><div style="font-size:24px;font-weight:700;color:#1a3a40">'+avgBaseline+' kg</div></div>';
     h+='<div style="flex:1;background:#f0fdf9;border:1px solid #d1ede8;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888">CURRENT WEIGHT</div><div style="font-size:11px;color:#aaa;margin-top:2px">Latest reading average</div></div><div style="font-size:24px;font-weight:700;color:#0f766e">'+avgCurrent+' kg</div></div>';
     h+='</div>';
   }
   // MoM
   if(momKeys.length>0){
-    h+='<div style="margin-bottom:28px"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px"><div style="font-size:16px;font-weight:700;color:#1a3a40">Month on Month Average Weight Loss</div><div style="font-size:11px;color:#aaa">Average change vs. starting weight</div></div>';
+    h+='<div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px"><div style="font-size:16px;font-weight:700;color:#1a3a40">Month on Month Average Weight Loss</div><div style="font-size:11px;color:#aaa">Average change vs. starting weight</div></div>';
     h+='<div style="display:flex;gap:0;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden">';
     momKeys.forEach(function(k,i){
       var avg=(momData[k].total/momData[k].count).toFixed(2);
@@ -2029,7 +2029,7 @@ function generateDrReport(doctor,src){
     h+='</div></div>';
   }
   // Features - names only, no %, no BCA
-  h+='<div style="margin-bottom:24px"><div style="font-size:16px;font-weight:700;color:#1a3a40;margin-bottom:12px">Top Features Explored</div>';
+  h+='<div style="margin-bottom:10px"><div style="font-size:16px;font-weight:700;color:#1a3a40;margin-bottom:8px">Top Features Explored</div>';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">';
   var feats=['Educational Content','Steps Tracker','Diet Logging','Sleep Tracking','Water Intake','Exercise'];
   feats.forEach(function(f){
@@ -2037,11 +2037,12 @@ function generateDrReport(doctor,src){
   });
   h+='</div></div>';
   // Confidential footer
-  h+='<div style="text-align:center;margin-top:40px;padding-bottom:20px;font-size:10px;color:#aaa">Confidential · For '+doctor+'</div>';
+  
   document.getElementById('rptBody').innerHTML=h;
   // Fix logo - set full base64 after render
   var logoImg=document.querySelector('#rptBody img[alt=MySaathi]');
   if(logoImg) logoImg.src='data:image/png;base64,'+MYSAATHI_LOGO_B64;
+  var footDoc=document.getElementById('rptFooterDoc');if(footDoc)footDoc.textContent='Confidential · For '+doctor;
   document.getElementById('rptOverlay').classList.add('show');
 }
 function closeRptView(){document.getElementById('rptOverlay').classList.remove('show');document.getElementById('drReportModal').classList.add('show');}
@@ -2113,7 +2114,7 @@ function downloadRptPDF(){
       <button class="rpt-dl-btn" onclick="downloadRptPDF()">Download PDF</button>
     </div>
     <div class="rpt-body" id="rptBody"></div>
-    <div class="rpt-footer">Generated by <b style="color:#0f766e">MySaathi</b> · An initiative by Zydus</div>
+    <div class="rpt-footer" style="display:flex;justify-content:space-between;align-items:center"><span>Generated by <b style="color:#0f766e">MySaathi</b> · An initiative by Zydus</span><span id="rptFooterDoc"></span></div>
   </div>
 </div>
 <footer class="pf"><div>MySaathi Dashboard · Zydus Lifesciences · Live Google Sheets</div><div id="fSt">—</div></footer>
