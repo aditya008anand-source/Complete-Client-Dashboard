@@ -282,7 +282,7 @@ footer.pf{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);disp
 .rpt-hdr-bar button{padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit}
 .rpt-dl-btn{background:#0e2a33;color:#fff}
 .rpt-close-btn{background:#eee;color:#333}
-.rpt-body{padding:32px 36px}
+.rpt-body{padding:32px 36px 40px}
 .rpt-title{font-family:'Fraunces',serif;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#0e9a83;margin:0}
 .rpt-subtitle{font-family:'Fraunces',serif;font-size:28px;color:#0e2a33;margin:4px 0 4px}
 .rpt-drname{font-size:20px;color:#0e2a33;font-weight:700;margin:0 0 4px}
@@ -2037,7 +2037,7 @@ function generateDrReport(doctor,src){
   });
   h+='</div></div>';
   // Confidential footer
-  h+='<div style="text-align:center;margin-top:20px;font-size:10px;color:#aaa">Confidential · For '+doctor+'</div>';
+  h+='<div style="text-align:center;margin-top:40px;padding-bottom:20px;font-size:10px;color:#aaa">Confidential · For '+doctor+'</div>';
   document.getElementById('rptBody').innerHTML=h;
   // Fix logo - set full base64 after render
   var logoImg=document.querySelector('#rptBody img[alt=MySaathi]');
