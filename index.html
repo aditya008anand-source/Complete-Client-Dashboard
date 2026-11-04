@@ -1935,6 +1935,20 @@ function generateDrReport(doctor,src){
     var upper=q3+1.5*iqr;
     var clean=readings.filter(function(r){return r.weight>=lower&&r.weight<=upper;});
     clean.sort(function(a,b){return a._date-b._date;});
+    // Spike removal: if reading >25% from median AND both neighbours are close to each other, it's a machine error
+    if(clean.length>=3){
+      var wts=clean.map(function(r){return r.weight;}).sort(function(a,b){return a-b;});
+      var median=wts[Math.floor(wts.length/2)];
+      var remove={};
+      for(var ci=1;ci<clean.length-1;ci++){
+        var curr=clean[ci].weight;
+        if(Math.abs(curr-median)/median>0.25){
+          var prev=clean[ci-1].weight,next=clean[ci+1].weight;
+          if(Math.abs(prev-next)/Math.max(prev,next)<0.15){remove[ci]=true;}
+        }
+      }
+      clean=clean.filter(function(r,i){return !remove[i];});
+    }
     if(clean.length<2)return;
     var span=(clean[clean.length-1]._date-clean[0]._date)/(1000*60*60*24);
     if(span<14)return;
