@@ -1973,7 +1973,7 @@ function generateDrReport(doctor,src){
   // Render report
   var h='';
   h+='<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">';
-  h+='<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAu8AAALKCAYAAACC4r/UAAEAAE" alt="MySaathi" style="height:100px;object-fit:contain">';
+  h+='<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAu8AAALKCAYAAACC4r/UAAEAAE" alt="MySaathi" style="height:110px;object-fit:contain">';
   // Split logo b64 to avoid string too long issues - we'll do it differently
   h+='<div style="text-align:right"><div style="font-size:10px;letter-spacing:2.5px;color:#888;text-transform:uppercase">HEALTH OUTCOMES</div><div style="font-size:14px;font-weight:600;color:#1a3a40">Program Report</div></div>';
   h+='</div>';
@@ -1983,7 +1983,7 @@ function generateDrReport(doctor,src){
   h+='<div style="height:2px;background:#0f766e;margin-bottom:14px"></div>';
   // Hero KPIs
   h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden;margin-bottom:14px">';
-  h+='<div style="background:#1a3a40;color:#fff;padding:28px 24px;position:relative;overflow:hidden">';
+  h+='<div style="background:#1a3a40;color:#fff;padding:24px 20px;position:relative;overflow:hidden">';
   h+='<div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06)"></div>';
   h+='<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:8px">PATIENTS WHO LOST WEIGHT</div>';
   h+='<div style="font-size:42px;font-weight:700;color:#5de8c8;line-height:1">'+pctLost+'%</div>';
