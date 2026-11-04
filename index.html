@@ -2001,7 +2001,7 @@ function generateDrReport(doctor,src){
   if(avgBaseline!=='—'){
     h+='<div style="display:flex;gap:12px;margin-bottom:12px">';
     h+='<div style="flex:1;background:#f0fdf9;border:1px solid #d1ede8;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888">BASELINE WEIGHT</div><div style="font-size:11px;color:#aaa;margin-top:2px">Month 1 average</div></div><div style="font-size:24px;font-weight:700;color:#1a3a40">'+avgBaseline+' kg</div></div>';
-    h+='<div style="flex:1;background:#f0fdf9;border:1px solid #d1ede8;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888">CURRENT WEIGHT</div><div style="font-size:11px;color:#aaa;margin-top:2px">Month '+lastMonth+' average</div></div><div style="font-size:24px;font-weight:700;color:#0f766e">'+avgCurrent+' kg</div></div>';
+    h+='<div style="flex:1;background:#f0fdf9;border:1px solid #d1ede8;border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#888">CURRENT WEIGHT</div><div style="font-size:11px;color:#aaa;margin-top:2px">Latest reading average</div></div><div style="font-size:24px;font-weight:700;color:#0f766e">'+avgCurrent+' kg</div></div>';
     h+='</div>';
   }
   // MoM
