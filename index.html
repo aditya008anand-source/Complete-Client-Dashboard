@@ -1957,6 +1957,16 @@ function generateDrReport(doctor,src){
       if(month===0)return;
       patientMonths[month]=r.weight-baseWeight;
     });
+    // Fill intermediate months: if patient has M3, they must appear in M1 and M2
+    var maxMonth=Math.max.apply(null,Object.keys(patientMonths).map(Number));
+    for(var mm=1;mm<=maxMonth;mm++){
+      if(!patientMonths[mm]){
+        // Find closest earlier month's value
+        for(var prev=mm-1;prev>=1;prev--){
+          if(patientMonths[prev]){patientMonths[mm]=patientMonths[prev];break;}
+        }
+      }
+    }
     Object.keys(patientMonths).forEach(function(m){
       var mi=parseInt(m);
       if(!momData[mi])momData[mi]={total:0,count:0};
