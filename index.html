@@ -1908,6 +1908,7 @@ function filterDrReportList(){
   for(var i=0;i<items.length;i++){items[i].style.display=items[i].textContent.toLowerCase().includes(q)?'':'none';}
 }
 function generateDrReport(doctor,src){
+  _rptDoctor=doctor;
   var patients=src.filter(function(r){return r.doctor===doctor;});
   var totalPatients=patients.length;
   // BCA outcomes with IQR filter
@@ -2046,9 +2047,10 @@ function generateDrReport(doctor,src){
   document.getElementById('rptOverlay').classList.add('show');
 }
 function closeRptView(){document.getElementById('rptOverlay').classList.remove('show');document.getElementById('drReportModal').classList.add('show');}
+var _rptDoctor='Doctor';
 function downloadRptPDF(){
   var el=document.getElementById('rptPage');
-  var opt={margin:0,filename:doctor+'_Health_Report.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
+  var opt={margin:0,filename:_rptDoctor+'_Health_Report.pdf',image:{type:'jpeg',quality:0.98},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}};
   if(typeof html2pdf!=='undefined'){html2pdf().set(opt).from(el).save();}
   else{window.print();}
 }
