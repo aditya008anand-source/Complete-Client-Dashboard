@@ -2168,15 +2168,6 @@ function r7(){
   var ovVals=ovLabels.map(function(k){return ovMap[k];});
   mkC('cRoldVar',{type:'doughnut',data:{labels:ovLabels,datasets:[{data:ovVals,backgroundColor:[C.teal,C.amber,C.blue,C.red].slice(0,ovLabels.length)}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}});
 
-  // Table
-  var tbody=document.getElementById('renewalTbody');
-  if(src.length===0){
-    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:20px">No renewal patients found</td></tr>';
-  } else {
-    tbody.innerHTML=src.map(function(r){
-      return '<tr><td>'+esc(r.opsPoc)+'</td><td style="font-size:10px">'+esc(r.patientId.substring(0,8))+'…</td><td>'+esc(r.name)+'</td><td>'+esc(r.mobile)+'</td><td>'+esc(r.state)+'</td><td>'+esc(r.drug)+'</td><td>'+esc(r.oldDrug)+'</td><td>'+esc(r.oldVariant)+'</td><td>'+esc(r.currentType)+'</td><td>'+esc(r.qr)+'</td><td>'+esc(r.doctor)+'</td></tr>';
-    }).join('');
-  }
 }
 
 function exportRenewalCSV(){
@@ -2295,14 +2286,6 @@ function exportRenewalCSV(){
   <div class="grid g2" style="margin-top:14px">
     <div class="card"><div class="ct">Old vs Current Drug Comparison</div><div class="cw sh"><canvas id="cRcomp"></canvas></div></div>
     <div class="card"><div class="ct">Old Drug Variant Split</div><div class="cw sh"><canvas id="cRoldVar"></canvas></div></div>
-  </div>
-  <div class="card" style="margin-top:14px"><div class="ct">Renewal Patient List</div>
-    <div style="overflow-x:auto">
-      <table class="rtbl" id="renewalTable">
-        <thead><tr><th>OPS POC</th><th>Patient ID</th><th>Name</th><th>Mobile</th><th>State</th><th>Drug Name</th><th>Old Drug</th><th>Old Variant</th><th>Current Type</th><th>QR Type</th><th>Doctor</th></tr></thead>
-        <tbody id="renewalTbody"></tbody>
-      </table>
-    </div>
   </div>
 </section>
 <footer class="pf"><div>MySaathi Dashboard · Zydus Lifesciences · Live Google Sheets</div><div id="fSt">—</div></footer>
